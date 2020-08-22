@@ -12,7 +12,7 @@ double precision :: kref
 double precision, allocatable, dimension(:,:,:) :: rav, fav
 !------------ Read input
 
-  open (unit=55, file="aka.in", status='old', action='read') !read align.in file
+  open (unit=55, file="feneb.in", status='old', action='read') !read align.in file
   read(55,*) infile
   read(55,*) nrep
   read(55,*) nrestr
@@ -30,6 +30,7 @@ double precision, allocatable, dimension(:,:,:) :: rav, fav
     fname = trim(fname) // trim(chi)
     fname = trim(fname) // ".nc"
     call getdims(fname,nsteps,spatial,natoms)
+    if (allocated(coordinate_evol)) deallocate(coordinate_evol)
     allocate(coordinate_evol(nsteps))
     call getandwritecoord(fname,nsteps,natoms,spatial,point,coordinate_evol,&
     nrestr,mask,kref,rav,fav,nrep,i)
