@@ -5,14 +5,14 @@ integer :: nsteps, spatial, natoms, nrestr, nrep
 integer :: i, j
 integer, allocatable, dimension (:) :: mask
 real(4) :: coordinate
-real(4), allocatable, dimension (:) :: coordinate_evol
+real(4), allocatable, dimension (:) :: coordx,coordy,coordz
 integer, dimension (3) :: point
 double precision :: kref, steep_size, ftol, maxforce
 double precision, dimension(6) :: boxinfo
 double precision, allocatable, dimension(:,:) :: rref
 double precision, allocatable, dimension(:,:,:) :: rav, fav
 logical ::  per, vel, relaxd
-!------------ Read inpu
+!------------ Read input
 
   open (unit=1000, file="feneb.in", status='old', action='read') !read align.in file
   read(1000,*) infile
@@ -44,13 +44,15 @@ logical ::  per, vel, relaxd
     oname = trim(oname) // ".rst7"
 
     call getdims(fname,nsteps,spatial,natoms)
-    if (allocated(coordinate_evol)) deallocate(coordinate_evol)
+    if (allocated(coordx)) deallocate(coordx)
+    if (allocated(coordy)) deallocate(coordy)
+    if (allocated(coordz)) deallocate(coordz)
     if (allocated(rref)) deallocate(rref)
-    allocate(coordinate_evol(nsteps),rref(3,natoms))
+    allocate(coordx(nsteps),coordy(nsteps),coordz(nsteps),rref(3,natoms))
     call getrefcoord(rname,nrestr,mask,natoms,rref,boxinfo,per,vel)
 
-    call getandwritecoord(fname,nsteps,natoms,spatial,coordinate_evol,&
-    nrestr,mask,kref,rav,fav,nrep,i)
+    call getandwritecoord(fname,nsteps,natoms,spatial,coordx,coordy, coordz,&
+                    nrestr,mask,kref,rav,fav,nrep,i,rref)
 
     do j=1,nrestr
       write(1001,'(2x, I6,2x, 6(f20.10,2x))') j, rav(1:3,j,i), fav(1:3,j,i)
@@ -88,16 +90,18 @@ CALL check(nf90_close(ncid))
 END SUBROUTINE getdims
 
 SUBROUTINE getandwritecoord(infile,nsteps,natoms,spatial, &
-                            coordinate_evol,nrestr,mask,kref,rav,fav,nrep,rep)
+                            coordx,coordy,coordz,nrestr,mask, &
+                            kref,rav,fav,nrep,rep,rref)
 USE netcdf
 IMPLICIT NONE
-REAL (KIND=4), DIMENSION(3) :: coordinate_evol, ref, av
+REAL (KIND=4), DIMENSION(nsteps) :: coordx, coordy, coordz, ref, av
 INTEGER(KIND=4), INTENT(IN) :: natoms, nsteps, spatial, nrestr
 INTEGER(KIND=4) :: ncid, xtype, ndims, varid
 CHARACTER(LEN=50), INTENT(IN) :: infile
 CHARACTER(LEN=50) :: xname, vname, chi, chrep
 double precision :: kref
 double precision, dimension(3,nrestr,nrep) :: rav,fav
+double precision, dimension(3,natoms), intent(inout) :: rref
 integer, dimension(3) :: point,endp
 integer, dimension(nrestr) :: mask
 integer :: i,j,k,ati,atf,nrep,rep
@@ -113,20 +117,25 @@ do i = 1,nrestr !natoms
   chi = trim(chi)//trim(chrep)
   open(i, file = chi, status = 'unknown')
   ati=mask(i)
-  atf=mask(1)
-  point = (/ 1,ati,1 /)
-  endp = (/ 3,atf,1 /)
-  CALL check(nf90_get_var(ncid,3,ref,start = point,count = endp))
   av=0.d0
-  do j = 1,nsteps
-      point = (/ 1,ati,j /)
-      endp = (/ 3,atf,1 /)
-      CALL check(nf90_get_var(ncid,3,coordinate_evol,start = point,count = endp))
-      av(1:3)=(av(1:3)*(dble(j)-1)+coordinate_evol(1:3))/dble(j)
-      write(i,*) j, -kref*(av(1:3)-ref(1:3))
-  enddo
+  point = (/ 1,ati,1 /)
+  endp = (/ 1,1,nsteps /)
+  CALL check(nf90_get_var(ncid,3,coordx,start = point,count = endp))
+  point = (/ 2,ati,1 /)
+  endp = (/ 1,1,nsteps-1 /)
+  CALL check(nf90_get_var(ncid,3,coordy,start = point,count = endp))
+  point = (/ 3,ati,1 /)
+  endp = (/ 1,1,nsteps-1 /)
+  CALL check(nf90_get_var(ncid,3,coordz,start = point,count = endp))
+
+  do k=1,nsteps
+    av(1)=(av(1)*(dble(k-1))+coordx(k))/dble(k)
+    av(2)=(av(2)*(dble(k-1))+coordy(k))/dble(k)
+    av(3)=(av(3)*(dble(k-1))+coordz(k))/dble(k)
+  write(i,*) k, kref*(av(1:3)-rref(1:3,ati))
+  end do
   rav(1:3,i,rep)=av(1:3)
-  fav(1:3,i,rep)=-kref*(av(1:3)-ref(1:3))
+  fav(1:3,i,rep)=kref*(av(1:3)-rref(1:3,ati))
   close(i)
 enddo
 
@@ -192,7 +201,7 @@ end do
 
 open (unit=auxunit, file=oname)
 write(auxunit,*) "FENEB restart, replica: ", rep
-write(auxunit,*) natoms
+write(auxunit,'(I8)') natoms
 i=1
 do while (i .le. natoms/2)
   write(auxunit,'(6(f12.7))') rout(1,2*i-1), rout(2,2*i-1), rout(3,2*i-1), &
@@ -233,6 +242,9 @@ subroutine max_force(nrestr,nrep,rep,fav,maxforce,ftol,relaxd)
   maxforce=dsqrt(maxforce)
   if(maxforce .le. ftol) relaxd=.TRUE.
 
+  write(*,*) "maxforce: ", maxforce
+
+
 end subroutine max_force
 
 subroutine steep(rav,fav,nrep,rep,steep_size,maxforce)
@@ -247,7 +259,6 @@ integer :: i,j
 
 
 step=steep_size/maxforce
-  write(*,*) "maxforce: ", maxforce, "step size"
   do i=1,nrestr
     do j=1,3
       rav(j,i,rep)=rav(j,i,rep)+step*fav(j,i,rep)
