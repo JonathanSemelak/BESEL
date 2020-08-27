@@ -12,7 +12,7 @@ double precision, dimension(6) :: boxinfo
 double precision, allocatable, dimension(:,:) :: rref
 double precision, allocatable, dimension(:,:,:) :: rav, fav
 logical ::  per, vel, relaxd
-!------------ Read input
+!------------ Read inpu
 
   open (unit=1000, file="feneb.in", status='old', action='read') !read align.in file
   read(1000,*) infile
