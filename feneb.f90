@@ -1,6 +1,6 @@
 program feneb
 implicit none
-character(len=50) :: infile, reffile, ofile, chi, fname, rname, oname
+character(len=50) :: infile, reffile, outfile, chi, iname, rname, oname
 integer :: nsteps, spatial, natoms, nrestr, nrep
 integer :: i, j
 integer, allocatable, dimension (:) :: mask
@@ -12,12 +12,12 @@ double precision, dimension(6) :: boxinfo
 double precision, allocatable, dimension(:,:) :: rref
 double precision, allocatable, dimension(:,:,:) :: rav, fav
 logical ::  per, vel, relaxd
-!------------ Read input
 
+!------------ Read input
   open (unit=1000, file="feneb.in", status='old', action='read') !read align.in file
   read(1000,*) infile
   read(1000,*) reffile
-  read(1000,*) ofile
+  read(1000,*) outfile
   read(1000,*) per, vel
   read(1000,*) nrep
   read(1000,*) nrestr
@@ -29,76 +29,110 @@ logical ::  per, vel, relaxd
   close (unit=1000)
 !------------
 
-  open(unit=1001, file="Pos_forces.dat")
-  do i=1,nrep
-    if (i .le. 9) write(chi,'(I1)') i
-    if (i .gt. 9 .and. i .le. 99) write(chi,'(I2)') i
-    fname = trim(infile) // "_"
-    fname = trim(fname) // trim(chi)
-    fname = trim(fname) // ".nc"
-    rname = trim(reffile) // "_"
-    rname = trim(rname) // trim(chi)
-    rname = trim(rname) // ".rst7"
-    oname = trim(ofile) // "_"
-    oname = trim(oname) // trim(chi)
-    oname = trim(oname) // ".rst7"
+ open(unit=9999, file="feneb.out") !Opten file for feneb output
 
-    call getdims(fname,nsteps,spatial,natoms)
+!------------ Main loop
+
+  do i=1,nrep
+
+    call getfilenames(i,chi,infile,reffile,outfile,iname,rname,oname)
+
+    call getdims(iname,nsteps,spatial,natoms)
+
     if (allocated(coordx)) deallocate(coordx)
     if (allocated(coordy)) deallocate(coordy)
     if (allocated(coordz)) deallocate(coordz)
     if (allocated(rref)) deallocate(rref)
     allocate(coordx(nsteps),coordy(nsteps),coordz(nsteps),rref(3,natoms))
+
     call getrefcoord(rname,nrestr,mask,natoms,rref,boxinfo,per,vel)
 
-    call getandwritecoord(fname,nsteps,natoms,spatial,coordx,coordy, coordz,&
+    call getavcoordanforces(iname,nsteps,natoms,spatial,coordx,coordy, coordz,&
                     nrestr,mask,kref,rav,fav,nrep,i,rref)
 
-    do j=1,nrestr
-      write(1001,'(2x, I6,2x, 6(f20.10,2x))') j, rav(1:3,j,i), fav(1:3,j,i)
-    end do
-    write(1001,'(2x, I6,2x, 6(f20.10,2x))')
+    call writeposforces(rav,fav,nrestr,i)
 
-    call max_force(nrestr,nrep,i,fav,maxforce,ftol,relaxd)
+    call getmaxforce(nrestr,nrep,i,fav,maxforce,ftol,relaxd)
 
-    if (.not. relaxd) then
-      call steep(rav,fav,nrep,i,steep_size,maxforce)
-      call writenewcoord(oname,rref,boxinfo,natoms,nrestr,mask,per,rav,i)
-    else
-      write(*,*) "Convergence criteria of ", ftol, " (kcal/mol A) achieved"
-    endif
+
   end do
 
-  close(1001)
+!----------- End main loop
+  if (nrep .gt. 1) then
 
+  if (.not. relaxd) then
+    call steep(rav,fav,nrep,i,steep_size,maxforce)
+    call writenewcoord(oname,rref,boxinfo,natoms,nrestr,mask,per,rav,i)
+  else
+    write(999,*) "Convergence criteria of ", ftol, " (kcal/mol A) achieved"
+  endif
+   end if
+  close(unit=9999)
 
 contains
 
-SUBROUTINE getdims(infile,nsteps,spatial,natoms)
-USE netcdf
-IMPLICIT NONE
-INTEGER(KIND=4), INTENT(OUT) :: nsteps,spatial,natoms
-INTEGER(KIND=4) :: ncid
-CHARACTER(LEN=50), INTENT(IN) :: infile
-CHARACTER(LEN=50) :: xname, yname, zname
+subroutine getfilenames(rep,chrep,infile,reffile,outfile,iname,rname,oname)
 
-CALL check(nf90_open(infile, nf90_nowrite, ncid))
-CALL check(nf90_inquire_dimension(ncid,1,xname,nsteps))
-CALL check(nf90_inquire_dimension(ncid,2,yname,spatial))
-CALL check(nf90_inquire_dimension(ncid,3,zname,natoms))
-CALL check(nf90_close(ncid))
-END SUBROUTINE getdims
+implicit none
+integer, intent(in) :: rep
+character(len=50), intent(out) :: infile, reffile, outfile, chrep, iname, rname, oname
 
-SUBROUTINE getandwritecoord(infile,nsteps,natoms,spatial, &
+  if (rep .le. 9) write(chi,'(I1)') rep
+  if (rep .gt. 9 .and. rep .le. 99) write(chrep,'(I2)') rep
+  if (rep .gt. 99 .and. rep .le. 999) write(chrep,'(I3)') rep
+
+  iname = trim(infile) // "_"
+  iname = trim(iname) // trim(chrep)
+  iname = trim(iname) // ".nc"
+  rname = trim(reffile) // "_"
+  rname = trim(rname) // trim(chrep)
+  rname = trim(rname) // ".rst7"
+  oname = trim(outfile) // "_"
+  oname = trim(oname) // trim(chrep)
+  oname = trim(oname) // ".rst7"
+
+end subroutine getfilenames
+
+subroutine writeposforces(rav,fav,nrestr,rep)
+
+implicit none
+integer, intent(in) :: nrestr, rep
+double precision, dimension(3,nrestr,nrep), intent(in) :: rav, fav
+
+open(unit=1001, file="Pos_forces.dat")
+do i=1,nrestr
+write(1001,'(2x, I6,2x, 6(f20.10,2x))') rep, rav(1:3,i,rep), fav(1:3,i,rep)
+end do
+write(1001,'(2x, I6,2x, 6(f20.10,2x))')
+close(1001)
+
+end subroutine writeposforces
+
+subroutine getdims(iname,nsteps,spatial,natoms)
+use netcdf
+implicit none
+integer(kind=4), intent(out) :: nsteps,spatial,natoms
+integer(kind=4) :: ncid
+character(len=50), intent(in) :: iname
+character(len=50) :: xname, yname, zname
+
+call check(nf90_open(iname, nf90_nowrite, ncid))
+call check(nf90_inquire_dimension(ncid,1,xname,nsteps))
+call check(nf90_inquire_dimension(ncid,2,yname,spatial))
+call check(nf90_inquire_dimension(ncid,3,zname,natoms))
+call check(nf90_close(ncid))
+end subroutine getdims
+
+subroutine getavcoordanforces(iname,nsteps,natoms,spatial, &
                             coordx,coordy,coordz,nrestr,mask, &
                             kref,rav,fav,nrep,rep,rref)
-USE netcdf
-IMPLICIT NONE
-REAL (KIND=4), DIMENSION(nsteps) :: coordx, coordy, coordz, ref, av
-INTEGER(KIND=4), INTENT(IN) :: natoms, nsteps, spatial, nrestr
-INTEGER(KIND=4) :: ncid, xtype, ndims, varid
-CHARACTER(LEN=50), INTENT(IN) :: infile
-CHARACTER(LEN=50) :: xname, vname, chi, chrep
+use netcdf
+implicit none
+real (kind=4), DIMENSION(nsteps) :: coordx, coordy, coordz, ref, av
+integer(kind=4), intent(in) :: natoms, nsteps, spatial, nrestr
+integer(kind=4) :: ncid, xtype, ndims, varid
+character(len=50), intent(in) :: iname
+character(len=50) :: xname, vname, chi, chrep
 double precision :: kref
 double precision, dimension(3,nrestr,nrep) :: rav,fav
 double precision, dimension(3,natoms), intent(inout) :: rref
@@ -106,7 +140,7 @@ integer, dimension(3) :: point,endp
 integer, dimension(nrestr) :: mask
 integer :: i,j,k,ati,atf,nrep,rep
 
-CALL check(nf90_open(infile, nf90_nowrite, ncid))
+call check(nf90_open(iname, nf90_nowrite, ncid))
 do i = 1,nrestr !natoms
   if (i .le. 9) write(chi,'(I1)') i
   if (i .gt. 9 .and. i .le. 99) write(chi,'(I2)') i
@@ -120,13 +154,13 @@ do i = 1,nrestr !natoms
   av=0.d0
   point = (/ 1,ati,1 /)
   endp = (/ 1,1,nsteps /)
-  CALL check(nf90_get_var(ncid,3,coordx,start = point,count = endp))
+  call check(nf90_get_var(ncid,3,coordx,start = point,count = endp))
   point = (/ 2,ati,1 /)
   endp = (/ 1,1,nsteps-1 /)
-  CALL check(nf90_get_var(ncid,3,coordy,start = point,count = endp))
+  call check(nf90_get_var(ncid,3,coordy,start = point,count = endp))
   point = (/ 3,ati,1 /)
   endp = (/ 1,1,nsteps-1 /)
-  CALL check(nf90_get_var(ncid,3,coordz,start = point,count = endp))
+  call check(nf90_get_var(ncid,3,coordz,start = point,count = endp))
 
   do k=1,nsteps
     av(1)=(av(1)*(dble(k-1))+coordx(k))/dble(k)
@@ -139,8 +173,8 @@ do i = 1,nrestr !natoms
   close(i)
 enddo
 
-CALL check(nf90_close(ncid))
-END SUBROUTINE getandwritecoord
+call check(nf90_close(ncid))
+end subroutine getavcoordanforces
 
 
 subroutine getrefcoord(rname,nrestr,mask,natoms,rref,boxinfo,per,vel)
@@ -221,7 +255,7 @@ close (unit=auxunit)
 end subroutine writenewcoord
 
 
-subroutine max_force(nrestr,nrep,rep,fav,maxforce,ftol,relaxd)
+subroutine getmaxforce(nrestr,nrep,rep,fav,maxforce,ftol,relaxd)
   implicit none
   double precision, dimension(3,nrestr,nrep), intent(in) :: fav
   integer, intent(in) :: nrep, rep, nrestr
@@ -242,10 +276,10 @@ subroutine max_force(nrestr,nrep,rep,fav,maxforce,ftol,relaxd)
   maxforce=dsqrt(maxforce)
   if(maxforce .le. ftol) relaxd=.TRUE.
 
-  write(*,*) "maxforce: ", maxforce
+  write(9999,*) "maxforce: ", maxforce
 
 
-end subroutine max_force
+end subroutine getmaxforce
 
 subroutine steep(rav,fav,nrep,rep,steep_size,maxforce)
 implicit none
@@ -267,14 +301,14 @@ step=steep_size/maxforce
 
 end subroutine steep
 
-SUBROUTINE check(istatus)
-USE netcdf
-IMPLICIT NONE
-INTEGER, INTENT (IN) :: istatus
-IF (istatus /= nf90_noerr) THEN
-write(*,*) TRIM(ADJUSTL(nf90_strerror(istatus)))
-END IF
-END SUBROUTINE check
+subroutine check(istatus)
+use netcdf
+implicit none
+integer, intent (in) :: istatus
+if (istatus /= nf90_noerr) then
+write(9999,*) trim(adjustl(nf90_strerror(istatus)))
+end if
+end subroutine check
 
 
 
