@@ -7,10 +7,10 @@ integer, allocatable, dimension (:) :: mask
 real(4) :: coordinate
 real(4), allocatable, dimension (:) :: coordx,coordy,coordz
 integer, dimension (3) :: point
-double precision :: kref, steep_size, ftol, maxforce
+double precision :: kref, steep_size, ftol, maxforce, kspring
 double precision, dimension(6) :: boxinfo
 double precision, allocatable, dimension(:,:) :: rref
-double precision, allocatable, dimension(:,:,:) :: rav, fav
+double precision, allocatable, dimension(:,:,:) :: rav, fav, tang
 logical ::  per, vel, relaxd
 
 !------------ Read input
@@ -21,10 +21,11 @@ logical ::  per, vel, relaxd
   read(1000,*) per, vel
   read(1000,*) nrep
   read(1000,*) nrestr
-  read(1000,*) kref
+  if (nrep .eq. 1) read(1000,*) kref
+  if (nrep .gt. 1) read(1000,*) kref, kspring
   read(1000,*) steep_size
   read(1000,*) ftol
-  allocate(mask(nrestr),rav(3,nrestr,nrep),fav(3,nrestr,nrep))
+  allocate(mask(nrestr),rav(3,nrestr,nrep),fav(3,nrestr,nrep),tang(3,nrestr,nrep))
   read(1000,*) (mask(i),i=1,nrestr)
   close (unit=1000)
 !------------
@@ -32,42 +33,87 @@ logical ::  per, vel, relaxd
  open(unit=9999, file="feneb.out") !Opten file for feneb output
 
 !------------ Main loop
+  if (nrep .eq. 1) then !FE opt only
+    write(999,*) "---------------------------------------------------"
+    write(999,*) "Performing FE full optmization for a single replica"
+    write(999,*) "---------------------------------------------------"
 
-  do i=1,nrep
-
-    call getfilenames(i,chi,infile,reffile,outfile,iname,rname,oname)
-
+    call getfilenames(nrep,chi,infile,reffile,outfile,iname,rname,oname)
     call getdims(iname,nsteps,spatial,natoms)
 
     if (allocated(coordx)) deallocate(coordx)
     if (allocated(coordy)) deallocate(coordy)
     if (allocated(coordz)) deallocate(coordz)
     if (allocated(rref)) deallocate(rref)
+
     allocate(coordx(nsteps),coordy(nsteps),coordz(nsteps),rref(3,natoms))
 
     call getrefcoord(rname,nrestr,mask,natoms,rref,boxinfo,per,vel)
+    call getavcoordanforces(iname,nsteps,natoms,spatial,coordx,coordy,coordz,&
+                        nrestr,mask,kref,rav,fav,nrep,nrep,rref)
+    call writeposforces(rav,fav,nrestr,nrep)
+    call getmaxforce(nrestr,nrep,nrep,fav,maxforce,ftol,relaxd)
+    if (.not. relaxd) then
+       call steep(rav,fav,nrep,nrep,steep_size,maxforce)
+       call writenewcoord(oname,rref,boxinfo,natoms,nrestr,mask,per,rav,nrep)
+    else
+       write(999,*) "Convergence criteria of ", ftol, " (kcal/mol A) achieved"
+    endif
 
-    call getavcoordanforces(iname,nsteps,natoms,spatial,coordx,coordy, coordz,&
+  elseif (nrep .gt. 1) then !NEB on FE surface
+
+    write(999,*) "---------------------------------------------------"
+    write(999,*) "Performing NEB on the FE surface"
+    write(999,*) "---------------------------------------------------"
+!------------ Get coordinates for previously optimized extrema
+!------------ And set forces to zero
+    !Reactants
+    call getfilenames(1,chi,infile,reffile,outfile,iname,rname,oname)
+    call getrefcoord(rname,nrestr,mask,natoms,rref,boxinfo,per,vel)
+    call getcoordextrema(rref,natoms,rav,nrestr,nrep,1)
+    !Products
+    call getfilenames(nrep,chi,infile,reffile,outfile,iname,rname,oname)
+    call getrefcoord(rname,nrestr,mask,natoms,rref,boxinfo,per,vel)
+    call getcoordextrema(rref,natoms,rav,nrestr,nrep,nrep)
+    !Forces set to zero
+    fav=0.d0
+
+!------------ Band loop
+    do i=2,nrep-1
+      call getfilenames(i,chi,infile,reffile,outfile,iname,rname,oname)
+      call getdims(iname,nsteps,spatial,natoms)
+
+      if (allocated(coordx)) deallocate(coordx)
+      if (allocated(coordy)) deallocate(coordy)
+      if (allocated(coordz)) deallocate(coordz)
+      if (allocated(rref)) deallocate(rref)
+      allocate(coordx(nsteps),coordy(nsteps),coordz(nsteps),rref(3,natoms))
+      call getrefcoord(rname,nrestr,mask,natoms,rref,boxinfo,per,vel)
+      call getavcoordanforces(iname,nsteps,natoms,spatial,coordx,coordy, coordz,&
                     nrestr,mask,kref,rav,fav,nrep,i,rref)
+      call writeposforces(rav,fav,nrestr,i)
+    end do
+    call gettang(rav,tang,nrestr,nrep)
+    call getnebforce(rav,fav,tang,nrestr,nrep,kspring)
 
-    call writeposforces(rav,fav,nrestr,i)
+!----------- Moves the band
+    do i=1,nrep
+      write(9999,*) "Replica: ", i
+      call getmaxforce(nrestr,nrep,i,fav,maxforce,ftol,relaxd)
+      if (.not. relaxd) call steep(rav,fav,nrep,nrep,steep_size,maxforce)
+      call getfilenames(i,chi,infile,reffile,outfile,iname,rname,oname)
+      call getrefcoord(rname,nrestr,mask,natoms,rref,boxinfo,per,vel)
+      call writenewcoord(oname,rref,boxinfo,natoms,nrestr,mask,per,rav,nrep)
+    end do
+    write(999,*) "---------------------------------------------------"
+    if (.not. relaxd) write(9999,*) "Final result: System not converged"
+    if (relaxd) write(9999,*) "Final result: System converged"
 
-    call getmaxforce(nrestr,nrep,i,fav,maxforce,ftol,relaxd)
+  end if
 
-
-  end do
-
-!----------- End main loop
-  if (nrep .gt. 1) then
-
-  if (.not. relaxd) then
-    call steep(rav,fav,nrep,i,steep_size,maxforce)
-    call writenewcoord(oname,rref,boxinfo,natoms,nrestr,mask,per,rav,i)
-  else
-    write(999,*) "Convergence criteria of ", ftol, " (kcal/mol A) achieved"
-  endif
-   end if
   close(unit=9999)
+
+
 
 contains
 
@@ -180,18 +226,20 @@ end subroutine getavcoordanforces
 subroutine getrefcoord(rname,nrestr,mask,natoms,rref,boxinfo,per,vel)
 
 implicit none
-integer :: nrestr, natoms
+integer :: nrestr
+integer, intent(out) :: natoms
 character(len=50), intent(in) :: rname
-double precision, dimension(3,natoms), intent(inout) :: rref
-double precision, dimension(6) :: boxinfo
+double precision, dimension(:,:), allocatable :: rref
+double precision, dimension(6), intent(out) :: boxinfo
 integer, dimension(nrestr),intent(in) :: mask
 integer :: i
 logical ::  per, vel
-
+if (allocated(rref)) deallocate(rref)
 i=1
 open (unit=1002, file=rname, status='old', action='read') !read ref file
 read(1002,*)
-read(1002,*)
+read(1002,*) natoms
+allocate(rref(3,natoms))
 do while (i .le. natoms/2)
   read(1002,'(6(f12.7))') rref(1,2*i-1), rref(2,2*i-1), rref(3,2*i-1), &
                           rref(1,2*i), rref(2,2*i), rref(3,2*i)
@@ -209,6 +257,22 @@ endif
 if (per) read(1002,'(6(f12.7))') boxinfo(1:6)
 close (unit=1002)
 end subroutine getrefcoord
+
+subroutine getcoordextrema(rref,natoms,rav,nrestr,nrep,rep)
+implicit none
+double precision, dimension(3,nrestr,nrep), intent(out) :: rav
+double precision, dimension(3,natoms), intent(in) :: rref
+integer, intent(in) :: natoms, nrestr, nrep, rep
+integer :: at
+
+  do i=1,nrestr
+    do j=1,3
+      at=mask(i)
+      rav(j,i,rep) = rref(j,at)
+    end do
+  end do
+
+end subroutine getcoordextrema
 
 subroutine writenewcoord(oname,rref,boxinfo,natoms,nrestr,mask,per,rav,rep)
 
@@ -278,8 +342,63 @@ subroutine getmaxforce(nrestr,nrep,rep,fav,maxforce,ftol,relaxd)
 
   write(9999,*) "maxforce: ", maxforce
 
-
 end subroutine getmaxforce
+
+subroutine gettang(rav,tang,nrestr,nrep)
+implicit none
+double precision, dimension(3,nrestr,nrep), intent(in) :: rav
+double precision, dimension(3,nrestr,nrep), intent(out) :: tang
+integer, intent(in) :: nrestr, nrep
+double precision, dimension(nrestr,nrep) :: norm
+integer :: i,j
+
+tang=0.d0
+norm=0.d0
+do i=2,nrep-1
+  do j=1,nrestr
+    tang(1:3,j,i) = rav(1:3,j,i+1) - rav(1:3,j,i-1)
+    norm(j,i) = tang(1,j,i)**2 + tang(1,j,i)**2 + tang(1,j,i)**2
+    norm(j,i) = dsqrt(norm(j,i))
+    if (norm(j,i) .lt. 1d-30) then
+      tang(1:3,j,i) = 0.d0
+    else
+      tang(1:3,j,i) = tang(1:3,j,i)/norm(j,i)
+    endif
+  end do
+end do
+
+end subroutine gettang
+
+
+subroutine getnebforce(rav,fav,tang,nrestr,nrep,kspring)
+implicit none
+double precision, dimension(3,nrestr,nrep), intent(inout) :: fav
+double precision, dimension(3,nrestr,nrep), intent(in) :: rav, tang
+integer, intent(in) :: nrestr, nrep
+double precision, intent(in) :: kspring
+double precision, dimension(3,nrestr,nrep) :: fspring
+double precision, dimension(nrestr,nrep) :: fproj
+double precision :: distright, distleft
+integer :: i,j
+
+	fspring=0.d0
+  fproj=0.d0
+  do i=2,nrep-1
+	  do j=1, nrestr
+        !Computes spring force
+	      distright=(rav(1,j,i+1)-rav(1,j,i))**2+(rav(2,j,i+1)-rav(2,j,i))**2+(rav(3,j,i+1)-rav(3,j,i))**2
+        distleft=(rav(1,j,i)-rav(1,j,i-1))**2+(rav(2,j,i)-rav(2,j,i-1))**2+(rav(3,j,i)-rav(3,j,i-1))**2
+        distright=sqrt(distright)
+	      distleft=sqrt(distleft)
+	      fspring(1:3,j,i)=kspring*(distright-distleft)*tang(1:3,j,i)
+        !Computes force component on tangent direction
+        fproj(j,i)=fav(1,j,i)*tang(1,j,i)+fav(2,j,i)*tang(2,j,i)+fav(3,j,i)*tang(3,j,i)
+        !Computes neb force
+        fav(1:3,j,i)=fav(1:3,j,i)-fproj(j,i)*tang(1:3,j,i)+fspring(1:3,j,i)
+	  end do
+  end do
+
+end subroutine getnebforce
 
 subroutine steep(rav,fav,nrep,rep,steep_size,maxforce)
 implicit none
@@ -291,9 +410,12 @@ double precision, intent(inout) :: maxforce
 double precision :: step
 integer :: i,j
 
-
-step=steep_size/maxforce
-  do i=1,nrestr
+if (maxforce .lt. 1d-30) then
+  step=0.d0
+else
+  step=steep_size/maxforce
+end if
+do i=1,nrestr
     do j=1,3
       rav(j,i,rep)=rav(j,i,rep)+step*fav(j,i,rep)
     end do
