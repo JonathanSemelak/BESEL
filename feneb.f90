@@ -11,7 +11,7 @@ double precision :: kref, steep_size, ftol, maxforce, kspring
 double precision, dimension(6) :: boxinfo
 double precision, allocatable, dimension(:,:) :: rref
 double precision, allocatable, dimension(:,:,:) :: rav, fav, tang
-logical ::  per, vel, relaxd
+logical ::  per, vel, relaxd, converged
 
 !------------ Read input
   open (unit=1000, file="feneb.in", status='old', action='read') !read align.in file
@@ -31,12 +31,11 @@ logical ::  per, vel, relaxd
 !------------
 
  open(unit=9999, file="feneb.out") !Opten file for feneb output
-
 !------------ Main loop
   if (nrep .eq. 1) then !FE opt only
-    write(999,*) "---------------------------------------------------"
-    write(999,*) "Performing FE full optmization for a single replica"
-    write(999,*) "---------------------------------------------------"
+    write(9999,*) "---------------------------------------------------"
+    write(9999,*) "Performing FE full optmization for a single replica"
+    write(9999,*) "---------------------------------------------------"
 
     call getfilenames(nrep,chi,infile,reffile,outfile,iname,rname,oname)
     call getdims(iname,nsteps,spatial,natoms)
@@ -55,16 +54,16 @@ logical ::  per, vel, relaxd
     call getmaxforce(nrestr,nrep,nrep,fav,maxforce,ftol,relaxd)
     if (.not. relaxd) then
        call steep(rav,fav,nrep,nrep,steep_size,maxforce)
-       call writenewcoord(oname,rref,boxinfo,natoms,nrestr,mask,per,rav,nrep)
+       call writenewcoord(oname,rref,boxinfo,natoms,nrestr,mask,per,vel,rav,nrep,nrep)
     else
-       write(999,*) "Convergence criteria of ", ftol, " (kcal/mol A) achieved"
+       write(9999,*) "Convergence criteria of ", ftol, " (kcal/mol A) achieved"
     endif
 
   elseif (nrep .gt. 1) then !NEB on FE surface
 
-    write(999,*) "---------------------------------------------------"
-    write(999,*) "Performing NEB on the FE surface"
-    write(999,*) "---------------------------------------------------"
+    write(9999,*) "---------------------------------------------------"
+    write(9999,*) "       Performing NEB on the FE surface"
+    write(9999,*) "---------------------------------------------------"
 !------------ Get coordinates for previously optimized extrema
 !------------ And set forces to zero
     !Reactants
@@ -75,10 +74,12 @@ logical ::  per, vel, relaxd
     call getfilenames(nrep,chi,infile,reffile,outfile,iname,rname,oname)
     call getrefcoord(rname,nrestr,mask,natoms,rref,boxinfo,per,vel)
     call getcoordextrema(rref,natoms,rav,nrestr,nrep,nrep)
+
     !Forces set to zero
     fav=0.d0
 
 !------------ Band loop
+
     do i=2,nrep-1
       call getfilenames(i,chi,infile,reffile,outfile,iname,rname,oname)
       call getdims(iname,nsteps,spatial,natoms)
@@ -88,31 +89,42 @@ logical ::  per, vel, relaxd
       if (allocated(coordz)) deallocate(coordz)
       if (allocated(rref)) deallocate(rref)
       allocate(coordx(nsteps),coordy(nsteps),coordz(nsteps),rref(3,natoms))
+
       call getrefcoord(rname,nrestr,mask,natoms,rref,boxinfo,per,vel)
       call getavcoordanforces(iname,nsteps,natoms,spatial,coordx,coordy, coordz,&
                     nrestr,mask,kref,rav,fav,nrep,i,rref)
+    end do
+
+!----------- Write mean pos and forces
+    do i=1,nrep
       call writeposforces(rav,fav,nrestr,i)
     end do
+
+!----------- Compute tangent and nebforce
+
     call gettang(rav,tang,nrestr,nrep)
     call getnebforce(rav,fav,tang,nrestr,nrep,kspring)
 
-!----------- Moves the band
+!----------- moves the band
+
+    converged = .TRUE.
     do i=1,nrep
       write(9999,*) "Replica: ", i
       call getmaxforce(nrestr,nrep,i,fav,maxforce,ftol,relaxd)
+      write(9999,*) "Replica: ", relaxd
       if (.not. relaxd) call steep(rav,fav,nrep,nrep,steep_size,maxforce)
       call getfilenames(i,chi,infile,reffile,outfile,iname,rname,oname)
       call getrefcoord(rname,nrestr,mask,natoms,rref,boxinfo,per,vel)
-      call writenewcoord(oname,rref,boxinfo,natoms,nrestr,mask,per,rav,nrep)
+      call writenewcoord(oname,rref,boxinfo,natoms,nrestr,mask,per,vel,rav,nrep,i)
+      converged = (converged .and. relaxd)
     end do
-    write(999,*) "---------------------------------------------------"
-    if (.not. relaxd) write(9999,*) "Final result: System not converged"
-    if (relaxd) write(9999,*) "Final result: System converged"
-
+    write(9999,*) "---------------------------------------------------"
+    if (.not. converged) write(9999,*) "Final result: System not converged"
+    if (converged) write(9999,*) "Final result: System converged"
   end if
 
-  close(unit=9999)
 
+  close(unit=9999)
 
 
 contains
@@ -144,10 +156,11 @@ subroutine writeposforces(rav,fav,nrestr,rep)
 implicit none
 integer, intent(in) :: nrestr, rep
 double precision, dimension(3,nrestr,nrep), intent(in) :: rav, fav
+integer :: i
 
-open(unit=1001, file="Pos_forces.dat")
+open(unit=1001, file="Pos_forces.dat", position='append')
 do i=1,nrestr
-write(1001,'(2x, I6,2x, 6(f20.10,2x))') rep, rav(1:3,i,rep), fav(1:3,i,rep)
+write(1001,'(2x, I6,2x, 6(f20.10,2x))') i, rav(1:3,i,rep), fav(1:3,i,rep)
 end do
 write(1001,'(2x, I6,2x, 6(f20.10,2x))')
 close(1001)
@@ -184,7 +197,7 @@ double precision, dimension(3,nrestr,nrep) :: rav,fav
 double precision, dimension(3,natoms), intent(inout) :: rref
 integer, dimension(3) :: point,endp
 integer, dimension(nrestr) :: mask
-integer :: i,j,k,ati,atf,nrep,rep
+integer :: i,j,k,ati,atf,nrep,rep,auxunit
 
 call check(nf90_open(iname, nf90_nowrite, ncid))
 do i = 1,nrestr !natoms
@@ -195,28 +208,29 @@ do i = 1,nrestr !natoms
   chi = "at."//chi
   chi = trim(chi)//".rep."
   chi = trim(chi)//trim(chrep)
-  open(i, file = chi, status = 'unknown')
+  auxunit = 1000*i+rep
+  open(auxunit, file = chi, status = 'unknown')
   ati=mask(i)
   av=0.d0
   point = (/ 1,ati,1 /)
   endp = (/ 1,1,nsteps /)
   call check(nf90_get_var(ncid,3,coordx,start = point,count = endp))
   point = (/ 2,ati,1 /)
-  endp = (/ 1,1,nsteps-1 /)
+  endp = (/ 1,1,nsteps /)
   call check(nf90_get_var(ncid,3,coordy,start = point,count = endp))
   point = (/ 3,ati,1 /)
-  endp = (/ 1,1,nsteps-1 /)
+  endp = (/ 1,1,nsteps /)
   call check(nf90_get_var(ncid,3,coordz,start = point,count = endp))
 
   do k=1,nsteps
     av(1)=(av(1)*(dble(k-1))+coordx(k))/dble(k)
     av(2)=(av(2)*(dble(k-1))+coordy(k))/dble(k)
     av(3)=(av(3)*(dble(k-1))+coordz(k))/dble(k)
-  write(i,*) k, kref*(av(1:3)-rref(1:3,ati))
+  write(auxunit,*) k, kref*(av(1:3)-rref(1:3,ati))
   end do
   rav(1:3,i,rep)=av(1:3)
   fav(1:3,i,rep)=kref*(av(1:3)-rref(1:3,ati))
-  close(i)
+  close(auxunit)
 enddo
 
 call check(nf90_close(ncid))
@@ -274,21 +288,21 @@ integer :: at
 
 end subroutine getcoordextrema
 
-subroutine writenewcoord(oname,rref,boxinfo,natoms,nrestr,mask,per,rav,rep)
+subroutine writenewcoord(oname,rref,boxinfo,natoms,nrestr,mask,per,vel,rav,nrep,rep)
 
 implicit none
 character(len=50), intent(in) :: oname
-integer, intent(in) :: natoms, nrestr, rep
+integer, intent(in) :: natoms, nrestr, nrep, rep
 double precision, dimension(3,nrestr,nrep) :: rav
 double precision, dimension(3,natoms), intent(in) :: rref
 double precision, dimension(3,natoms) :: rout
 double precision, dimension(6), intent(in) :: boxinfo
 integer, dimension(nrestr), intent(in) :: mask
-logical, intent(in) :: per
+logical, intent(in) :: per, vel
 integer :: i, j, at, auxunit
 
 rout=rref
-auxunit=2000+rep
+auxunit=21000000+rep
 
 do i=1,nrestr
   do j=1,3
@@ -299,19 +313,22 @@ end do
 
 open (unit=auxunit, file=oname)
 write(auxunit,*) "FENEB restart, replica: ", rep
-write(auxunit,'(I8)') natoms
+!write(auxunit,'(I8)') natoms
+write(auxunit,'(I6)') natoms
 i=1
 do while (i .le. natoms/2)
   write(auxunit,'(6(f12.7))') rout(1,2*i-1), rout(2,2*i-1), rout(3,2*i-1), &
                           rout(1,2*i), rout(2,2*i), rout(3,2*i)
   i = i + 1
 enddo
-if (mod(natoms,2) .ne. 0) write(auxunit,'(6(f12.7))') rout(2*i,1:3)
-i=1
-do while (i .le. natoms/2)
-  write(auxunit,'(6(f12.7))') 0.d0,0.d0,0.d0,0.d0,0.d0,0.d0
-  i = i + 1
-enddo
+if (mod(natoms,2) .ne. 0) write(auxunit,'(6(f12.7))') rout(1:3,2*i)
+if (vel) then
+  i=1
+  do while (i .le. natoms/2)
+    write(auxunit,'(6(f12.7))') 0.d0,0.d0,0.d0,0.d0,0.d0,0.d0
+    i = i + 1
+  enddo
+ endif
   if (mod(natoms,2) .ne. 0) write(auxunit,'(6(f12.7))') 0.d0, 0.d0, 0.d0
   if (per) write(auxunit,'(6(f12.7))') boxinfo(1:6)
 close (unit=auxunit)
@@ -357,7 +374,7 @@ norm=0.d0
 do i=2,nrep-1
   do j=1,nrestr
     tang(1:3,j,i) = rav(1:3,j,i+1) - rav(1:3,j,i-1)
-    norm(j,i) = tang(1,j,i)**2 + tang(1,j,i)**2 + tang(1,j,i)**2
+    norm(j,i) = tang(1,j,i)**2 + tang(2,j,i)**2 + tang(3,j,i)**2
     norm(j,i) = dsqrt(norm(j,i))
     if (norm(j,i) .lt. 1d-30) then
       tang(1:3,j,i) = 0.d0
