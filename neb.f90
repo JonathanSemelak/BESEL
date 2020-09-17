@@ -1,0 +1,55 @@
+subroutine gettang(rav,tang,nrestr,nrep)
+implicit none
+double precision, dimension(3,nrestr,nrep), intent(in) :: rav
+double precision, dimension(3,nrestr,nrep), intent(out) :: tang
+integer, intent(in) :: nrestr, nrep
+double precision, dimension(nrestr,nrep) :: norm
+integer :: i,j
+
+tang=0.d0
+norm=0.d0
+do i=2,nrep-1
+  do j=1,nrestr
+    tang(1:3,j,i) = rav(1:3,j,i+1) - rav(1:3,j,i-1)
+    norm(j,i) = tang(1,j,i)**2 + tang(2,j,i)**2 + tang(3,j,i)**2
+    norm(j,i) = dsqrt(norm(j,i))
+    if (norm(j,i) .lt. 1d-30) then
+      tang(1:3,j,i) = 0.d0
+    else
+      tang(1:3,j,i) = tang(1:3,j,i)/norm(j,i)
+    endif
+  end do
+end do
+
+end subroutine gettang
+
+
+subroutine getnebforce(rav,fav,tang,nrestr,nrep,kspring)
+implicit none
+double precision, dimension(3,nrestr,nrep), intent(inout) :: fav
+double precision, dimension(3,nrestr,nrep), intent(in) :: rav, tang
+integer, intent(in) :: nrestr, nrep
+double precision, intent(in) :: kspring
+double precision, dimension(3,nrestr,nrep) :: fspring
+double precision, dimension(nrestr,nrep) :: fproj
+double precision :: distright, distleft
+integer :: i,j
+
+	fspring=0.d0
+  fproj=0.d0
+  do i=2,nrep-1
+	  do j=1, nrestr
+        !Computes spring force
+	      distright=(rav(1,j,i+1)-rav(1,j,i))**2+(rav(2,j,i+1)-rav(2,j,i))**2+(rav(3,j,i+1)-rav(3,j,i))**2
+        distleft=(rav(1,j,i)-rav(1,j,i-1))**2+(rav(2,j,i)-rav(2,j,i-1))**2+(rav(3,j,i)-rav(3,j,i-1))**2
+        distright=sqrt(distright)
+	      distleft=sqrt(distleft)
+	      fspring(1:3,j,i)=kspring*(distright-distleft)*tang(1:3,j,i)
+        !Computes force component on tangent direction
+        fproj(j,i)=fav(1,j,i)*tang(1,j,i)+fav(2,j,i)*tang(2,j,i)+fav(3,j,i)*tang(3,j,i)
+        !Computes neb force
+        fav(1:3,j,i)=fav(1:3,j,i)-fproj(j,i)*tang(1:3,j,i)+fspring(1:3,j,i)
+	  end do
+  end do
+
+end subroutine getnebforce
