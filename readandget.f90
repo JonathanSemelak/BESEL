@@ -1,9 +1,42 @@
+module readandget
+implicit none
+contains
+subroutine readinput(nrep,infile,reffile,outfile,mask,nrestr, &
+           rav,fav,tang,kref,kspring,steep_size,ftol,per,vel)
+implicit none
+character(len=50) :: infile, reffile, outfile
+integer :: nrestr, nrep, i
+logical ::  per, vel
+double precision :: kref, kspring, steep_size, ftol
+integer, allocatable, dimension (:), intent(inout) :: mask
+double precision, allocatable, dimension(:,:,:), intent(inout) :: rav, fav, tang
+
+open (unit=1000, file="feneb.in", status='old', action='read') !read align.in
+read(1000,*) infile
+read(1000,*) reffile
+read(1000,*) outfile
+read(1000,*) per, vel
+read(1000,*) nrep
+read(1000,*) nrestr
+if (nrep .eq. 1) read(1000,*) kref
+if (nrep .gt. 1) read(1000,*) kref, kspring
+if (nrep .gt. 1) allocate(tang(3,nrestr,nrep))
+allocate(mask(nrestr),rav(3,nrestr,nrep),fav(3,nrestr,nrep))
+read(1000,*) steep_size
+read(1000,*) ftol
+read(1000,*) (mask(i),i=1,nrestr)
+close (unit=1000)
+
+end subroutine readinput
+
+
 subroutine getfilenames(rep,chrep,infile,reffile,outfile,iname,rname,oname)
 
 implicit none
 integer, intent(in) :: rep
 character(len=50), intent(out) :: infile, reffile, outfile, chrep, iname, rname, oname
 
+  if (rep .le. 9) write(chrep,'(I1)') rep
   if (rep .gt. 9 .and. rep .le. 99) write(chrep,'(I2)') rep
   if (rep .gt. 99 .and. rep .le. 999) write(chrep,'(I3)') rep
 
@@ -149,3 +182,5 @@ if (istatus /= nf90_noerr) then
 write(9999,*) trim(adjustl(nf90_strerror(istatus)))
 end if
 end subroutine check
+
+end module readandget

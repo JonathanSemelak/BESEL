@@ -1,4 +1,6 @@
 program feneb
+use netcdf 
+use readandget
 implicit none
 character(len=50) :: infile, reffile, outfile, chi, iname, rname, oname
 integer :: nsteps, spatial, natoms, nrestr, nrep
@@ -14,8 +16,10 @@ double precision, allocatable, dimension(:,:,:) :: rav, fav, tang
 logical ::  per, vel, relaxd, converged
 
 !------------ Read input
-  call readinput(nrep,infile,reffile,outfile,mask,nrestr)
+    call readinput(nrep,infile,reffile,outfile,mask,nrestr, &
+                 rav,fav,tang,kref,kspring,steep_size,ftol,per,vel)
 !------------
+
 
  open(unit=9999, file="feneb.out") !Opten file for feneb output
 !------------ Main loop
@@ -60,7 +64,7 @@ logical ::  per, vel, relaxd, converged
     !Products
     call getfilenames(nrep,chi,infile,reffile,outfile,iname,rname,oname)
     call getrefcoord(rname,nrestr,mask,natoms,rref,boxinfo,per,vel)
-    call getcoordextrema(rref,natoms,rav,nrestr,nrep,nrep)
+    call getcoordextrema(rref,natoms,rav,nrestr,nrep,nrep,mask)
 
     !Forces set to zero
     fav=0.d0
