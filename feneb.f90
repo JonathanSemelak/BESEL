@@ -9,15 +9,15 @@ integer, allocatable, dimension (:) :: mask
 real(4) :: coordinate
 real(4), allocatable, dimension (:) :: coordx,coordy,coordz
 integer, dimension (3) :: point
-double precision :: kref, steep_size, ftol, maxforce, kspring
+double precision :: kref, steep_size, ftol, maxforce, kspring, maxforceband
 double precision, dimension(6) :: boxinfo
 double precision, allocatable, dimension(:,:) :: rref
-double precision, allocatable, dimension(:,:,:) :: rav, fav, tang
+double precision, allocatable, dimension(:,:,:) :: rav, fav, tang, ftang
 logical ::  per, velin, velout, relaxd, converged
 
 !------------ Read input
     call readinput(nrep,infile,reffile,outfile,mask,nrestr, &
-                 rav,fav,tang,kref,kspring,steep_size,ftol,per,velin,velout)
+                 rav,fav,ftang,tang,kref,kspring,steep_size,ftol,per,velin,velout)
 !------------
 
 
@@ -43,6 +43,7 @@ logical ::  per, velin, velout, relaxd, converged
                         nrestr,mask,kref,rav,fav,nrep,nrep,rref)
     call writeposforces(rav,fav,nrestr,nrep)
     call getmaxforce(nrestr,nrep,nrep,fav,maxforce,ftol,relaxd)
+    write(9999,*) "Max force: ", maxforce
     if (.not. relaxd) then
        call steep(rav,fav,nrep,nrep,steep_size,maxforce,nrestr)
        call writenewcoord(oname,rref,boxinfo,natoms,nrestr,mask,per,velout,rav,nrep,nrep)
@@ -87,32 +88,30 @@ logical ::  per, velin, velout, relaxd, converged
                     nrestr,mask,kref,rav,fav,nrep,i,rref)
     end do
 
-!----------- Write mean pos and forces
-    do i=1,nrep
-      call writeposforces(rav,fav,nrestr,i,nrep)
-    end do
-
 !----------- Compute tangent and nebforce
 
     call gettang(rav,tang,nrestr,nrep)
-    call getnebforce(rav,fav,tang,nrestr,nrep,kspring)
+    call getnebforce(rav,fav,tang,nrestr,nrep,kspring,maxforceband,ftol,converged,ftang)
+
+!----------- Write mean pos and forces
+    do i=1,nrep
+      call writeposforces(rav,ftang,nrestr,i,nrep)
+    end do
+
 
 !----------- moves the band
-
-    converged = .TRUE.
-    do i=1,nrep
-      write(9999,*) "Replica: ", i
-      call getmaxforce(nrestr,nrep,i,fav,maxforce,ftol,relaxd)
-      write(9999,*) "Replica: ", relaxd
-      if (.not. relaxd) call steep(rav,fav,nrep,nrep,steep_size,maxforce,nrestr)
-      call getfilenames(i,chi,infile,reffile,outfile,iname,rname,oname)
-      call getrefcoord(rname,nrestr,mask,natoms,rref,boxinfo,per,velin)
-      call writenewcoord(oname,rref,boxinfo,natoms,nrestr,mask,per,velout,rav,nrep,i)
-      converged = (converged .and. relaxd)
-    end do
-    write(9999,*) "---------------------------------------------------"
-    if (.not. converged) write(9999,*) "System converged: F"
-    if (converged) write(9999,*) "System converged: T"
+    ! converged = .TRUE.
+    if (.not. converged) then
+      do i=1,nrep
+        call getmaxforce(nrestr,nrep,i,fav,maxforce,ftol,relaxd)
+        ! write(9999,*) "Replica: ", i, "Converged: " relaxd
+        if (.not. relaxd) call steep(rav,fav,nrep,nrep,steep_size,maxforceband,nrestr)
+        call getfilenames(i,chi,infile,reffile,outfile,iname,rname,oname)
+        call getrefcoord(rname,nrestr,mask,natoms,rref,boxinfo,per,velin)
+        call writenewcoord(oname,rref,boxinfo,natoms,nrestr,mask,per,velout,rav,nrep,i)
+      ! converged = (converged .and. relaxd)
+      end do
+    end if
   end if
 
 

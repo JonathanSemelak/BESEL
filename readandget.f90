@@ -2,14 +2,14 @@ module readandget
 implicit none
 contains
 subroutine readinput(nrep,infile,reffile,outfile,mask,nrestr, &
-           rav,fav,tang,kref,kspring,steep_size,ftol,per,velin,velout)
+           rav,fav,ftang,tang,kref,kspring,steep_size,ftol,per,velin,velout)
 implicit none
 character(len=50) :: infile, reffile, outfile
 integer :: nrestr, nrep, i
 logical ::  per, velin, velout
 double precision :: kref, kspring, steep_size, ftol
 integer, allocatable, dimension (:), intent(inout) :: mask
-double precision, allocatable, dimension(:,:,:), intent(inout) :: rav, fav, tang
+double precision, allocatable, dimension(:,:,:), intent(inout) :: rav, fav, tang, ftang
 
 open (unit=1000, file="feneb.in", status='old', action='read') !read align.in
 read(1000,*) infile
@@ -20,7 +20,7 @@ read(1000,*) nrep
 read(1000,*) nrestr
 if (nrep .eq. 1) read(1000,*) kref
 if (nrep .gt. 1) read(1000,*) kref, kspring
-if (nrep .gt. 1) allocate(tang(3,nrestr,nrep))
+if (nrep .gt. 1) allocate(tang(3,nrestr,nrep),ftang(3,nrestr,nrep))
 allocate(mask(nrestr),rav(3,nrestr,nrep),fav(3,nrestr,nrep))
 read(1000,*) steep_size
 read(1000,*) ftol

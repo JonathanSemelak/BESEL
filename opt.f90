@@ -19,8 +19,6 @@ subroutine getmaxforce(nrestr,nrep,rep,fav,maxforce,ftol,relaxd)
   maxforce=dsqrt(maxforce)
   if(maxforce .le. ftol) relaxd=.TRUE.
 
-  write(9999,*) "maxforce: ", maxforce
-
 end subroutine getmaxforce
 
 subroutine steep(rav,fav,nrep,rep,steep_size,maxforce,nrestr)

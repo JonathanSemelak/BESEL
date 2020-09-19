@@ -1,3 +1,6 @@
+!Original subroutines by N. Foglia 03/2018
+!Oriented to free energy optimizations by J. Semelak 09/2020
+
 subroutine gettang(rav,tang,nrestr,nrep)
 implicit none
 double precision, dimension(3,nrestr,nrep), intent(in) :: rav
@@ -24,19 +27,23 @@ end do
 end subroutine gettang
 
 
-subroutine getnebforce(rav,fav,tang,nrestr,nrep,kspring)
+subroutine getnebforce(rav,fav,tang,nrestr,nrep,kspring,maxforceband,ftol,relaxd,ftang)
 implicit none
 double precision, dimension(3,nrestr,nrep), intent(inout) :: fav
 double precision, dimension(3,nrestr,nrep), intent(in) :: rav, tang
+double precision, intent(out) :: maxforceband
+integer :: maxforcerep
 integer, intent(in) :: nrestr, nrep
-double precision, intent(in) :: kspring
-double precision, dimension(3,nrestr,nrep) :: fspring
+double precision, intent(in) :: kspring, ftol
+double precision, dimension(3,nrestr,nrep) :: fspring, ftang
 double precision, dimension(nrestr,nrep) :: fproj
-double precision :: distright, distleft
+double precision :: distright, distleft, maxforce
 integer :: i,j
+logical :: relaxdrep,relaxd
 
 	fspring=0.d0
   fproj=0.d0
+  maxforceband=0.d0
   do i=2,nrep-1
 	  do j=1, nrestr
         !Computes spring force
@@ -48,8 +55,19 @@ integer :: i,j
         !Computes force component on tangent direction
         fproj(j,i)=fav(1,j,i)*tang(1,j,i)+fav(2,j,i)*tang(2,j,i)+fav(3,j,i)*tang(3,j,i)
         !Computes neb force
+        ftang(1:3,j,i)=fproj(j,i)*tang(1:3,j,i)
         fav(1:3,j,i)=fav(1:3,j,i)-fproj(j,i)*tang(1:3,j,i)+fspring(1:3,j,i)
 	  end do
+    call getmaxforce(nrestr,nrep,i,fav,maxforce,ftol,relaxdrep)
+    if (maxforce .gt. maxforceband) maxforcerep=i
+    if (maxforce .gt. maxforceband) maxforceband=maxforce
+    write(9999,*) "Replica: ", i, "Max force: ", maxforce, "Converged: ", relaxdrep
   end do
+    write(9999,*) "-----------------------------------------------------------------"
+    write(9999,*) "Max force :", maxforceband, "on replica: ", maxforcerep
+    write(9999,*) "-----------------------------------------------------------------"
+  if(maxforceband .le. ftol) relaxd=.TRUE.
+  if (relaxd) write(9999,*) "System converged: T"
+  if (.not. relaxd) write(9999,*) "System converged: F"
 
 end subroutine getnebforce
