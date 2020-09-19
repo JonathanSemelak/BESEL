@@ -2,11 +2,11 @@ module readandget
 implicit none
 contains
 subroutine readinput(nrep,infile,reffile,outfile,mask,nrestr, &
-           rav,fav,tang,kref,kspring,steep_size,ftol,per,vel)
+           rav,fav,tang,kref,kspring,steep_size,ftol,per,velin,velout)
 implicit none
 character(len=50) :: infile, reffile, outfile
 integer :: nrestr, nrep, i
-logical ::  per, vel
+logical ::  per, velin, velout
 double precision :: kref, kspring, steep_size, ftol
 integer, allocatable, dimension (:), intent(inout) :: mask
 double precision, allocatable, dimension(:,:,:), intent(inout) :: rav, fav, tang
@@ -15,7 +15,7 @@ open (unit=1000, file="feneb.in", status='old', action='read') !read align.in
 read(1000,*) infile
 read(1000,*) reffile
 read(1000,*) outfile
-read(1000,*) per, vel
+read(1000,*) per, velin, velout
 read(1000,*) nrep
 read(1000,*) nrestr
 if (nrep .eq. 1) read(1000,*) kref
@@ -29,6 +29,27 @@ close (unit=1000)
 
 end subroutine readinput
 
+subroutine readinputbuilder(rcfile, pcfile, tsfile, prefix, nrestr, nrep, usets, per, velin, velout, rav, mask)
+implicit none
+character(len=50) :: rcfile, pcfile, tsfile, prefix
+integer :: nrestr, nrep, i
+logical ::  usets, per, velin, velout
+integer, allocatable, dimension (:), intent(inout) :: mask
+double precision, allocatable, dimension(:,:,:), intent(inout) :: rav
+
+usets = .false.
+open (unit=1000, file="bandbuilder.in", status='old', action='read') !read align.in
+read(1000,*) prefix
+read(1000,*) rcfile, pcfile
+read(1000,*) usets
+if (usets) read(1000,*)  tsfile
+read(1000,*) nrep
+read(1000,*) nrestr
+read(1000,*) per, velin, velout
+allocate(mask(nrestr),rav(3,nrestr,nrep))
+read(1000,*) (mask(i),i=1,nrestr)
+close (unit=1000)
+end subroutine readinputbuilder
 
 subroutine getfilenames(rep,chrep,infile,reffile,outfile,iname,rname,oname)
 
@@ -122,7 +143,7 @@ call check(nf90_close(ncid))
 end subroutine getavcoordanforces
 
 
-subroutine getrefcoord(rname,nrestr,mask,natoms,rref,boxinfo,per,vel)
+subroutine getrefcoord(rname,nrestr,mask,natoms,rref,boxinfo,per,velin)
 
 implicit none
 integer :: nrestr
@@ -132,7 +153,7 @@ double precision, dimension(:,:), allocatable :: rref
 double precision, dimension(6), intent(out) :: boxinfo
 integer, dimension(nrestr),intent(in) :: mask
 integer :: i
-logical ::  per, vel
+logical ::  per, velin
 if (allocated(rref)) deallocate(rref)
 i=1
 open (unit=1002, file=rname, status='old', action='read') !read ref file
@@ -145,7 +166,7 @@ do while (i .le. natoms/2)
   i = i + 1
 enddo
 if (mod(natoms,2) .ne. 0) read(1002,'(6(f12.7))') rref(2*i,1:3)
-if (vel) then
+if (velin) then
   i=1
   do while (i .le. natoms/2)
     read(1002,*)

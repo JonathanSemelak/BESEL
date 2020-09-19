@@ -14,7 +14,7 @@ close(1001)
 
 end subroutine writeposforces
 
-subroutine writenewcoord(oname,rref,boxinfo,natoms,nrestr,mask,per,vel,rav,nrep,rep)
+subroutine writenewcoord(oname,rref,boxinfo,natoms,nrestr,mask,per,velout,rav,nrep,rep)
 
 implicit none
 character(len=50), intent(in) :: oname
@@ -24,7 +24,7 @@ double precision, dimension(3,natoms), intent(in) :: rref
 double precision, dimension(3,natoms) :: rout
 double precision, dimension(6), intent(in) :: boxinfo
 integer, dimension(nrestr), intent(in) :: mask
-logical, intent(in) :: per, vel
+logical, intent(in) :: per, velout
 integer :: i, j, at, auxunit
 
 rout=rref
@@ -48,7 +48,7 @@ do while (i .le. natoms/2)
   i = i + 1
 enddo
 if (mod(natoms,2) .ne. 0) write(auxunit,'(6(f12.7))') rout(1:3,2*i)
-if (vel) then
+if (velout) then
   i=1
   do while (i .le. natoms/2)
     write(auxunit,'(6(f12.7))') 0.d0,0.d0,0.d0,0.d0,0.d0,0.d0

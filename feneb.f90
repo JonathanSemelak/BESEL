@@ -1,5 +1,5 @@
 program feneb
-use netcdf 
+use netcdf
 use readandget
 implicit none
 character(len=50) :: infile, reffile, outfile, chi, iname, rname, oname
@@ -13,11 +13,11 @@ double precision :: kref, steep_size, ftol, maxforce, kspring
 double precision, dimension(6) :: boxinfo
 double precision, allocatable, dimension(:,:) :: rref
 double precision, allocatable, dimension(:,:,:) :: rav, fav, tang
-logical ::  per, vel, relaxd, converged
+logical ::  per, velin, velout, relaxd, converged
 
 !------------ Read input
     call readinput(nrep,infile,reffile,outfile,mask,nrestr, &
-                 rav,fav,tang,kref,kspring,steep_size,ftol,per,vel)
+                 rav,fav,tang,kref,kspring,steep_size,ftol,per,velin,velout)
 !------------
 
 
@@ -38,14 +38,14 @@ logical ::  per, vel, relaxd, converged
 
     allocate(coordx(nsteps),coordy(nsteps),coordz(nsteps),rref(3,natoms))
 
-    call getrefcoord(rname,nrestr,mask,natoms,rref,boxinfo,per,vel)
+    call getrefcoord(rname,nrestr,mask,natoms,rref,boxinfo,per,velin)
     call getavcoordanforces(iname,nsteps,natoms,spatial,coordx,coordy,coordz,&
                         nrestr,mask,kref,rav,fav,nrep,nrep,rref)
     call writeposforces(rav,fav,nrestr,nrep)
     call getmaxforce(nrestr,nrep,nrep,fav,maxforce,ftol,relaxd)
     if (.not. relaxd) then
        call steep(rav,fav,nrep,nrep,steep_size,maxforce,nrestr)
-       call writenewcoord(oname,rref,boxinfo,natoms,nrestr,mask,per,vel,rav,nrep,nrep)
+       call writenewcoord(oname,rref,boxinfo,natoms,nrestr,mask,per,velout,rav,nrep,nrep)
     else
        write(9999,*) "Convergence criteria of ", ftol, " (kcal/mol A) achieved"
     endif
@@ -59,11 +59,11 @@ logical ::  per, vel, relaxd, converged
 !------------ And set forces to zero
     !Reactants
     call getfilenames(1,chi,infile,reffile,outfile,iname,rname,oname)
-    call getrefcoord(rname,nrestr,mask,natoms,rref,boxinfo,per,vel)
+    call getrefcoord(rname,nrestr,mask,natoms,rref,boxinfo,per,velin)
     call getcoordextrema(rref,natoms,rav,nrestr,nrep,1,mask)
     !Products
     call getfilenames(nrep,chi,infile,reffile,outfile,iname,rname,oname)
-    call getrefcoord(rname,nrestr,mask,natoms,rref,boxinfo,per,vel)
+    call getrefcoord(rname,nrestr,mask,natoms,rref,boxinfo,per,velin)
     call getcoordextrema(rref,natoms,rav,nrestr,nrep,nrep,mask)
 
     !Forces set to zero
@@ -81,7 +81,7 @@ logical ::  per, vel, relaxd, converged
       if (allocated(rref)) deallocate(rref)
       allocate(coordx(nsteps),coordy(nsteps),coordz(nsteps),rref(3,natoms))
 
-      call getrefcoord(rname,nrestr,mask,natoms,rref,boxinfo,per,vel)
+      call getrefcoord(rname,nrestr,mask,natoms,rref,boxinfo,per,velin)
       call getavcoordanforces(iname,nsteps,natoms,spatial,coordx,coordy, coordz,&
                     nrestr,mask,kref,rav,fav,nrep,i,rref)
     end do
@@ -105,8 +105,8 @@ logical ::  per, vel, relaxd, converged
       write(9999,*) "Replica: ", relaxd
       if (.not. relaxd) call steep(rav,fav,nrep,nrep,steep_size,maxforce,nrestr)
       call getfilenames(i,chi,infile,reffile,outfile,iname,rname,oname)
-      call getrefcoord(rname,nrestr,mask,natoms,rref,boxinfo,per,vel)
-      call writenewcoord(oname,rref,boxinfo,natoms,nrestr,mask,per,vel,rav,nrep,i)
+      call getrefcoord(rname,nrestr,mask,natoms,rref,boxinfo,per,velin)
+      call writenewcoord(oname,rref,boxinfo,natoms,nrestr,mask,per,velout,rav,nrep,i)
       converged = (converged .and. relaxd)
     end do
     write(9999,*) "---------------------------------------------------"
