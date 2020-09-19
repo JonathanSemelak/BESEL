@@ -82,6 +82,7 @@ logical ::  per, velin, velout, relaxd, converged
       allocate(coordx(nsteps),coordy(nsteps),coordz(nsteps),rref(3,natoms))
 
       call getrefcoord(rname,nrestr,mask,natoms,rref,boxinfo,per,velin)
+
       call getavcoordanforces(iname,nsteps,natoms,spatial,coordx,coordy, coordz,&
                     nrestr,mask,kref,rav,fav,nrep,i,rref)
     end do
@@ -110,8 +111,8 @@ logical ::  per, velin, velout, relaxd, converged
       converged = (converged .and. relaxd)
     end do
     write(9999,*) "---------------------------------------------------"
-    if (.not. converged) write(9999,*) "Final result: System not converged"
-    if (converged) write(9999,*) "Final result: System converged"
+    if (.not. converged) write(9999,*) "System converged: F"
+    if (converged) write(9999,*) "System converged: T"
   end if
 
 
