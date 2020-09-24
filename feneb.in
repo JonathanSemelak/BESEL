@@ -1,21 +1,14 @@
-DCE_f
-DCE_t
-DCE_o
-T T
-1
-8
-400
-0.1
-0.25
-1 2 3 4 5 6 7 8
-
-!!!
-  read(1000,*) infile
-  read(1000,*) reffile
-  read(1000,*) ofile
-  read(1000,*) per, vel
-  read(1000,*) nrep
-  read(1000,*) nrestr
-  read(1000,*) kref
-  read(1000,*) steep_size
-  read(1000,*) ftol
+infile DCE_f
+reffile DCE_r
+outfile DCE_o
+per F
+velin F
+velout F
+nrep 25
+nrestr 8
+kref 400
+kspring 55
+steepsize 0.1
+ftol 2.5
+lastmforce 0
+mask 1 2 3 4 5 6 7 8

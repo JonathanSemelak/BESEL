@@ -4,28 +4,62 @@ contains
 subroutine readinput(nrep,infile,reffile,outfile,mask,nrestr, &
            rav,fav,ftang,tang,kref,kspring,steep_size,ftol,per,velin,velout)
 implicit none
-character(len=50) :: infile, reffile, outfile
-integer :: nrestr, nrep, i
+character(len=50) :: infile, reffile, outfile, line, exp, keyword
+integer :: nrestr, nrep, i, ierr
 logical ::  per, velin, velout
-double precision :: kref, kspring, steep_size, ftol
+double precision :: kref, kspring, steep_size, ftol, lastmforce
 integer, allocatable, dimension (:), intent(inout) :: mask
 double precision, allocatable, dimension(:,:,:), intent(inout) :: rav, fav, tang, ftang
 
-open (unit=1000, file="feneb.in", status='old', action='read') !read align.in
-read(1000,*) infile
-read(1000,*) reffile
-read(1000,*) outfile
-read(1000,*) per, velin, velout
-read(1000,*) nrep
-read(1000,*) nrestr
-if (nrep .eq. 1) read(1000,*) kref
-if (nrep .gt. 1) read(1000,*) kref, kspring
+open (unit=1000, file='feneb.in', status='old', action='read') !read align.in
+do
+   read (1000,"(a)",iostat=ierr) line ! read line into character variable
+   if (ierr /= 0) exit
+   read (line,*) keyword ! read first keyword of line
+   if (keyword == 'infile') read(line,*) exp,infile
+   if (keyword == 'reffile') read(line,*) exp,reffile
+   if (keyword == 'outfile') read(line,*) exp,outfile
+   if (keyword == 'per') read(line,*) exp, per
+   if (keyword == 'velin') read(line,*) exp, velin
+   if (keyword == 'velout') read(line,*) exp, velout
+   if (keyword == 'nrep') read(line,*) exp, nrep
+   if (keyword == 'nrestr') read(line,*) exp, nrestr
+   if (keyword == 'kref') read(line,*) exp, kref
+   if (keyword == 'kspring') read(line,*) exp, kspring
+   if (keyword == 'steepsize') read(line,*) exp, steep_size
+   if (keyword == 'ftol') read(line,*) exp, ftol
+   if (keyword == 'lastmforce') read(line,*) exp, lastmforce
+end do
+close (unit=1000)
+
 if (nrep .gt. 1) allocate(tang(3,nrestr,nrep),ftang(3,nrestr,nrep))
 allocate(mask(nrestr),rav(3,nrestr,nrep),fav(3,nrestr,nrep))
-read(1000,*) steep_size
-read(1000,*) ftol
-read(1000,*) (mask(i),i=1,nrestr)
+
+
+open (unit=1000, file="feneb.in", status='old', action='read') !read align.in
+do
+   read (1000,"(a)",iostat=ierr) line ! read line into character variable
+   if (ierr /= 0) exit
+   read (line,*) keyword ! read first keyword of line
+   if (keyword == 'mask') read(line,*) exp, mask(1:nrestr)
+end do
 close (unit=1000)
+
+! open (unit=1000, file="feneb.in", status='old', action='read') !read align.in
+! read(1000,*) infile
+! read(1000,*) reffile
+! read(1000,*) outfile
+! read(1000,*) per, velin, velout
+! read(1000,*) nrep
+! read(1000,*) nrestr
+! if (nrep .eq. 1) read(1000,*) kref
+! if (nrep .gt. 1) read(1000,*) kref, kspring
+! if (nrep .gt. 1) allocate(tang(3,nrestr,nrep),ftang(3,nrestr,nrep))
+! allocate(mask(nrestr),rav(3,nrestr,nrep),fav(3,nrestr,nrep))
+! read(1000,*) steep_size
+! read(1000,*) ftol
+! read(1000,*) (mask(i),i=1,nrestr)
+! close (unit=1000)
 
 end subroutine readinput
 
