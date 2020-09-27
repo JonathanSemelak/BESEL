@@ -9,14 +9,15 @@ integer, allocatable, dimension (:) :: mask
 real(4) :: coordinate
 real(4), allocatable, dimension (:) :: coordx,coordy,coordz
 integer, dimension (3) :: point
-double precision :: kref, steep_size, ftol, maxforce, kspring, maxforceband
+double precision :: kref, steep_size, ftol, maxforce, kspring, maxforceband, lastmforce
+double precision :: stepl
 double precision, dimension(6) :: boxinfo
 double precision, allocatable, dimension(:,:) :: rref
 double precision, allocatable, dimension(:,:,:) :: rav, fav, tang, ftang
 logical ::  per, velin, velout, relaxd, converged
 
 !------------ Read input
-    call readinput(nrep,infile,reffile,outfile,mask,nrestr, &
+    call readinput(nrep,infile,reffile,outfile,mask,nrestr,lastmforce, &
                  rav,fav,ftang,tang,kref,kspring,steep_size,ftol,per,velin,velout)
 !------------
 
@@ -45,7 +46,7 @@ logical ::  per, velin, velout, relaxd, converged
     call getmaxforce(nrestr,nrep,nrep,fav,maxforce,ftol,relaxd)
     write(9999,*) "Max force: ", maxforce
     if (.not. relaxd) then
-       call steep(rav,fav,nrep,nrep,steep_size,maxforce,nrestr)
+       call steep(rav,fav,nrep,nrep,steep_size,maxforce,nrestr,lastmforce,stepl)
        call writenewcoord(oname,rref,boxinfo,natoms,nrestr,mask,per,velout,rav,nrep,nrep)
     else
        write(9999,*) "Convergence criteria of ", ftol, " (kcal/mol A) achieved"
@@ -105,12 +106,13 @@ logical ::  per, velin, velout, relaxd, converged
       do i=1,nrep
         call getmaxforce(nrestr,nrep,i,fav,maxforce,ftol,relaxd)
         ! write(9999,*) "Replica: ", i, "Converged: " relaxd
-        if (.not. relaxd) call steep(rav,fav,nrep,nrep,steep_size,maxforceband,nrestr)
+        if (.not. relaxd) call steep(rav,fav,nrep,i,steep_size,maxforceband,nrestr,lastmforce,stepl)
         call getfilenames(i,chi,infile,reffile,outfile,iname,rname,oname)
         call getrefcoord(rname,nrestr,mask,natoms,rref,boxinfo,per,velin)
         call writenewcoord(oname,rref,boxinfo,natoms,nrestr,mask,per,velout,rav,nrep,i)
       ! converged = (converged .and. relaxd)
       end do
+      write(9999,'(1x,a,f8.6)') "Step length: ", stepl
     end if
   end if
 

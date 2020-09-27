@@ -64,7 +64,7 @@ logical :: relaxdrep,relaxd
     write(9999,*) "Replica: ", i, "Max force: ", maxforce, "Converged: ", relaxdrep
   end do
     write(9999,*) "-----------------------------------------------------------------"
-    write(9999,*) "Max force :", maxforceband, "on replica: ", maxforcerep
+    write(9999,*) "Band max force: ", maxforceband, "on replica: ", maxforcerep
     write(9999,*) "-----------------------------------------------------------------"
   if(maxforceband .le. ftol) relaxd=.TRUE.
   if (relaxd) write(9999,*) "System converged: T"
