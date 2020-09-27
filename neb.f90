@@ -35,7 +35,7 @@ double precision, intent(out) :: maxforceband
 integer :: maxforcerep
 integer, intent(in) :: nrestr, nrep
 double precision, intent(in) :: kspring, ftol
-double precision, dimension(3,nrestr,nrep) :: fspring, ftang
+double precision, dimension(3,nrestr,nrep) :: fspring, ftang, fperp
 double precision, dimension(nrestr,nrep) :: fproj
 double precision :: distright, distleft, maxforce
 integer :: i,j
@@ -56,9 +56,10 @@ logical :: relaxdrep,relaxd
         fproj(j,i)=fav(1,j,i)*tang(1,j,i)+fav(2,j,i)*tang(2,j,i)+fav(3,j,i)*tang(3,j,i)
         !Computes neb force
         ftang(1:3,j,i)=fproj(j,i)*tang(1:3,j,i)
-        fav(1:3,j,i)=fav(1:3,j,i)-fproj(j,i)*tang(1:3,j,i)+fspring(1:3,j,i)
+        fperp(1:3,j,i)=fav(1:3,j,i)-ftang(1:3,j,i)
+        fav(1:3,j,i)=fperp(1:3,j,i)+fspring(1:3,j,i)
 	  end do
-    call getmaxforce(nrestr,nrep,i,fav,maxforce,ftol,relaxdrep)
+    call getmaxforce(nrestr,nrep,i,fperp,maxforce,ftol,relaxdrep)
     if (maxforce .gt. maxforceband) maxforcerep=i
     if (maxforce .gt. maxforceband) maxforceband=maxforce
     write(9999,*) "Replica: ", i, "Max force: ", maxforce, "Converged: ", relaxdrep
