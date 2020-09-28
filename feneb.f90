@@ -40,15 +40,28 @@ logical ::  per, velin, velout, relaxd, converged
     allocate(coordx(nsteps),coordy(nsteps),coordz(nsteps),rref(3,natoms))
 
     call getrefcoord(rname,nrestr,mask,natoms,rref,boxinfo,per,velin)
+
     call getavcoordanforces(iname,nsteps,natoms,spatial,coordx,coordy,coordz,&
                         nrestr,mask,kref,rav,fav,nrep,nrep,rref)
-    call writeposforces(rav,fav,nrestr,nrep)
+
+    call writeposforces(rav,fav,nrestr,nrep,nrep)
+
     call getmaxforce(nrestr,nrep,nrep,fav,maxforce,ftol,relaxd)
+
     write(9999,*) "Max force: ", maxforce
     if (.not. relaxd) then
        call steep(rav,fav,nrep,nrep,steep_size,maxforce,nrestr,lastmforce,stepl)
+       write(9999,'(1x,a,f8.6)') "Step length: ", stepl
+       if (stepl .lt. 1d-5) then
+         write(9999,*) "-----------------------------------------------------"
+         write(9999,*) "Warning: max precision reached on atomic displacement"
+         write(9999,*) "step length has been set to zero"
+         write(9999,*) "-----------------------------------------------------"
+       end if
        call writenewcoord(oname,rref,boxinfo,natoms,nrestr,mask,per,velout,rav,nrep,nrep)
+       write(9999,*) "System converged: F"
     else
+       write(9999,*) "System converged: T"
        write(9999,*) "Convergence criteria of ", ftol, " (kcal/mol A) achieved"
     endif
 
@@ -113,6 +126,12 @@ logical ::  per, velin, velout, relaxd, converged
       ! converged = (converged .and. relaxd)
       end do
       write(9999,'(1x,a,f8.6)') "Step length: ", stepl
+      if (stepl .lt. 1d-5) then
+        write(9999,*) "-----------------------------------------------------"
+        write(9999,*) "Warning: max precision reached on atomic displacement"
+        write(9999,*) "step length has been set to zero"
+        write(9999,*) "-----------------------------------------------------"
+      end if
     end if
   end if
 

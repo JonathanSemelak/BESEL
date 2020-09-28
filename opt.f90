@@ -34,28 +34,15 @@ integer :: i,j
 stepl=steep_size
 
 if (maxforce .gt. lastmforce) stepl=stepl*0.85d0
-if (stepl .lt. 1d-5) then
 
-  write(9999,*) "-----------------------------------------------------"
-  write(9999,*) "Warning: max precision reached on atomic displacement"
-  write(9999,*) "step length will be set to zero"
-  write(9999,*) "-----------------------------------------------------"
-
-  stepl=0.d0
-end if
-!write (*,*) rep, nrep, nrep-1, (rep .eq. nrep .or. rep .eq. nrep-1)
-!if (rep .eq. nrep .or. rep .eq. nrep-1) write(9999,*) "Step length: ", step
-
-if (maxforce .lt. 1d-30) then
-  stepl=0.d0
-else
+if (stepl .lt. 1d-5 .or. maxforce .lt. 1d-30) stepl=0.d0
 
 step=stepl/maxforce
+
 do i=1,nrestr
-    do j=1,3
-      rav(j,i,rep)=rav(j,i,rep)+step*fav(j,i,rep)
-    end do
+  do j=1,3
+    rav(j,i,rep)=rav(j,i,rep)+step*fav(j,i,rep)
   end do
-end if
+end do
 
 end subroutine steep

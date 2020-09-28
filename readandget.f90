@@ -34,7 +34,6 @@ close (unit=1000)
 if (nrep .gt. 1) allocate(tang(3,nrestr,nrep),ftang(3,nrestr,nrep))
 allocate(mask(nrestr),rav(3,nrestr,nrep),fav(3,nrestr,nrep))
 
-
 open (unit=1000, file="feneb.in", status='old', action='read') !read align.in
 do
    read (1000,"(a)",iostat=ierr) line ! read line into character variable
