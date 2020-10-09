@@ -10,7 +10,7 @@ real(4) :: coordinate
 real(4), allocatable, dimension (:) :: coordx,coordy,coordz
 integer, dimension (3) :: point
 double precision :: kref, steep_size, ftol, maxforce, kspring, maxforceband, lastmforce
-double precision :: stepl
+double precision :: stepl, deltaA
 double precision, dimension(6) :: boxinfo
 double precision, allocatable, dimension(:,:) :: rref
 double precision, allocatable, dimension(:,:,:) :: rav, fav, tang, ftang
@@ -50,9 +50,9 @@ logical ::  per, velin, velout, relaxd, converged
 
     write(9999,*) "Max force: ", maxforce
     if (.not. relaxd) then
-       call steep(rav,fav,nrep,nrep,steep_size,maxforce,nrestr,lastmforce,stepl)
-       write(9999,'(1x,a,f8.6)') "Step length: ", stepl
-       if (stepl .lt. 1d-5) then
+       call steep(rav,fav,nrep,nrep,steep_size,maxforce,nrestr,lastmforce,stepl,deltaA)
+       write(9999,'(1x,a,f20.16)') "Step length: ", stepl, "DeltaA: ", deltaA
+       if (stepl .lt. 1d-10) then
          write(9999,*) "-----------------------------------------------------"
          write(9999,*) "Warning: max precision reached on atomic displacement"
          write(9999,*) "step length has been set to zero"
@@ -119,7 +119,7 @@ logical ::  per, velin, velout, relaxd, converged
       do i=1,nrep
         call getmaxforce(nrestr,nrep,i,fav,maxforce,ftol,relaxd)
         ! write(9999,*) "Replica: ", i, "Converged: " relaxd
-        if (.not. relaxd) call steep(rav,fav,nrep,i,steep_size,maxforceband,nrestr,lastmforce,stepl)
+        if (.not. relaxd) call steep(rav,fav,nrep,i,steep_size,maxforceband,nrestr,lastmforce,stepl,deltaA)
         call getfilenames(i,chi,infile,reffile,outfile,iname,rname,oname)
         call getrefcoord(rname,nrestr,mask,natoms,rref,boxinfo,per,velin)
         call writenewcoord(oname,rref,boxinfo,natoms,nrestr,mask,per,velout,rav,nrep,i)

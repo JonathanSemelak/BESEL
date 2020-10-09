@@ -40,6 +40,11 @@ do
    if (ierr /= 0) exit
    read (line,*) keyword ! read first keyword of line
    if (keyword == 'mask') read(line,*) exp, mask(1:nrestr)
+   if (keyword == 'all') then
+     do i=1,nrestr
+       mask(i)=i
+     end do
+   end if
 end do
 close (unit=1000)
 
