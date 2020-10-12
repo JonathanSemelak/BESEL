@@ -29,6 +29,8 @@ if (usets) then
 	do i=1,nrestr
 		rav(1:3,i,middlepoint)=rclas(1:3,mask(i))
 	end do
+else
+	middlepoint=nrep
 end if
 
 !reads product complex coordinates

@@ -27,7 +27,7 @@ end do
 end subroutine gettang
 
 
-subroutine getnebforce(rav,fav,tang,nrestr,nrep,kspring,maxforceband,ftol,relaxd,ftang)
+subroutine getnebforce(rav,fav,tang,nrestr,nrep,kspring,maxforceband,ftol,relaxd,ftrue,ftang)
 implicit none
 double precision, dimension(3,nrestr,nrep), intent(inout) :: fav
 double precision, dimension(3,nrestr,nrep), intent(in) :: rav, tang
@@ -35,7 +35,7 @@ double precision, intent(out) :: maxforceband
 integer :: maxforcerep
 integer, intent(in) :: nrestr, nrep
 double precision, intent(in) :: kspring, ftol
-double precision, dimension(3,nrestr,nrep) :: fspring, ftang, fperp
+double precision, dimension(3,nrestr,nrep) :: fspring, ftang, fperp, ftrue
 double precision, dimension(nrestr,nrep) :: fproj
 double precision :: distright, distleft, maxforce
 integer :: i,j
@@ -43,9 +43,13 @@ logical :: relaxdrep,relaxd
 
 	fspring=0.d0
   fproj=0.d0
+  ftang=0.d0
+  ftrue=0.d0
   maxforceband=0.d0
   do i=2,nrep-1
 	  do j=1, nrestr
+        !Saves true force
+        ftrue(1:3,j,i)=fav(1:3,j,i)
         !Computes spring force
 	      distright=(rav(1,j,i+1)-rav(1,j,i))**2+(rav(2,j,i+1)-rav(2,j,i))**2+(rav(3,j,i+1)-rav(3,j,i))**2
         distleft=(rav(1,j,i)-rav(1,j,i-1))**2+(rav(2,j,i)-rav(2,j,i-1))**2+(rav(3,j,i)-rav(3,j,i-1))**2
@@ -58,8 +62,10 @@ logical :: relaxdrep,relaxd
         ftang(1:3,j,i)=fproj(j,i)*tang(1:3,j,i)
         fperp(1:3,j,i)=fav(1:3,j,i)-ftang(1:3,j,i)
         fav(1:3,j,i)=fperp(1:3,j,i)+fspring(1:3,j,i)
+        !write(*,*) i, ftrue(1:3,j,i), ftang(1:3,j,i), fperp(1:3,j,i), fav(1:3,j,i)
 	  end do
-    call getmaxforce(nrestr,nrep,i,fperp,maxforce,ftol,relaxdrep)
+    !call getmaxforce(nrestr,nrep,i,fperp,maxforce,ftol,relaxdrep)
+    call getmaxforce(nrestr,nrep,i,fav,maxforce,ftol,relaxdrep)
     if (maxforce .gt. maxforceband) maxforcerep=i
     if (maxforce .gt. maxforceband) maxforceband=maxforce
     write(9999,*) "Replica: ", i, "Max force: ", maxforce, "Converged: ", relaxdrep

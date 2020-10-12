@@ -1,4 +1,4 @@
-program feneb
+ program feneb
 use netcdf
 use readandget
 implicit none
@@ -13,12 +13,12 @@ double precision :: kref, steep_size, ftol, maxforce, kspring, maxforceband, las
 double precision :: stepl, deltaA
 double precision, dimension(6) :: boxinfo
 double precision, allocatable, dimension(:,:) :: rref
-double precision, allocatable, dimension(:,:,:) :: rav, fav, tang, ftang
-logical ::  per, velin, velout, relaxd, converged
+double precision, allocatable, dimension(:,:,:) :: rav, fav, tang, ftang, ftrue
+logical ::  per, velin, velout, relaxd, converged, wgrad
 
 !------------ Read input
     call readinput(nrep,infile,reffile,outfile,mask,nrestr,lastmforce, &
-                 rav,fav,ftang,tang,kref,kspring,steep_size,ftol,per,velin,velout)
+                 rav,fav,ftrue,ftang,tang,kref,kspring,steep_size,ftol,per,velin,velout,wgrad)
 !------------
 
 
@@ -42,16 +42,25 @@ logical ::  per, velin, velout, relaxd, converged
     call getrefcoord(rname,nrestr,mask,natoms,rref,boxinfo,per,velin)
 
     call getavcoordanforces(iname,nsteps,natoms,spatial,coordx,coordy,coordz,&
-                        nrestr,mask,kref,rav,fav,nrep,nrep,rref)
+                        nrestr,mask,kref,rav,fav,nrep,nrep,rref,wgrad)
 
     call writeposforces(rav,fav,nrestr,nrep,nrep)
 
     call getmaxforce(nrestr,nrep,nrep,fav,maxforce,ftol,relaxd)
 
     write(9999,*) "Max force: ", maxforce
+
+    ! stepl=0.05d0
+    ! DeltaA=-0.15d0
+    ! write(9999,'(1x,a,f20.16)') "Step length: ", stepl, "DeltaA: ", deltaA
+    ! write(9999,*) "System converged: F"
+    ! call writenewcoord(oname,rref,boxinfo,natoms,nrestr,mask,per,velout,rav,nrep,nrep)
+
+
     if (.not. relaxd) then
        call steep(rav,fav,nrep,nrep,steep_size,maxforce,nrestr,lastmforce,stepl,deltaA)
        write(9999,'(1x,a,f20.16)') "Step length: ", stepl, "DeltaA: ", deltaA
+
        if (stepl .lt. 1d-10) then
          write(9999,*) "-----------------------------------------------------"
          write(9999,*) "Warning: max precision reached on atomic displacement"
@@ -76,11 +85,21 @@ logical ::  per, velin, velout, relaxd, converged
     call getfilenames(1,chi,infile,reffile,outfile,iname,rname,oname)
     call getrefcoord(rname,nrestr,mask,natoms,rref,boxinfo,per,velin)
     call getcoordextrema(rref,natoms,rav,nrestr,nrep,1,mask)
+
+    ! write(*,*) "rc"
+    ! do i=1,nrestr
+    ! write(*,'(2x, I6,2x, 6(f20.10,2x))') i, rav(1:3,i,1)
+    ! end do
+
     !Products
     call getfilenames(nrep,chi,infile,reffile,outfile,iname,rname,oname)
     call getrefcoord(rname,nrestr,mask,natoms,rref,boxinfo,per,velin)
     call getcoordextrema(rref,natoms,rav,nrestr,nrep,nrep,mask)
 
+    ! write(*,*) "rc"
+    ! do i=1,nrestr
+    ! write(*,'(2x, I6,2x, 6(f20.10,2x))') i, rav(1:3,i,nrep)
+    ! end do
     !Forces set to zero
     fav=0.d0
 
@@ -99,16 +118,17 @@ logical ::  per, velin, velout, relaxd, converged
       call getrefcoord(rname,nrestr,mask,natoms,rref,boxinfo,per,velin)
 
       call getavcoordanforces(iname,nsteps,natoms,spatial,coordx,coordy, coordz,&
-                    nrestr,mask,kref,rav,fav,nrep,i,rref)
+                    nrestr,mask,kref,rav,fav,nrep,i,rref,wgrad)
     end do
 
 !----------- Compute tangent and nebforce
 
     call gettang(rav,tang,nrestr,nrep)
-    call getnebforce(rav,fav,tang,nrestr,nrep,kspring,maxforceband,ftol,converged,ftang)
+    call getnebforce(rav,fav,tang,nrestr,nrep,kspring,maxforceband,ftol,converged,ftrue,ftang)
 
 !----------- Write mean pos and forces
     do i=1,nrep
+!      call writeposforces(rav,fav,nrestr,i,nrep)
       call writeposforces(rav,ftang,nrestr,i,nrep)
     end do
 

@@ -34,17 +34,18 @@ double precision, intent(inout) :: maxforce
 integer :: i,j
 logical :: moved
 stepl=steep_size
-moved=.false.
+! moved=.false.
 !if (maxforce .gt. lastmforce) stepl=stepl*0.85d0
 !if (maxforce .lt. lastmforce) stepl=stepl*1.1d0
 !if (nrep .gt. 1 .and. maxforce .gt. lastmforce) stepl=stepl*0.85d0
 !if (stepl .lt. 1d-5 .or. maxforce .lt. 1d-30) stepl=0.d0
 
 if (maxforce .lt. 1d-30) stepl=0.d0
+step=stepl/maxforce
 
-do while (.not. moved)
-  deltaA=0.d0
-  step=stepl/maxforce
+! ! do while (.not. moved)
+!   deltaA=0.d0
+!   step=stepl/maxforce
 
   do i=1,nrestr
     do j=1,3
@@ -52,26 +53,25 @@ do while (.not. moved)
     end do
   end do
 
-  do i=1,nrestr
-    do j=1,3
-      deltaA=deltaA-fav(j,i,rep)*(rnew(j,i,rep)-rav(j,i,rep))
-    end do
-  end do
+  ! do i=1,nrestr
+  !   do j=1,3
+  !     deltaA=deltaA-fav(j,i,rep)*(rnew(j,i,rep)-rav(j,i,rep))
+  !   end do
+  ! end do
   !write(*,*) "deltaA", deltaA
-  if (deltaA .lt. 0.d0) then
-    rav=rnew
-    moved=.true.
-  else
-    stepl=stepl*0.85
-  end if
-  step=stepl/maxforce
+  ! if (deltaA .lt. 0.d0) then
+  !   rav=rnew
+  !   moved=.true.
+  ! else
+  !   stepl=stepl*0.85
+  ! end if
 
   if (stepl .lt. 1d-10) then
     moved=.true.
     stepl=0.d0
     write(*,*) "Max precision reached"
   end if
-end do
+! end do
 
 ! do i=1,nrestr
 !   do j=1,3

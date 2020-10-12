@@ -2,14 +2,14 @@ module readandget
 implicit none
 contains
 subroutine readinput(nrep,infile,reffile,outfile,mask,nrestr,lastmforce, &
-           rav,fav,ftang,tang,kref,kspring,steep_size,ftol,per,velin,velout)
+           rav,fav,ftrue,ftang,tang,kref,kspring,steep_size,ftol,per,velin,velout,wgrad)
 implicit none
 character(len=50) :: infile, reffile, outfile, line, exp, keyword
 integer :: nrestr, nrep, i, ierr
-logical ::  per, velin, velout
+logical ::  per, velin, velout, wgrad
 double precision :: kref, kspring, steep_size, ftol, lastmforce
 integer, allocatable, dimension (:), intent(inout) :: mask
-double precision, allocatable, dimension(:,:,:), intent(inout) :: rav, fav, tang, ftang
+double precision, allocatable, dimension(:,:,:), intent(inout) :: rav, fav, tang, ftang, ftrue
 
 open (unit=1000, file='feneb.in', status='old', action='read') !read align.in
 do
@@ -29,9 +29,10 @@ do
    if (keyword == 'steepsize') read(line,*) exp, steep_size
    if (keyword == 'ftol') read(line,*) exp, ftol
    if (keyword == 'lastmforce') read(line,*) exp, lastmforce
+   if (keyword == 'wgrad') read(line,*) exp, wgrad
 end do
 close (unit=1000)
-if (nrep .gt. 1) allocate(tang(3,nrestr,nrep),ftang(3,nrestr,nrep))
+if (nrep .gt. 1) allocate(tang(3,nrestr,nrep),ftang(3,nrestr,nrep),ftrue(3,nrestr,nrep))
 allocate(mask(nrestr),rav(3,nrestr,nrep),fav(3,nrestr,nrep))
 
 open (unit=1000, file="feneb.in", status='old', action='read') !read align.in
@@ -52,24 +53,49 @@ end subroutine readinput
 
 subroutine readinputbuilder(rcfile, pcfile, tsfile, prefix, nrestr, nrep, usets, per, velin, velout, rav, mask)
 implicit none
-character(len=50) :: rcfile, pcfile, tsfile, prefix
-integer :: nrestr, nrep, i
+character(len=50) :: rcfile, pcfile, tsfile, prefix, exp, keyword, line, all
+integer :: nrestr, nrep, i, ierr
 logical ::  usets, per, velin, velout
 integer, allocatable, dimension (:), intent(inout) :: mask
 double precision, allocatable, dimension(:,:,:), intent(inout) :: rav
 
 usets = .false.
 open (unit=1000, file="bandbuilder.in", status='old', action='read') !read align.in
-read(1000,*) prefix
-read(1000,*) rcfile, pcfile
-read(1000,*) usets
-if (usets) read(1000,*)  tsfile
-read(1000,*) nrep
-read(1000,*) nrestr
-read(1000,*) per, velin, velout
-allocate(mask(nrestr),rav(3,nrestr,nrep))
-read(1000,*) (mask(i),i=1,nrestr)
+do
+   read (1000,"(a)",iostat=ierr) line ! read line into character variable
+   if (ierr /= 0) exit
+   read (line,*) keyword ! read first keyword of line
+   if (keyword == 'prefix') read(line,*) exp,prefix
+   if (keyword == 'rcfile') read(line,*) exp,rcfile
+   if (keyword == 'pcfile') read(line,*) exp,pcfile
+   if (keyword == 'usets') read(line,*) exp,usets
+   if (keyword == 'tsfile') read(line,*) exp,tsfile
+   if (keyword == 'nrep') read(line,*) exp, nrep
+   if (keyword == 'nrestr') read(line,*) exp, nrestr
+   if (keyword == 'per') read(line,*) exp, per
+   if (keyword == 'velin') read(line,*) exp, velin
+   if (keyword == 'velout') read(line,*) exp, velout
+end do
 close (unit=1000)
+
+allocate(mask(nrestr),rav(3,nrestr,nrep))
+
+open (unit=1000, file="bandbuilder.in", status='old', action='read') !read align.in
+do
+   read (1000,"(a)",iostat=ierr) line ! read line into character variable
+   if (ierr /= 0) exit
+   read (line,*) keyword ! read first keyword of line
+   if (keyword == 'mask') read(line,*) exp, mask(1:nrestr)
+   if (keyword == 'all') then
+     do i=1,nrestr
+       mask(i)=i
+     end do
+   end if
+end do
+
+write(*,*) prefix,rcfile,pcfile,usets,tsfile, nrep, nrestr, per,velin,velout
+close (unit=1000)
+
 end subroutine readinputbuilder
 
 subroutine getfilenames(rep,chrep,infile,reffile,outfile,iname,rname,oname)
@@ -111,7 +137,7 @@ end subroutine getdims
 
 subroutine getavcoordanforces(iname,nsteps,natoms,spatial, &
                             coordx,coordy,coordz,nrestr,mask, &
-                            kref,rav,fav,nrep,rep,rref)
+                            kref,rav,fav,nrep,rep,rref,wgrad)
 use netcdf
 implicit none
 real (kind=4), DIMENSION(nsteps) :: coordx, coordy, coordz, ref, av
@@ -125,6 +151,7 @@ double precision, dimension(3,natoms), intent(inout) :: rref
 integer, dimension(3) :: point,endp
 integer, dimension(nrestr) :: mask
 integer :: i,j,k,ati,atf,nrep,rep,auxunit
+logical :: wgrad
 
 call check(nf90_open(iname, nf90_nowrite, ncid))
 do i = 1,nrestr !natoms
@@ -136,7 +163,7 @@ do i = 1,nrestr !natoms
   chi = trim(chi)//".rep."
   chi = trim(chi)//trim(chrep)
   auxunit = 1000*i+rep
-  open(auxunit, file = chi, status = 'unknown')
+  if (wgrad) open(auxunit, file = chi, status = 'unknown')
   ati=mask(i)
   av=0.d0
   point = (/ 1,ati,1 /)
@@ -153,11 +180,11 @@ do i = 1,nrestr !natoms
     av(1)=(av(1)*(dble(k-1))+coordx(k))/dble(k)
     av(2)=(av(2)*(dble(k-1))+coordy(k))/dble(k)
     av(3)=(av(3)*(dble(k-1))+coordz(k))/dble(k)
-  write(auxunit,*) k, kref*(av(1:3)-rref(1:3,ati))
+    !if (wgrad) write(auxunit,*) k, kref*(av(1:3)-rref(1:3,ati))
   end do
   rav(1:3,i,rep)=av(1:3)
   fav(1:3,i,rep)=kref*(av(1:3)-rref(1:3,ati))
-  close(auxunit)
+  if (wgrad) close(auxunit)
 enddo
 
 call check(nf90_close(ncid))
