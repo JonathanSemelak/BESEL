@@ -13,12 +13,13 @@ double precision :: kref, steep_size, ftol, maxforce, kspring, maxforceband, las
 double precision :: stepl, deltaA
 double precision, dimension(6) :: boxinfo
 double precision, allocatable, dimension(:,:) :: rref
-double precision, allocatable, dimension(:,:,:) :: rav, fav, tang, ftang, ftrue
+double precision, allocatable, dimension(:,:,:) :: rav, fav, tang, ftang, ftrue, fperp, rrefall
 logical ::  per, velin, velout, relaxd, converged, wgrad
 
 !------------ Read input
     call readinput(nrep,infile,reffile,outfile,mask,nrestr,lastmforce, &
-                 rav,fav,ftrue,ftang,tang,kref,kspring,steep_size,ftol,per,velin,velout,wgrad)
+                 rav,fav,ftrue,ftang,fperp,tang,kref,kspring,steep_size, &
+                 ftol,per,velin,velout,wgrad,rrefall)
 !------------
 
 
@@ -121,11 +122,21 @@ logical ::  per, velin, velout, relaxd, converged, wgrad
                     nrestr,mask,kref,rav,fav,nrep,i,rref,wgrad)
     end do
 
-!----------- Compute tangent and nebforce
 
-    call gettang(rav,tang,nrestr,nrep)
-    call getnebforce(rav,fav,tang,nrestr,nrep,kspring,maxforceband,ftol,converged,ftrue,ftang)
+!----------- Computes
+    do i=1,nrep
+      call getfilenames(i,chi,infile,reffile,outfile,iname,rname,oname)
+      call getrefcoord(rname,nrestr,mask,natoms,rref,boxinfo,per,velin)
+      call getcoordextrema(rref,natoms,rrefall,nrestr,nrep,i,mask)
+    end do
 
+!----------- Computes tangent and nebforce
+    call gettang(rrefall,tang,nrestr,nrep)
+
+    ! call gettang(rav,tang,nrestr,nrep)
+
+    call getnebforce(rav,fav,tang,nrestr,nrep,kspring,maxforceband,ftol,converged,ftrue,ftang,fperp)
+! fav ---> fneb
 !----------- Write mean pos and forces
     do i=1,nrep
 !      call writeposforces(rav,fav,nrestr,i,nrep)
@@ -137,7 +148,7 @@ logical ::  per, velin, velout, relaxd, converged, wgrad
     ! converged = .TRUE.
     if (.not. converged) then
       do i=1,nrep
-        call getmaxforce(nrestr,nrep,i,fav,maxforce,ftol,relaxd)
+        call getmaxforce(nrestr,nrep,i,fperp,maxforce,ftol,relaxd)
         ! write(9999,*) "Replica: ", i, "Converged: " relaxd
         if (.not. relaxd) call steep(rav,fav,nrep,i,steep_size,maxforceband,nrestr,lastmforce,stepl,deltaA)
         call getfilenames(i,chi,infile,reffile,outfile,iname,rname,oname)

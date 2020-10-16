@@ -27,7 +27,7 @@ end do
 end subroutine gettang
 
 
-subroutine getnebforce(rav,fav,tang,nrestr,nrep,kspring,maxforceband,ftol,relaxd,ftrue,ftang)
+subroutine getnebforce(rav,fav,tang,nrestr,nrep,kspring,maxforceband,ftol,relaxd,ftrue,ftang,fperp)
 implicit none
 double precision, dimension(3,nrestr,nrep), intent(inout) :: fav
 double precision, dimension(3,nrestr,nrep), intent(in) :: rav, tang
@@ -64,8 +64,8 @@ logical :: relaxdrep,relaxd
         fav(1:3,j,i)=fperp(1:3,j,i)+fspring(1:3,j,i)
         !write(*,*) i, ftrue(1:3,j,i), ftang(1:3,j,i), fperp(1:3,j,i), fav(1:3,j,i)
 	  end do
-    !call getmaxforce(nrestr,nrep,i,fperp,maxforce,ftol,relaxdrep)
-    call getmaxforce(nrestr,nrep,i,fav,maxforce,ftol,relaxdrep)
+    call getmaxforce(nrestr,nrep,i,fperp,maxforce,ftol,relaxdrep)
+    !call getmaxforce(nrestr,nrep,i,fav,maxforce,ftol,relaxdrep)
     if (maxforce .gt. maxforceband) maxforcerep=i
     if (maxforce .gt. maxforceband) maxforceband=maxforce
     write(9999,*) "Replica: ", i, "Max force: ", maxforce, "Converged: ", relaxdrep
