@@ -131,9 +131,9 @@ logical ::  per, velin, velout, relaxd, converged, wgrad
     end do
 
 !----------- Computes tangent and nebforce
-    call gettang(rrefall,tang,nrestr,nrep)
+    !call gettang(rrefall,tang,nrestr,nrep)
 
-    ! call gettang(rav,tang,nrestr,nrep)
+    call gettang(rav,tang,nrestr,nrep)
 
     call getnebforce(rav,fav,tang,nrestr,nrep,kspring,maxforceband,ftol,converged,ftrue,ftang,fperp)
 ! fav ---> fneb
@@ -150,7 +150,7 @@ logical ::  per, velin, velout, relaxd, converged, wgrad
       do i=1,nrep
         call getmaxforce(nrestr,nrep,i,fperp,maxforce,ftol,relaxd)
         ! write(9999,*) "Replica: ", i, "Converged: " relaxd
-        if (.not. relaxd) call steep(rav,fav,nrep,i,steep_size,maxforceband,nrestr,lastmforce,stepl,deltaA)
+        if (.not. relaxd) call steep(rav,fperp,nrep,i,steep_size,maxforceband,nrestr,lastmforce,stepl,deltaA)
         call getfilenames(i,chi,infile,reffile,outfile,iname,rname,oname)
         call getrefcoord(rname,nrestr,mask,natoms,rref,boxinfo,per,velin)
         call writenewcoord(oname,rref,boxinfo,natoms,nrestr,mask,per,velout,rav,nrep,i)

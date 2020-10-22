@@ -28,13 +28,13 @@ double precision, dimension(3,nrestr,nrep), intent(inout) :: rav
 double precision, dimension(3,nrestr,nrep) :: rnew
 double precision, dimension(3,nrestr,nrep), intent(in) :: fav
 double precision, intent(out) :: stepl
-double precision :: lastmforce, steep_size, step, deltaA
+double precision :: lastmforce, steep_size, step, deltaA, n1, n2
 integer, intent(in) :: nrep, rep, nrestr
 double precision, intent(inout) :: maxforce
-integer :: i,j
+integer :: i,j,auxunit
 logical :: moved
 stepl=steep_size
-! moved=.false.
+!moved=.false.
 !if (maxforce .gt. lastmforce) stepl=stepl*0.85d0
 !if (maxforce .lt. lastmforce) stepl=stepl*1.1d0
 !if (nrep .gt. 1 .and. maxforce .gt. lastmforce) stepl=stepl*0.85d0
@@ -43,13 +43,17 @@ stepl=steep_size
 if (maxforce .lt. 1d-30) stepl=0.d0
 step=stepl/maxforce
 
-! ! do while (.not. moved)
+!   do while (.not. moved)
 !   deltaA=0.d0
 !   step=stepl/maxforce
 
   do i=1,nrestr
+    n1=dble(fav(1,i,rep)**2+fav(2,i,rep)**2+fav(3,i,rep)**2)
+    n2=dble(rav(1,i,rep)**2+rav(2,i,rep)**2+rav(3,i,rep)**2)
+    auxunit=3000+i
+    write(auxunit,*) rep, n2, n1*step
     do j=1,3
-      rnew(j,i,rep)=rav(j,i,rep)+step*fav(j,i,rep)
+      rav(j,i,rep)=rav(j,i,rep)+step*fav(j,i,rep)
     end do
   end do
 

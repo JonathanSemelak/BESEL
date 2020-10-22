@@ -37,8 +37,8 @@ integer, intent(in) :: nrestr, nrep
 double precision, intent(in) :: kspring, ftol
 double precision, dimension(3,nrestr,nrep) :: fspring, ftang, fperp, ftrue
 double precision, dimension(nrestr,nrep) :: fproj
-double precision :: distright, distleft, maxforce
-integer :: i,j
+double precision :: distright, distleft, maxforce, n1,n2,n3,n4,n5
+integer :: i,j,auxunit
 logical :: relaxdrep,relaxd
 
 	fspring=0.d0
@@ -55,6 +55,7 @@ logical :: relaxdrep,relaxd
         distleft=(rav(1,j,i)-rav(1,j,i-1))**2+(rav(2,j,i)-rav(2,j,i-1))**2+(rav(3,j,i)-rav(3,j,i-1))**2
         distright=sqrt(distright)
 	      distleft=sqrt(distleft)
+        !write(*,*) i,j, kspring,distright,distleft,(distright-distleft)
 	      fspring(1:3,j,i)=kspring*(distright-distleft)*tang(1:3,j,i)
         !Computes force component on tangent direction
         fproj(j,i)=fav(1,j,i)*tang(1,j,i)+fav(2,j,i)*tang(2,j,i)+fav(3,j,i)*tang(3,j,i)
@@ -62,7 +63,22 @@ logical :: relaxdrep,relaxd
         ftang(1:3,j,i)=fproj(j,i)*tang(1:3,j,i)
         fperp(1:3,j,i)=fav(1:3,j,i)-ftang(1:3,j,i)
         fav(1:3,j,i)=fperp(1:3,j,i)+fspring(1:3,j,i)
-        !write(*,*) i, ftrue(1:3,j,i), ftang(1:3,j,i), fperp(1:3,j,i), fav(1:3,j,i)
+
+        ! write(*,*) i,j, tang(1:3,j,i)
+        ! write(*,*) i,j, ftang(1:3,j,i)
+        ! write(*,*) i,j, fperp(1:3,j,i)
+        ! write(*,*) i,j, fspring(1:3,j,i)
+        ! write(*,*) i,j, fav(1:3,j,i)
+
+
+        n1=dsqrt(ftrue(1,j,i)**2+ftrue(2,j,i)**2+ftrue(3,j,i)**2)
+        n2=dsqrt(ftang(1,j,i)**2+ftang(2,j,i)**2+ftang(3,j,i)**2)
+        n3=dsqrt(fperp(1,j,i)**2+fperp(2,j,i)**2+fperp(3,j,i)**2)
+        n4=dsqrt(fspring(1,j,i)**2+fspring(2,j,i)**2+fspring(3,j,i)**2)
+        n5=dsqrt(fav(1,j,i)**2+fav(2,j,i)**2+fav(3,j,i)**2)
+        auxunit=1000+j
+        write(auxunit,*) i, n1, n2, n3, n4, n5
+        ! write(*,*) i, ftrue(1:3,j,i), ftang(1:3,j,i), fperp(1:3,j,i), fspring (1:3,j,i), fav(1:3,j,i)
 	  end do
     call getmaxforce(nrestr,nrep,i,fperp,maxforce,ftol,relaxdrep)
     !call getmaxforce(nrestr,nrep,i,fav,maxforce,ftol,relaxdrep)

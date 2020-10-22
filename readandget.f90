@@ -94,7 +94,7 @@ do
    end if
 end do
 
-write(*,*) prefix,rcfile,pcfile,usets,tsfile, nrep, nrestr, per,velin,velout
+!write(*,*) prefix,rcfile,pcfile,usets,tsfile, nrep, nrestr, per,velin,velout
 close (unit=1000)
 
 end subroutine readinputbuilder
@@ -146,12 +146,12 @@ integer(kind=4), intent(in) :: natoms, nsteps, spatial, nrestr
 integer(kind=4) :: ncid, xtype, ndims, varid
 character(len=50), intent(in) :: iname
 character(len=50) :: xname, vname, chi, chrep
-double precision :: kref
+double precision :: kref, n1
 double precision, dimension(3,nrestr,nrep) :: rav,fav
 double precision, dimension(3,natoms), intent(inout) :: rref
 integer, dimension(3) :: point,endp
 integer, dimension(nrestr) :: mask
-integer :: i,j,k,ati,atf,nrep,rep,auxunit
+integer :: i,j,k,ati,atf,nrep,rep,auxunit,auxunit2
 logical :: wgrad
 
 call check(nf90_open(iname, nf90_nowrite, ncid))
@@ -184,6 +184,13 @@ do i = 1,nrestr !natoms
     !if (wgrad) write(auxunit,*) k, kref*(av(1:3)-rref(1:3,ati))
   end do
   rav(1:3,i,rep)=av(1:3)
+
+  n1=dsqrt((av(1)-rref(1,ati))**2+(av(2)-rref(2,ati))**2+(av(3)-rref(3,ati))**2)
+  auxunit2=2000+i
+   write(auxunit2,*) rep, n1
+  ! write(auxunit2,*) av(1:3)
+  ! write(auxunit2,*) rref(1:3,ati)
+
   fav(1:3,i,rep)=kref*(av(1:3)-rref(1:3,ati))
   if (wgrad) close(auxunit)
 enddo
