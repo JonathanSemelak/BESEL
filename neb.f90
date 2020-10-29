@@ -27,7 +27,8 @@ end do
 end subroutine gettang
 
 
-subroutine getnebforce(rav,fav,tang,nrestr,nrep,kspring,maxforceband,ftol,relaxd,ftrue,ftang,fperp)
+subroutine getnebforce(rav,fav,tang,nrestr,nrep,kspring,maxforceband,ftol,&
+                       relaxd,ftrue,ftang,fperp,fspring,wrmforce)
 implicit none
 double precision, dimension(3,nrestr,nrep), intent(inout) :: fav
 double precision, dimension(3,nrestr,nrep), intent(in) :: rav, tang
@@ -39,7 +40,7 @@ double precision, dimension(3,nrestr,nrep) :: fspring, ftang, fperp, ftrue
 double precision, dimension(nrestr,nrep) :: fproj
 double precision :: distright, distleft, maxforce, n1,n2,n3,n4,n5
 integer :: i,j,auxunit
-logical :: relaxdrep,relaxd
+logical :: relaxdrep,relaxd,wrmforce
 
 	fspring=0.d0
   fproj=0.d0
@@ -71,26 +72,34 @@ logical :: relaxdrep,relaxd
         ! write(*,*) i,j, fav(1:3,j,i)
 
 
-        n1=dsqrt(ftrue(1,j,i)**2+ftrue(2,j,i)**2+ftrue(3,j,i)**2)
-        n2=dsqrt(ftang(1,j,i)**2+ftang(2,j,i)**2+ftang(3,j,i)**2)
-        n3=dsqrt(fperp(1,j,i)**2+fperp(2,j,i)**2+fperp(3,j,i)**2)
-        n4=dsqrt(fspring(1,j,i)**2+fspring(2,j,i)**2+fspring(3,j,i)**2)
-        n5=dsqrt(fav(1,j,i)**2+fav(2,j,i)**2+fav(3,j,i)**2)
-        auxunit=1000+j
-        write(auxunit,*) i, n1, n2, n3, n4, n5
+        ! n1=dsqrt(ftrue(1,j,i)**2+ftrue(2,j,i)**2+ftrue(3,j,i)**2)
+        ! n2=dsqrt(ftang(1,j,i)**2+ftang(2,j,i)**2+ftang(3,j,i)**2)
+        ! n3=dsqrt(fperp(1,j,i)**2+fperp(2,j,i)**2+fperp(3,j,i)**2)
+        ! n4=dsqrt(fspring(1,j,i)**2+fspring(2,j,i)**2+fspring(3,j,i)**2)
+        ! n5=dsqrt(fav(1,j,i)**2+fav(2,j,i)**2+fav(3,j,i)**2)
+        ! auxunit=1000+j
+        ! write(auxunit,*) i, n1, n2, n3, n4, n5
         ! write(*,*) i, ftrue(1:3,j,i), ftang(1:3,j,i), fperp(1:3,j,i), fspring (1:3,j,i), fav(1:3,j,i)
 	  end do
-    call getmaxforce(nrestr,nrep,i,fperp,maxforce,ftol,relaxdrep)
+    if (wrmforce) then
+      call getmaxforce(nrestr,nrep,i,fperp,maxforce,ftol,relaxdrep)
     !call getmaxforce(nrestr,nrep,i,fav,maxforce,ftol,relaxdrep)
-    if (maxforce .gt. maxforceband) maxforcerep=i
-    if (maxforce .gt. maxforceband) maxforceband=maxforce
-    write(9999,*) "Replica: ", i, "Max force: ", maxforce, "Converged: ", relaxdrep
+      if (maxforce .gt. maxforceband) maxforcerep=i
+      if (maxforce .gt. maxforceband) maxforceband=maxforce
+      write(9999,*) "Replica: ", i, "Max force: ", maxforce, "Converged: ", relaxdrep
+    else
+      call getmaxforce(nrestr,nrep,i,fspring,maxforce,ftol,relaxdrep)
+      if (maxforce .gt. maxforceband) maxforcerep=i
+      if (maxforce .gt. maxforceband) maxforceband=maxforce
+    end if
   end do
-    write(9999,*) "-----------------------------------------------------------------"
-    write(9999,*) "Band max force: ", maxforceband, "on replica: ", maxforcerep
-    write(9999,*) "-----------------------------------------------------------------"
-  if(maxforceband .le. ftol) relaxd=.TRUE.
-  if (relaxd) write(9999,*) "System converged: T"
-  if (.not. relaxd) write(9999,*) "System converged: F"
+    if (wrmforce) then
+      write(9999,*) "-----------------------------------------------------------------"
+      write(9999,*) "Band max force: ", maxforceband, "on replica: ", maxforcerep
+      write(9999,*) "-----------------------------------------------------------------"
+      if(maxforceband .le. ftol) relaxd=.TRUE.
+      if (relaxd) write(9999,*) "System converged: T"
+      if (.not. relaxd) write(9999,*) "System converged: F"
+    endif
 
 end subroutine getnebforce

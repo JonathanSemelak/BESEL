@@ -39,9 +39,9 @@ stepl=steep_size
 !if (maxforce .lt. lastmforce) stepl=stepl*1.1d0
 !if (nrep .gt. 1 .and. maxforce .gt. lastmforce) stepl=stepl*0.85d0
 !if (stepl .lt. 1d-5 .or. maxforce .lt. 1d-30) stepl=0.d0
-
 if (maxforce .lt. 1d-30) stepl=0.d0
 step=stepl/maxforce
+write(1810,*) rep, stepl, maxforce, step
 
 !   do while (.not. moved)
 !   deltaA=0.d0
