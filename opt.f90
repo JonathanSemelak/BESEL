@@ -22,13 +22,13 @@ subroutine getmaxforce(nrestr,nrep,rep,fav,maxforce,ftol,relaxd)
 
 end subroutine getmaxforce
 
-subroutine steep(rav,fav,nrep,rep,steep_size,maxforce,nrestr,lastmforce,stepl,deltaA)
+subroutine steep(rav,fav,nrep,rep,steep_size,maxforce,nrestr,lastmforce,stepl,deltaA,dontg)
 implicit none
 double precision, dimension(3,nrestr,nrep), intent(inout) :: rav
 double precision, dimension(3,nrestr,nrep) :: rnew
-double precision, dimension(3,nrestr,nrep), intent(in) :: fav
+double precision, dimension(3,nrestr,nrep), intent(in) :: fav, dontg
 double precision, intent(out) :: stepl
-double precision :: lastmforce, steep_size, step, deltaA, n1, n2
+double precision :: lastmforce, steep_size, step, deltaA, n1, n2, n3 
 integer, intent(in) :: nrep, rep, nrestr
 double precision, intent(inout) :: maxforce
 integer :: i,j,auxunit
@@ -50,10 +50,13 @@ write(1810,*) rep, stepl, maxforce, step
   do i=1,nrestr
     n1=dble(fav(1,i,rep)**2+fav(2,i,rep)**2+fav(3,i,rep)**2)
     n2=dble(rav(1,i,rep)**2+rav(2,i,rep)**2+rav(3,i,rep)**2)
+    n3=dble(dontg(1,i,rep)**2+dontg(2,i,rep)**2+dontg(3,i,rep)**2)
+
     auxunit=3000+i
-    write(auxunit,*) rep, n2, n1*step
+    write(auxunit,*) rep, n2, n1*step, n3
     do j=1,3
       rav(j,i,rep)=rav(j,i,rep)+step*fav(j,i,rep)
+      if (nrep .gt. 1) rav(j,i,rep)=rav(j,i,rep)-dontg(j,i,rep) !CORRIJO
     end do
   end do
 

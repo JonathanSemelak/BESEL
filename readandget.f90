@@ -3,7 +3,7 @@ implicit none
 contains
 subroutine readinput(nrep,infile,reffile,outfile,mask,nrestr,lastmforce, &
            rav,fav,ftrue,ftang,fperp,fspring,tang,kref,kspring,steep_size,ftol,per, &
-           velin,velout,wgrad,rrefall,nscycle)
+           velin,velout,wgrad,rrefall,nscycle,dontg)
 implicit none
 character(len=50) :: infile, reffile, outfile, line, exp, keyword
 integer :: nrestr, nrep, i, ierr, nscycle
@@ -11,10 +11,10 @@ logical ::  per, velin, velout, wgrad
 double precision :: kref, kspring, steep_size, ftol, lastmforce
 integer, allocatable, dimension (:), intent(inout) :: mask
 double precision, allocatable, dimension(:,:,:), intent(inout) :: rav, fav, tang, ftang, ftrue,fperp, rrefall
-double precision, allocatable, dimension(:,:,:), intent(inout) :: fspring
+double precision, allocatable, dimension(:,:,:), intent(inout) :: fspring, dontg
 
  nscycle=0
- 
+
 open (unit=1000, file='feneb.in', status='old', action='read') !read align.in
 do
    read (1000,"(a)",iostat=ierr) line ! read line into character variable
@@ -38,7 +38,7 @@ do
 end do
 close (unit=1000)
 if (nrep .gt. 1) allocate(tang(3,nrestr,nrep),ftang(3,nrestr,nrep),ftrue(3,nrestr,nrep),&
-                          fperp(3,nrestr,nrep),fspring(3,nrestr,nrep))
+                          fperp(3,nrestr,nrep),fspring(3,nrestr,nrep),dontg(3,nrestr,nrep))
 allocate(mask(nrestr),rav(3,nrestr,nrep),fav(3,nrestr,nrep),rrefall(3,nrestr,nrep))
 
 open (unit=1000, file="feneb.in", status='old', action='read') !read align.in
@@ -143,7 +143,7 @@ end subroutine getdims
 
 subroutine getavcoordanforces(iname,nsteps,natoms,spatial, &
                             coordx,coordy,coordz,nrestr,mask, &
-                            kref,rav,fav,nrep,rep,rref,wgrad)
+                            kref,rav,fav,nrep,rep,rref,wgrad,dontg)
 use netcdf
 implicit none
 real (kind=4), DIMENSION(nsteps) :: coordx, coordy, coordz, ref, av
@@ -152,7 +152,7 @@ integer(kind=4) :: ncid, xtype, ndims, varid
 character(len=50), intent(in) :: iname
 character(len=50) :: xname, vname, chi, chrep
 double precision :: kref, n1
-double precision, dimension(3,nrestr,nrep) :: rav,fav
+double precision, dimension(3,nrestr,nrep) :: rav,fav,dontg
 double precision, dimension(3,natoms), intent(inout) :: rref
 integer, dimension(3) :: point,endp
 integer, dimension(nrestr) :: mask
@@ -192,11 +192,12 @@ do i = 1,nrestr !natoms
 
   n1=dsqrt((av(1)-rref(1,ati))**2+(av(2)-rref(2,ati))**2+(av(3)-rref(3,ati))**2)
   auxunit2=2000+i
-   write(auxunit2,*) rep, n1
+  write(auxunit2,*) rep, n1
   ! write(auxunit2,*) av(1:3)
   ! write(auxunit2,*) rref(1:3,ati)
 
   fav(1:3,i,rep)=kref*(av(1:3)-rref(1:3,ati))
+  if (nrep .gt. 1) dontg(1:3,i,rep)=rref(1:3,ati)-av(1:3)
   if (wgrad) close(auxunit)
 enddo
 

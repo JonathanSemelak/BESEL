@@ -14,13 +14,13 @@ double precision :: stepl, deltaA
 double precision, dimension(6) :: boxinfo
 double precision, allocatable, dimension(:,:) :: rref
 double precision, allocatable, dimension(:,:,:) :: rav, fav, tang, ftang, ftrue, fperp, rrefall
-double precision, allocatable, dimension(:,:,:) :: fspring
+double precision, allocatable, dimension(:,:,:) :: fspring, dontg
 logical ::  per, velin, velout, relaxd, converged, wgrad
 
 !------------ Read input
     call readinput(nrep,infile,reffile,outfile,mask,nrestr,lastmforce, &
                  rav,fav,ftrue,ftang,fperp,fspring,tang,kref,kspring,steep_size, &
-                 ftol,per,velin,velout,wgrad,rrefall,nscycle)
+                 ftol,per,velin,velout,wgrad,rrefall,nscycle,dontg)
 !------------
 
 
@@ -44,7 +44,7 @@ logical ::  per, velin, velout, relaxd, converged, wgrad
     call getrefcoord(rname,nrestr,mask,natoms,rref,boxinfo,per,velin)
 
     call getavcoordanforces(iname,nsteps,natoms,spatial,coordx,coordy,coordz,&
-                        nrestr,mask,kref,rav,fav,nrep,nrep,rref,wgrad)
+                        nrestr,mask,kref,rav,fav,nrep,nrep,rref,wgrad,dontg)
 
     call writeposforces(rav,fav,nrestr,nrep,nrep)
 
@@ -60,7 +60,7 @@ logical ::  per, velin, velout, relaxd, converged, wgrad
 
 
     if (.not. relaxd) then
-       call steep(rav,fav,nrep,nrep,steep_size,maxforce,nrestr,lastmforce,stepl,deltaA)
+       call steep(rav,fav,nrep,nrep,steep_size,maxforce,nrestr,lastmforce,stepl,deltaA,dontg)
        write(9999,'(1x,a,f20.16)') "Step length: ", stepl, "DeltaA: ", deltaA
 
        if (stepl .lt. 1d-10) then
@@ -120,7 +120,7 @@ logical ::  per, velin, velout, relaxd, converged, wgrad
       call getrefcoord(rname,nrestr,mask,natoms,rref,boxinfo,per,velin)
 
       call getavcoordanforces(iname,nsteps,natoms,spatial,coordx,coordy, coordz,&
-                    nrestr,mask,kref,rav,fav,nrep,i,rref,wgrad)
+                    nrestr,mask,kref,rav,fav,nrep,i,rref,wgrad,dontg)
     end do
 
 
@@ -137,7 +137,7 @@ logical ::  per, velin, velout, relaxd, converged, wgrad
     call gettang(rav,tang,nrestr,nrep)
 
     call getnebforce(rav,fav,tang,nrestr,nrep,kspring,maxforceband,ftol,converged,&
-                    ftrue,ftang,fperp,fspring,.true.)
+                    ftrue,ftang,fperp,fspring,.true.,dontg)
 ! fav ---> fneb
 !----------- Write mean pos and forces
     do i=1,nrep
@@ -155,7 +155,7 @@ logical ::  per, velin, velout, relaxd, converged, wgrad
         do i=1,nrep
           call getmaxforce(nrestr,nrep,i,fperp,maxforce,ftol,relaxd)
           ! write(9999,*) "Replica: ", i, "Converged: " relaxd
-          if (.not. relaxd) call steep(rav,fperp,nrep,i,steep_size,maxforceband,nrestr,lastmforce,stepl,deltaA)
+          if (.not. relaxd) call steep(rav,fperp,nrep,i,steep_size,maxforceband,nrestr,lastmforce,stepl,deltaA,dontg)
           ! call getfilenames(i,chi,infile,reffile,outfile,iname,rname,oname)
           ! call getrefcoord(rname,nrestr,mask,natoms,rref,boxinfo,per,velin)
           ! call writenewcoord(oname,rref,boxinfo,natoms,nrestr,mask,per,velout,rav,nrep,i)
@@ -192,12 +192,13 @@ logical ::  per, velin, velout, relaxd, converged, wgrad
           !call gettang(rav,tang,nrestr,nrep)
           !Computes spring force and others
           call getnebforce(rav,fav,tang,nrestr,nrep,kspring,maxforceband,ftol,converged,&
-                          ftrue,ftang,fperp,fspring,.false.)
+                          ftrue,ftang,fperp,fspring,.false.,dontg)
           !Moves band using spring force only
+          dontg=0.d0
           do i=2,nrep-1
             !call getmaxforce(nrestr,nrep,i,fperp,maxforce,ftol,relaxd)
             !write(*,*) i, relaxd
-            call steep(rav,fspring,nrep,i,steep_size,maxforceband,nrestr,lastmforce,stepl,deltaA)
+            call steep(rav,fspring,nrep,i,steep_size,maxforceband,nrestr,lastmforce,stepl,deltaA,dontg)
           end do
         end do
 

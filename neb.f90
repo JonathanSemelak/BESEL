@@ -28,7 +28,7 @@ end subroutine gettang
 
 
 subroutine getnebforce(rav,fav,tang,nrestr,nrep,kspring,maxforceband,ftol,&
-                       relaxd,ftrue,ftang,fperp,fspring,wrmforce)
+                       relaxd,ftrue,ftang,fperp,fspring,wrmforce,dontg)
 implicit none
 double precision, dimension(3,nrestr,nrep), intent(inout) :: fav
 double precision, dimension(3,nrestr,nrep), intent(in) :: rav, tang
@@ -36,7 +36,7 @@ double precision, intent(out) :: maxforceband
 integer :: maxforcerep
 integer, intent(in) :: nrestr, nrep
 double precision, intent(in) :: kspring, ftol
-double precision, dimension(3,nrestr,nrep) :: fspring, ftang, fperp, ftrue
+double precision, dimension(3,nrestr,nrep) :: fspring, ftang, fperp, ftrue, dontg
 double precision, dimension(nrestr,nrep) :: fproj
 double precision :: distright, distleft, maxforce, n1,n2,n3,n4,n5
 integer :: i,j,auxunit
@@ -64,6 +64,10 @@ logical :: relaxdrep,relaxd,wrmforce
         ftang(1:3,j,i)=fproj(j,i)*tang(1:3,j,i)
         fperp(1:3,j,i)=fav(1:3,j,i)-ftang(1:3,j,i)
         fav(1:3,j,i)=fperp(1:3,j,i)+fspring(1:3,j,i)
+
+        fproj(j,i)=dontg(1,j,i)*tang(1,j,i)+dontg(2,j,i)*tang(2,j,i)+dontg(3,j,i)*tang(3,j,i)
+        fproj(j,i)=dsqrt(fproj(j,i)**2)
+        dontg(1:3,j,i)=fproj(j,i)*tang(1:3,j,i)
 
         ! write(*,*) i,j, tang(1:3,j,i)
         ! write(*,*) i,j, ftang(1:3,j,i)
