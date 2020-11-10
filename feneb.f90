@@ -134,16 +134,18 @@ logical ::  per, velin, velout, relaxd, converged, wgrad
 !----------- Computes tangent and nebforce
     !call gettang(rrefall,tang,nrestr,nrep)
 
+    do i=1,nrep !DESCOMENTAR ESTO DESPUES
+    call writeposforces(rav,fav,nrestr,i,nrep)
+      ! call writeposforces(rav,ftang,nrestr,i,nrep)
+    end do
+    
     call gettang(rav,tang,nrestr,nrep)
 
     call getnebforce(rav,fav,tang,nrestr,nrep,kspring,maxforceband,ftol,converged,&
                     ftrue,ftang,fperp,fspring,.true.,dontg)
 ! fav ---> fneb
 !----------- Write mean pos and forces
-!     do i=1,nrep !DESCOMENTAR ESTO DESPUES
-! !      call writeposforces(rav,fav,nrestr,i,nrep)
-!       call writeposforces(rav,ftang,nrestr,i,nrep)
-!     end do
+
 
 
 !----------- moves the band
@@ -155,8 +157,8 @@ logical ::  per, velin, velout, relaxd, converged, wgrad
         do i=1,nrep
           call getmaxforce(nrestr,nrep,i,fspring,maxforce,ftol,relaxd)
           ! write(9999,*) "Replica: ", i, "Converged: " relaxd
-          !if (.not. relaxd) call steep(rav,fperp,nrep,i,steep_size,maxforceband,nrestr,lastmforce,stepl,deltaA,dontg)
-          if (.not. relaxd) call steep(rav,fspring,nrep,i,steep_size,maxforceband,nrestr,lastmforce,stepl,deltaA,dontg)
+          if (.not. relaxd) call steep(rav,fperp,nrep,i,steep_size,maxforceband,nrestr,lastmforce,stepl,deltaA,dontg)
+          !if (.not. relaxd) call steep(rav,fspring,nrep,i,steep_size,maxforceband,nrestr,lastmforce,stepl,deltaA,dontg)
           ! call getfilenames(i,chi,infile,reffile,outfile,iname,rname,oname)
           ! call getrefcoord(rname,nrestr,mask,natoms,rref,boxinfo,per,velin)
           ! call writenewcoord(oname,rref,boxinfo,natoms,nrestr,mask,per,velout,rav,nrep,i)
@@ -204,10 +206,10 @@ logical ::  per, velin, velout, relaxd, converged, wgrad
         end do
 
         !para checkear post movimiento
-        do i=1,nrep
-    !      call writeposforces(rav,fav,nrestr,i,nrep)
-          call writeposforces(rav,ftang,nrestr,i,nrep)
-        end do
+    !     do i=1,nrep
+    ! !      call writeposforces(rav,fav,nrestr,i,nrep)
+    !       call writeposforces(rav,ftang,nrestr,i,nrep)
+    !     end do
 
         do i=1,nrep
           call getfilenames(i,chi,infile,reffile,outfile,iname,rname,oname)
