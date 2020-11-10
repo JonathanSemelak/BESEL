@@ -58,6 +58,8 @@ logical :: relaxdrep,relaxd,wrmforce
 	      distleft=sqrt(distleft)
         !write(*,*) i,j, kspring,distright,distleft,(distright-distleft)
 	      fspring(1:3,j,i)=kspring*(distright-distleft)*tang(1:3,j,i)
+        !write(*,*) kspring, fspring(1:3,j,i)
+
         !Computes force component on tangent direction
         fproj(j,i)=fav(1,j,i)*tang(1,j,i)+fav(2,j,i)*tang(2,j,i)+fav(3,j,i)*tang(3,j,i)
         !Computes neb force

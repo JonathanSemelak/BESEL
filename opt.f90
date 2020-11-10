@@ -28,7 +28,7 @@ double precision, dimension(3,nrestr,nrep), intent(inout) :: rav
 double precision, dimension(3,nrestr,nrep) :: rnew
 double precision, dimension(3,nrestr,nrep), intent(in) :: fav, dontg
 double precision, intent(out) :: stepl
-double precision :: lastmforce, steep_size, step, deltaA, n1, n2, n3 
+double precision :: lastmforce, steep_size, step, deltaA, n1, n2, n3
 integer, intent(in) :: nrep, rep, nrestr
 double precision, intent(inout) :: maxforce
 integer :: i,j,auxunit
@@ -43,6 +43,11 @@ if (maxforce .lt. 1d-30) stepl=0.d0
 step=stepl/maxforce
 write(1810,*) rep, stepl, maxforce, step
 
+write(789789,*) "paso", step
+do i=1,nrestr
+
+write(789789,*) fav(1:3,i,rep)
+enddo
 !   do while (.not. moved)
 !   deltaA=0.d0
 !   step=stepl/maxforce
@@ -55,8 +60,10 @@ write(1810,*) rep, stepl, maxforce, step
     auxunit=3000+i
     write(auxunit,*) rep, n2, n1*step, n3
     do j=1,3
+      write(88888,*) "antes", rav(j,i,rep)
       rav(j,i,rep)=rav(j,i,rep)+step*fav(j,i,rep)
-      if (nrep .gt. 1) rav(j,i,rep)=rav(j,i,rep)-dontg(j,i,rep) !CORRIJO
+      write(88888,*) "despues", rav(j,i,rep)
+      !if (nrep .gt. 1) rav(j,i,rep)=rav(j,i,rep)-dontg(j,i,rep) !CORRIJO
     end do
   end do
 
