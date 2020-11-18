@@ -1,0 +1,16 @@
+infile DCE_f
+reffile DCE_r
+outfile DCE_o
+per F
+velin F
+velout F
+nrep 25
+nrestr 8
+kref 400
+kspring 500
+steepsize STEP
+ftol 0.01
+lastmforce LMFORCE
+all
+wgrad F
+nscycle 3
