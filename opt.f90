@@ -1,21 +1,24 @@
-subroutine getmaxforce(nrestr,nrep,rep,fav,maxforce,ftol,relaxd)
+subroutine getmaxforce(nrestr,nrep,rep,fav,maxforce,ftol,relaxd,maxforceat,rms)
   implicit none
   double precision, dimension(3,nrestr,nrep), intent(in) :: fav
   integer, intent(in) :: nrep, rep, nrestr
   double precision, intent(in) :: ftol
-  double precision, intent(out) :: maxforce
+  double precision, intent(inout) :: maxforce, rms
   logical, intent(out) :: relaxd
   double precision :: fmax2
-  integer :: i,j
+  integer :: i,j,maxforceat
 
   relaxd=.FALSE.
   maxforce=0.d0
+  maxforceat=0
   do i=1,nrestr
     fmax2=0.d0
     do j=1,3
       fmax2=fmax2+fav(j,i,rep)**2
     end do
+    rms=rms+fmax2
     if (fmax2 .gt. maxforce) maxforce=fmax2
+    if (fmax2 .gt. maxforce) maxforceat=i
   end do
   maxforce=dsqrt(maxforce)
   if(maxforce .le. ftol) relaxd=.TRUE.
@@ -33,6 +36,8 @@ integer, intent(in) :: nrep, rep, nrestr
 double precision, intent(inout) :: maxforce
 integer :: i,j,auxunit
 logical :: moved
+
+
 stepl=steep_size
 !moved=.false.
 !if (maxforce .gt. lastmforce) stepl=stepl*0.85d0
@@ -41,28 +46,30 @@ stepl=steep_size
 !if (stepl .lt. 1d-5 .or. maxforce .lt. 1d-30) stepl=0.d0
 if (maxforce .lt. 1d-30) stepl=0.d0
 step=stepl/maxforce
-write(1810,*) rep, stepl, maxforce, step
+! write(1810,*) rep, stepl, maxforce, step
+!
+! write(789789,*) "paso", step
+! do i=1,nrestr
+!
+! write(789789,*) fav(1:3,i,rep)
+! enddo
 
-write(789789,*) "paso", step
-do i=1,nrestr
 
-write(789789,*) fav(1:3,i,rep)
-enddo
 !   do while (.not. moved)
 !   deltaA=0.d0
 !   step=stepl/maxforce
 
   do i=1,nrestr
-    n1=dble(fav(1,i,rep)**2+fav(2,i,rep)**2+fav(3,i,rep)**2)
-    n2=dble(rav(1,i,rep)**2+rav(2,i,rep)**2+rav(3,i,rep)**2)
-    n3=dble(dontg(1,i,rep)**2+dontg(2,i,rep)**2+dontg(3,i,rep)**2)
-
-    auxunit=3000+i
-    write(auxunit,*) rep, n2, n1*step, n3
+    ! n1=dble(fav(1,i,rep)**2+fav(2,i,rep)**2+fav(3,i,rep)**2)
+    ! n2=dble(rav(1,i,rep)**2+rav(2,i,rep)**2+rav(3,i,rep)**2)
+    ! n3=dble(dontg(1,i,rep)**2+dontg(2,i,rep)**2+dontg(3,i,rep)**2)
+    !
+    ! auxunit=3000+i
+    ! write(auxunit,*) rep, n2, n1*step, n3
     do j=1,3
-      write(88888,*) "antes", rav(j,i,rep)
+      ! write(88888,*) "antes", rav(j,i,rep)
       rav(j,i,rep)=rav(j,i,rep)+step*fav(j,i,rep)
-      write(88888,*) "despues", rav(j,i,rep)
+      ! write(88888,*) "despues", rav(j,i,rep)
       !if (nrep .gt. 1) rav(j,i,rep)=rav(j,i,rep)-dontg(j,i,rep) !CORRIJO
     end do
   end do

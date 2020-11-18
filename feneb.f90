@@ -3,14 +3,14 @@ use netcdf
 use readandget
 implicit none
 character(len=50) :: infile, reffile, outfile, chi, iname, rname, oname
-integer :: nsteps, spatial, natoms, nrestr, nrep, nscycle
+integer :: nsteps, spatial, natoms, nrestr, nrep, nscycle,maxforceat
 integer :: i, j, k
 integer, allocatable, dimension (:) :: mask
 real(4) :: coordinate
 real(4), allocatable, dimension (:) :: coordx,coordy,coordz
 integer, dimension (3) :: point
 double precision :: kref, steep_size, ftol, maxforce, kspring, maxforceband, lastmforce
-double precision :: stepl, deltaA
+double precision :: stepl, deltaA, rms
 double precision, dimension(6) :: boxinfo
 double precision, allocatable, dimension(:,:) :: rref
 double precision, allocatable, dimension(:,:,:) :: rav, fav, tang, ftang, ftrue, fperp, rrefall
@@ -31,8 +31,11 @@ logical ::  per, velin, velout, relaxd, converged, wgrad
     write(9999,*) "Performing FE full optmization for a single replica"
     write(9999,*) "---------------------------------------------------"
 
+
+
     call getfilenames(nrep,chi,infile,reffile,outfile,iname,rname,oname)
     call getdims(iname,nsteps,spatial,natoms)
+
 
     if (allocated(coordx)) deallocate(coordx)
     if (allocated(coordy)) deallocate(coordy)
@@ -48,7 +51,8 @@ logical ::  per, velin, velout, relaxd, converged, wgrad
 
     call writeposforces(rav,fav,nrestr,nrep,nrep)
 
-    call getmaxforce(nrestr,nrep,nrep,fav,maxforce,ftol,relaxd)
+    call getmaxforce(nrestr,nrep,nrep,fav,maxforce,ftol,relaxd,maxforceat,rms)
+
 
     write(9999,*) "Max force: ", maxforce
 
@@ -58,10 +62,14 @@ logical ::  per, velin, velout, relaxd, converged, wgrad
     ! write(9999,*) "System converged: F"
     ! call writenewcoord(oname,rref,boxinfo,natoms,nrestr,mask,per,velout,rav,nrep,nrep)
 
+    !call writeposforces(rav,fav,nrestr,nrep,nrep)
 
     if (.not. relaxd) then
        call steep(rav,fav,nrep,nrep,steep_size,maxforce,nrestr,lastmforce,stepl,deltaA,dontg)
-       write(9999,'(1x,a,f20.16)') "Step length: ", stepl, "DeltaA: ", deltaA
+
+       !write(9999,'(1x,a,f20.16)') "Step length: ", stepl, "DeltaA: ", deltaA
+
+
 
        if (stepl .lt. 1d-10) then
          write(9999,*) "-----------------------------------------------------"
@@ -107,7 +115,9 @@ logical ::  per, velin, velout, relaxd, converged, wgrad
 
 !------------ Band loop
 
-    do i=2,nrep-1
+    ! do i=2,nrep-1 TESTTTTTTTTTT DE SI ANULAR FUERZAS DE EXTREMOS
+    do i=1,nrep
+
       call getfilenames(i,chi,infile,reffile,outfile,iname,rname,oname)
       call getdims(iname,nsteps,spatial,natoms)
 
@@ -138,7 +148,7 @@ logical ::  per, velin, velout, relaxd, converged, wgrad
     call writeposforces(rav,fav,nrestr,i,nrep)
       ! call writeposforces(rav,ftang,nrestr,i,nrep)
     end do
-    
+
     call gettang(rav,tang,nrestr,nrep)
 
     call getnebforce(rav,fav,tang,nrestr,nrep,kspring,maxforceband,ftol,converged,&
@@ -153,9 +163,9 @@ logical ::  per, velin, velout, relaxd, converged, wgrad
     if (.not. converged) then
 
       ! if (nscycle .eq. 0) then
-
-        do i=1,nrep
-          call getmaxforce(nrestr,nrep,i,fspring,maxforce,ftol,relaxd)
+       do i=2,nrep-1 !TESTTTTTTTTTT DE SI ANULAR FUERZAS EN EXTREMOS
+!        do i=1,nrep
+          call getmaxforce(nrestr,nrep,i,fspring,maxforce,ftol,relaxd,maxforceat,rms)
           ! write(9999,*) "Replica: ", i, "Converged: " relaxd
           if (.not. relaxd) call steep(rav,fperp,nrep,i,steep_size,maxforceband,nrestr,lastmforce,stepl,deltaA,dontg)
           !if (.not. relaxd) call steep(rav,fspring,nrep,i,steep_size,maxforceband,nrestr,lastmforce,stepl,deltaA,dontg)
@@ -164,6 +174,7 @@ logical ::  per, velin, velout, relaxd, converged, wgrad
           ! call writenewcoord(oname,rref,boxinfo,natoms,nrestr,mask,per,velout,rav,nrep,i)
       ! converged = (converged .and. relaxd)
         end do
+
         write(9999,'(1x,a,f8.6)') "Step length: ", stepl
         if (stepl .lt. 1d-5) then
           write(9999,*) "-----------------------------------------------------"
@@ -171,6 +182,14 @@ logical ::  per, velin, velout, relaxd, converged, wgrad
           write(9999,*) "step length has been set to zero"
           write(9999,*) "-----------------------------------------------------"
         end if
+
+        rms=0.d0
+        do i=1,nrep
+          call getmaxforce(nrestr,nrep,i,fav,maxforce,ftol,relaxd,maxforceat,rms)
+        end do
+        rms=dsqrt(rms/dble(nrep*nrestr))
+
+        write(9999,'(1x,a,f8.6)') "RMS(FNEB): ", rms/nrep
 
       if (nscycle .gt. 0) then
 
@@ -180,6 +199,9 @@ logical ::  per, velin, velout, relaxd, converged, wgrad
         write(9999,'(1x,a,I4)') "Extra optmization movements: ", nscycle
         write(9999,*) "-----------------------------------------------------"
       end if
+
+
+
       !   do i=1,nrep
       !     call getmaxforce(nrestr,nrep,i,fperp,maxforce,ftol,relaxd)
       !     ! write(9999,*) "Replica: ", i, "Converged: " relaxd
@@ -210,6 +232,27 @@ logical ::  per, velin, velout, relaxd, converged, wgrad
     ! !      call writeposforces(rav,fav,nrestr,i,nrep)
     !       call writeposforces(rav,ftang,nrestr,i,nrep)
     !     end do
+
+
+
+
+    !------------ Get coordinates for previously optimized extrema
+    !------------ And set forces to zero
+        !Reactants
+        call getfilenames(1,chi,infile,reffile,outfile,iname,rname,oname)
+        call getrefcoord(rname,nrestr,mask,natoms,rref,boxinfo,per,velin)
+        call getcoordextrema(rref,natoms,rav,nrestr,nrep,1,mask)
+
+        ! write(*,*) "rc"
+        ! do i=1,nrestr
+        ! write(*,'(2x, I6,2x, 6(f20.10,2x))') i, rav(1:3,i,1)
+        ! end do
+
+        !Products
+        call getfilenames(nrep,chi,infile,reffile,outfile,iname,rname,oname)
+        call getrefcoord(rname,nrestr,mask,natoms,rref,boxinfo,per,velin)
+        call getcoordextrema(rref,natoms,rav,nrestr,nrep,nrep,mask)
+
 
         do i=1,nrep
           call getfilenames(i,chi,infile,reffile,outfile,iname,rname,oname)

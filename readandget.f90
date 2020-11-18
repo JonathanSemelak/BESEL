@@ -190,9 +190,9 @@ do i = 1,nrestr !natoms
   end do
   rav(1:3,i,rep)=av(1:3)
 
-  n1=dsqrt((av(1)-rref(1,ati))**2+(av(2)-rref(2,ati))**2+(av(3)-rref(3,ati))**2)
-  auxunit2=2000+i
-  write(auxunit2,*) rep, n1
+  !n1=dsqrt((av(1)-rref(1,ati))**2+(av(2)-rref(2,ati))**2+(av(3)-rref(3,ati))**2)
+  !auxunit2=2000+i
+  !write(auxunit2,*) rep, n1
   ! write(auxunit2,*) av(1:3)
   ! write(auxunit2,*) rref(1:3,ati)
 
