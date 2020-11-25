@@ -13,7 +13,7 @@ integer, allocatable, dimension (:), intent(inout) :: mask
 double precision, allocatable, dimension(:,:,:), intent(inout) :: rav, fav, tang, ftang, ftrue,fperp, rrefall
 double precision, allocatable, dimension(:,:,:), intent(inout) :: fspring, dontg
 
- nscycle=0
+ nscycle=1
 
 open (unit=1000, file='feneb.in', status='old', action='read') !read align.in
 do
