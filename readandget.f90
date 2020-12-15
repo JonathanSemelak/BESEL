@@ -99,7 +99,6 @@ do
    end if
 end do
 
-!write(*,*) prefix,rcfile,pcfile,usets,tsfile, nrep, nrestr, per,velin,velout
 close (unit=1000)
 
 end subroutine readinputbuilder
@@ -186,15 +185,8 @@ do i = 1,nrestr !natoms
     av(1)=(av(1)*(dble(k-1))+coordx(k))/dble(k)
     av(2)=(av(2)*(dble(k-1))+coordy(k))/dble(k)
     av(3)=(av(3)*(dble(k-1))+coordz(k))/dble(k)
-    !if (wgrad) write(auxunit,*) k, kref*(av(1:3)-rref(1:3,ati))
   end do
   rav(1:3,i,rep)=av(1:3)
-
-  !n1=dsqrt((av(1)-rref(1,ati))**2+(av(2)-rref(2,ati))**2+(av(3)-rref(3,ati))**2)
-  !auxunit2=2000+i
-  !write(auxunit2,*) rep, n1
-  ! write(auxunit2,*) av(1:3)
-  ! write(auxunit2,*) rref(1:3,ati)
 
   fav(1:3,i,rep)=kref*(av(1:3)-rref(1:3,ati))
   if (nrep .gt. 1) dontg(1:3,i,rep)=rref(1:3,ati)-av(1:3)

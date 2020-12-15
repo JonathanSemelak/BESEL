@@ -72,7 +72,6 @@ end do
 
 !write output files
 
-! ASDASD
 do i=1,nrep
 			if (i .le. 9) write(chi,'(I1)') i
 			if (i .gt. 9 .and. i .le. 99) write(chi,'(I2)') i

@@ -56,21 +56,8 @@ logical ::  per, velin, velout, relaxd, converged, wgrad
 
     write(9999,*) "Max force: ", maxforce
 
-    ! stepl=0.05d0
-    ! DeltaA=-0.15d0
-    ! write(9999,'(1x,a,f20.16)') "Step length: ", stepl, "DeltaA: ", deltaA
-    ! write(9999,*) "System converged: F"
-    ! call writenewcoord(oname,rref,boxinfo,natoms,nrestr,mask,per,velout,rav,nrep,nrep)
-
-    !call writeposforces(rav,fav,nrestr,nrep,nrep)
-
     if (.not. relaxd) then
        call steep(rav,fav,nrep,nrep,steep_size,maxforce,nrestr,lastmforce,stepl,deltaA,dontg)
-
-       !write(9999,'(1x,a,f20.16)') "Step length: ", stepl, "DeltaA: ", deltaA
-
-
-
        if (stepl .lt. 1d-10) then
          write(9999,*) "-----------------------------------------------------"
          write(9999,*) "Warning: max precision reached on atomic displacement"
@@ -96,26 +83,17 @@ logical ::  per, velin, velout, relaxd, converged, wgrad
     call getrefcoord(rname,nrestr,mask,natoms,rref,boxinfo,per,velin)
     call getcoordextrema(rref,natoms,rav,nrestr,nrep,1,mask)
 
-    ! write(*,*) "rc"
-    ! do i=1,nrestr
-    ! write(*,'(2x, I6,2x, 6(f20.10,2x))') i, rav(1:3,i,1)
-    ! end do
+
 
     !Products
     call getfilenames(nrep,chi,infile,reffile,outfile,iname,rname,oname)
     call getrefcoord(rname,nrestr,mask,natoms,rref,boxinfo,per,velin)
     call getcoordextrema(rref,natoms,rav,nrestr,nrep,nrep,mask)
 
-    ! write(*,*) "rc"
-    ! do i=1,nrestr
-    ! write(*,'(2x, I6,2x, 6(f20.10,2x))') i, rav(1:3,i,nrep)
-    ! end do
     !Forces set to zero
     fav=0.d0
 
 !------------ Band loop
-
-    ! do i=2,nrep-1 TESTTTTTTTTTT DE SI ANULAR FUERZAS DE EXTREMOS
     do i=1,nrep
 
       call getfilenames(i,chi,infile,reffile,outfile,iname,rname,oname)
@@ -134,45 +112,31 @@ logical ::  per, velin, velout, relaxd, converged, wgrad
     end do
 
 
-!----------- Computes
+!----------- Puts reference values in a single array (rrefall). Currently not used.
+    ! do i=1,nrep
+    !   call getfilenames(i,chi,infile,reffile,outfile,iname,rname,oname)
+    !   call getrefcoord(rname,nrestr,mask,natoms,rref,boxinfo,per,velin)
+    !   call getcoordextrema(rref,natoms,rrefall,nrestr,nrep,i,mask)
+    ! end do
+
+
+!----------- Write mean pos and forces
     do i=1,nrep
-      call getfilenames(i,chi,infile,reffile,outfile,iname,rname,oname)
-      call getrefcoord(rname,nrestr,mask,natoms,rref,boxinfo,per,velin)
-      call getcoordextrema(rref,natoms,rrefall,nrestr,nrep,i,mask)
+      call writeposforces(rav,fav,nrestr,i,nrep)
     end do
 
 !----------- Computes tangent and nebforce
-    !call gettang(rrefall,tang,nrestr,nrep)
-
-    do i=1,nrep !DESCOMENTAR ESTO DESPUES
-    call writeposforces(rav,fav,nrestr,i,nrep)
-      ! call writeposforces(rav,ftang,nrestr,i,nrep)
-    end do
-
     call gettang(rav,tang,nrestr,nrep)
 
     call getnebforce(rav,fav,tang,nrestr,nrep,kspring,maxforceband,ftol,relaxd,&
                     ftrue,ftang,fperp,fspring,.true.,dontg)
 ! fav ---> fneb
-!----------- Write mean pos and forces
-
-
 
 !----------- moves the band
-    ! converged = .TRUE.
     if (.not. converged) then
 
-      ! if (nscycle .eq. 0) then
-       do i=2,nrep-1 !TESTTTTTTTTTT DE SI ANULAR FUERZAS EN EXTREMOS
-!        do i=1,nrep
-          call getmaxforce(nrestr,nrep,i,fspring,maxforce,ftol,relaxd,maxforceat,rms)
-          ! write(9999,*) "Replica: ", i, "Converged: " relaxd
+       do i=2,nrep-1
           if (.not. relaxd) call steep(rav,fperp,nrep,i,steep_size,maxforceband,nrestr,lastmforce,stepl,deltaA,dontg)
-          !if (.not. relaxd) call steep(rav,fspring,nrep,i,steep_size,maxforceband,nrestr,lastmforce,stepl,deltaA,dontg)
-          ! call getfilenames(i,chi,infile,reffile,outfile,iname,rname,oname)
-          ! call getrefcoord(rname,nrestr,mask,natoms,rref,boxinfo,per,velin)
-          ! call writenewcoord(oname,rref,boxinfo,natoms,nrestr,mask,per,velout,rav,nrep,i)
-      ! converged = (converged .and. relaxd)
         end do
 
         write(9999,'(1x,a,f8.6)') "Step length: ", stepl
@@ -191,62 +155,32 @@ logical ::  per, velin, velout, relaxd, converged, wgrad
 
         write(9999,'(1x,a,f8.6)') "RMS(FNEB): ", rms/nrep
 
-      if (nscycle .gt. 0) then
+        if (nscycle .gt. 0) then
 
-        write(9999,*) "-----------------------------------------------------"
-        write(9999,*) "Performing extra optimization steps using fspring    "
-        write(9999,*) "get a better distribution of replicas.               "
-        write(9999,'(1x,a,I4)') "Extra optmization movements: ", nscycle
-        write(9999,*) "-----------------------------------------------------"
-      end if
-
-
-
-      !   do i=1,nrep
-      !     call getmaxforce(nrestr,nrep,i,fperp,maxforce,ftol,relaxd)
-      !     ! write(9999,*) "Replica: ", i, "Converged: " relaxd
-      !     if (.not. relaxd) call steep(rav,fperp,nrep,i,steep_size,maxforceband,nrestr,lastmforce,stepl,deltaA)
-      !     call getfilenames(i,chi,infile,reffile,outfile,iname,rname,oname)
-      !     call getrefcoord(rname,nrestr,mask,natoms,rref,boxinfo,per,velin)
-      !     call writenewcoord(oname,rref,boxinfo,natoms,nrestr,mask,per,velout,rav,nrep,i)
-      ! ! converged = (converged .and. relaxd)
-      !   end do
+          write(9999,*) "-----------------------------------------------------"
+          write(9999,*) "Performing extra optimization steps using fspring    "
+          write(9999,*) "get a better distribution of replicas.               "
+          write(9999,'(1x,a,I4)') "Extra optmization movements: ", nscycle
+          write(9999,*) "-----------------------------------------------------"
+        end if
 
         do k=1,nscycle
-          !Computes new tangent
-          !call gettang(rav,tang,nrestr,nrep)
           !Computes spring force and others
           call getnebforce(rav,fav,tang,nrestr,nrep,kspring,maxforceband,ftol,converged,&
                           ftrue,ftang,fperp,fspring,.false.,dontg)
           !Moves band using spring force only
           dontg=0.d0
           do i=2,nrep-1
-            !call getmaxforce(nrestr,nrep,i,fperp,maxforce,ftol,relaxd)
-            !write(*,*) i, relaxd
             call steep(rav,fspring,nrep,i,steep_size,maxforceband,nrestr,lastmforce,stepl,deltaA,dontg)
           end do
         end do
 
-        !para checkear post movimiento
-    !     do i=1,nrep
-    ! !      call writeposforces(rav,fav,nrestr,i,nrep)
-    !       call writeposforces(rav,ftang,nrestr,i,nrep)
-    !     end do
-
-
-
 
     !------------ Get coordinates for previously optimized extrema
-    !------------ And set forces to zero
         !Reactants
         call getfilenames(1,chi,infile,reffile,outfile,iname,rname,oname)
         call getrefcoord(rname,nrestr,mask,natoms,rref,boxinfo,per,velin)
         call getcoordextrema(rref,natoms,rav,nrestr,nrep,1,mask)
-
-        ! write(*,*) "rc"
-        ! do i=1,nrestr
-        ! write(*,'(2x, I6,2x, 6(f20.10,2x))') i, rav(1:3,i,1)
-        ! end do
 
         !Products
         call getfilenames(nrep,chi,infile,reffile,outfile,iname,rname,oname)
@@ -258,14 +192,9 @@ logical ::  per, velin, velout, relaxd, converged, wgrad
           call getfilenames(i,chi,infile,reffile,outfile,iname,rname,oname)
           call getrefcoord(rname,nrestr,mask,natoms,rref,boxinfo,per,velin)
           call writenewcoord(oname,rref,boxinfo,natoms,nrestr,mask,per,velout,rav,nrep,i)
-      ! converged = (converged .and. relaxd)
         end do
-
-      ! end if
-    end if
-
-  end if
-
+    end if !converged
+  end if !nrep gt 1
 
   close(unit=9999)
 
