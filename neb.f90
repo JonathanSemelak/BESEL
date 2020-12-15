@@ -47,6 +47,7 @@ logical :: relaxdrep,relaxd,wrmforce
   ftang=0.d0
   ftrue=0.d0
   maxforceband=0.d0
+  relaxd=.FALSE.
   do i=2,nrep-1
 	  do j=1, nrestr
         !Saves true force
@@ -98,7 +99,6 @@ logical :: relaxdrep,relaxd,wrmforce
       if (maxforce .gt. maxforceband) maxforceband=maxforce
     end if
   end do
-
   if (wrmforce) then
     write(9999,*) "-----------------------------------------------------------------"
     write(9999,*) "Band max force: ", maxforceband, "on replica: ", maxforcerep

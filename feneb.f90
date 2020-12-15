@@ -151,7 +151,7 @@ logical ::  per, velin, velout, relaxd, converged, wgrad
 
     call gettang(rav,tang,nrestr,nrep)
 
-    call getnebforce(rav,fav,tang,nrestr,nrep,kspring,maxforceband,ftol,converged,&
+    call getnebforce(rav,fav,tang,nrestr,nrep,kspring,maxforceband,ftol,relaxd,&
                     ftrue,ftang,fperp,fspring,.true.,dontg)
 ! fav ---> fneb
 !----------- Write mean pos and forces
