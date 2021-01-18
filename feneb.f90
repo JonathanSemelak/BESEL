@@ -155,11 +155,12 @@ logical ::  per, velin, velout, relaxd, converged, wgrad
 
         write(9999,'(1x,a,f8.6)') "RMS(FNEB): ", rms/nrep
 
-        if (nscycle .gt. 0) then
+        if (nscycle .eq. 1) write(9999,*) "WARNING: Using only fperp to move the band!"
+        if (nscycle .gt. 1) then
 
           write(9999,*) "-----------------------------------------------------"
           write(9999,*) "Performing extra optimization steps using fspring    "
-          write(9999,*) "get a better distribution of replicas.               "
+          write(9999,*) "to get a better distribution of replicas.            "
           write(9999,'(1x,a,I4)') "Extra optmization movements: ", nscycle
           write(9999,*) "-----------------------------------------------------"
         end if
@@ -168,6 +169,7 @@ logical ::  per, velin, velout, relaxd, converged, wgrad
           !Computes spring force and others
           call getnebforce(rav,fav,tang,nrestr,nrep,kspring,maxforceband,ftol,converged,&
                           ftrue,ftang,fperp,fspring,.false.,dontg)
+          !como wrmforce es false, acá usa fspring para determinar maxforceband
           !Moves band using spring force only
           dontg=0.d0
           do i=2,nrep-1

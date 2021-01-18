@@ -66,9 +66,9 @@ logical :: relaxdrep,relaxd,wrmforce
         fperp(1:3,j,i)=fav(1:3,j,i)-ftang(1:3,j,i)
         fav(1:3,j,i)=fperp(1:3,j,i)+fspring(1:3,j,i)
 
-        fproj(j,i)=dontg(1,j,i)*tang(1,j,i)+dontg(2,j,i)*tang(2,j,i)+dontg(3,j,i)*tang(3,j,i)
-        fproj(j,i)=dsqrt(fproj(j,i)**2)
-        dontg(1:3,j,i)=fproj(j,i)*tang(1:3,j,i)
+        ! fproj(j,i)=dontg(1,j,i)*tang(1,j,i)+dontg(2,j,i)*tang(2,j,i)+dontg(3,j,i)*tang(3,j,i)
+        ! fproj(j,i)=dsqrt(fproj(j,i)**2)
+        ! dontg(1:3,j,i)=fproj(j,i)*tang(1:3,j,i)
 
 	  end do
     if (wrmforce) then

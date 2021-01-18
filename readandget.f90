@@ -36,6 +36,7 @@ do
    if (keyword == 'wgrad') read(line,*) exp, wgrad
    if (keyword == 'nscycle') read(line,*) exp, nscycle
 end do
+! write(*,*) "asd"
 close (unit=1000)
 if (nrep .gt. 1) allocate(tang(3,nrestr,nrep),ftang(3,nrestr,nrep),ftrue(3,nrestr,nrep),&
                           fperp(3,nrestr,nrep),fspring(3,nrestr,nrep),dontg(3,nrestr,nrep))
