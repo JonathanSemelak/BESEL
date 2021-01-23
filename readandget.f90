@@ -170,6 +170,7 @@ do i = 1,nrestr !natoms
   chi = trim(chi)//trim(chrep)
   auxunit = 1000*i+rep
   if (wgrad) open(auxunit, file = chi, status = 'unknown')
+  ! write(*,*) "asd"
   ati=mask(i)
   av=0.d0
   point = (/ 1,ati,1 /)
@@ -186,6 +187,7 @@ do i = 1,nrestr !natoms
     av(1)=(av(1)*(dble(k-1))+coordx(k))/dble(k)
     av(2)=(av(2)*(dble(k-1))+coordy(k))/dble(k)
     av(3)=(av(3)*(dble(k-1))+coordz(k))/dble(k)
+    if (wgrad) write(auxunit,*) k, av(1:3)
   end do
   rav(1:3,i,rep)=av(1:3)
 

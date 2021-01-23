@@ -191,7 +191,8 @@ logical ::  per, velin, velout, relaxd, converged, wgrad
 
 
         do i=1,nrep
-          call getfilenames(i,chi,infile,reffile,outfile,iname,rname,oname)
+          ! call getfilenames(i,chi,infile,reffile,outfile,iname,rname,oname)
+          call getfilenames(i,chi,infile,infile,outfile,iname,rname,oname) !toma ultima foto p/ siguiente paso
           call getrefcoord(rname,nrestr,mask,natoms,rref,boxinfo,per,velin)
           call writenewcoord(oname,rref,boxinfo,natoms,nrestr,mask,per,velout,rav,nrep,i)
         end do
