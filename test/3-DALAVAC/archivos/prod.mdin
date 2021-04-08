@@ -1,0 +1,13 @@
+
+ &cntrl
+    imin=0,
+    ntx=1,
+    ntwr=100,ntpr=10,ntwx=1,ioutfm=1,ntxo=1,
+    nstlim=500,dt=0.001,
+    ntt=3,tempi=300.0,temp0=300.0,gamma_ln=5.0,
+    ntp=0,
+    ntb=0,
+    cut=999.,
+    ntr=1,restraint_wt=500.0,restraintmask='@5,7,9,15,17',
+  &end
+

@@ -3,14 +3,14 @@ implicit none
 contains
 subroutine readinput(nrep,infile,reffile,outfile,mask,nrestr,lastmforce, &
            rav,fav,ftrue,ftang,fperp,fspring,tang,kref,kspring,steep_size,ftol,per, &
-           velin,velout,wgrad,rrefall,nscycle,dontg)
+           velin,velout,wgrad,rrefall,nscycle,dontg,ravprevsetp)
 implicit none
 character(len=50) :: infile, reffile, outfile, line, exp, keyword
 integer :: nrestr, nrep, i, ierr, nscycle
 logical ::  per, velin, velout, wgrad
 double precision :: kref, kspring, steep_size, ftol, lastmforce
 integer, allocatable, dimension (:), intent(inout) :: mask
-double precision, allocatable, dimension(:,:,:), intent(inout) :: rav, fav, tang, ftang, ftrue,fperp, rrefall
+double precision, allocatable, dimension(:,:,:), intent(inout) :: rav, fav, tang, ftang, ftrue,fperp, rrefall,ravprevsetp
 double precision, allocatable, dimension(:,:,:), intent(inout) :: fspring, dontg
 
  nscycle=1
@@ -40,7 +40,7 @@ end do
 close (unit=1000)
 if (nrep .gt. 1) allocate(tang(3,nrestr,nrep),ftang(3,nrestr,nrep),ftrue(3,nrestr,nrep),&
                           fperp(3,nrestr,nrep),fspring(3,nrestr,nrep),dontg(3,nrestr,nrep))
-allocate(mask(nrestr),rav(3,nrestr,nrep),fav(3,nrestr,nrep),rrefall(3,nrestr,nrep))
+allocate(mask(nrestr),rav(3,nrestr,nrep),fav(3,nrestr,nrep),rrefall(3,nrestr,nrep),ravprevsetp(3,nrestr,nrep))
 
 open (unit=1000, file="feneb.in", status='old', action='read') !read align.in
 do

@@ -9,18 +9,19 @@ integer, allocatable, dimension (:) :: mask
 real(4) :: coordinate
 real(4), allocatable, dimension (:) :: coordx,coordy,coordz
 integer, dimension (3) :: point
-double precision :: kref, steep_size, ftol, maxforce, kspring, maxforceband, lastmforce
-double precision :: stepl, deltaA, rms
+double precision :: kref, steep_size, ftol, maxforce, kspring, maxforceband, lastmforce, maxforcebandprevsetp, steep_spring
+double precision :: stepl, deltaA, rmsfneb, minpoint, maxpoint, barrier
 double precision, dimension(6) :: boxinfo
-double precision, allocatable, dimension(:,:) :: rref
-double precision, allocatable, dimension(:,:,:) :: rav, fav, tang, ftang, ftrue, fperp, rrefall
+double precision, allocatable, dimension(:) :: rmsd
+double precision, allocatable, dimension(:,:) :: rref, profile
+double precision, allocatable, dimension(:,:,:) :: rav, fav, tang, ftang, ftrue, fperp, rrefall, ravprevsetp
 double precision, allocatable, dimension(:,:,:) :: fspring, dontg
-logical ::  per, velin, velout, relaxd, converged, wgrad
+logical ::  per, velin, velout, relaxd, converged, wgrad, moved, maxpreached
 
 !------------ Read input
     call readinput(nrep,infile,reffile,outfile,mask,nrestr,lastmforce, &
                  rav,fav,ftrue,ftang,fperp,fspring,tang,kref,kspring,steep_size, &
-                 ftol,per,velin,velout,wgrad,rrefall,nscycle,dontg)
+                 ftol,per,velin,velout,wgrad,rrefall,nscycle,dontg,ravprevsetp)
 !------------
 
 
@@ -51,7 +52,7 @@ logical ::  per, velin, velout, relaxd, converged, wgrad
 
     call writeposforces(rav,fav,nrestr,nrep,nrep)
 
-    call getmaxforce(nrestr,nrep,nrep,fav,maxforce,ftol,relaxd,maxforceat,rms)
+    call getmaxforce(nrestr,nrep,nrep,fav,maxforce,ftol,relaxd,maxforceat,rmsfneb)
 
 
     write(9999,*) "Max force: ", maxforce
@@ -64,6 +65,10 @@ logical ::  per, velin, velout, relaxd, converged, wgrad
          write(9999,*) "step length has been set to zero"
          write(9999,*) "-----------------------------------------------------"
        end if
+
+       call getfilenames(nrep,chi,infile,infile,outfile,iname,rname,oname) !toma ultima foto p/ siguiente paso
+       call getrefcoord(rname,nrestr,mask,natoms,rref,boxinfo,per,velin)
+
        call writenewcoord(oname,rref,boxinfo,natoms,nrestr,mask,per,velout,rav,nrep,nrep)
        write(9999,*) "System converged: F"
     else
@@ -113,17 +118,30 @@ logical ::  per, velin, velout, relaxd, converged, wgrad
 
 
 !----------- Puts reference values in a single array (rrefall). Currently not used.
-    ! do i=1,nrep
-    !   call getfilenames(i,chi,infile,reffile,outfile,iname,rname,oname)
-    !   call getrefcoord(rname,nrestr,mask,natoms,rref,boxinfo,per,velin)
-    !   call getcoordextrema(rref,natoms,rrefall,nrestr,nrep,i,mask)
-    ! end do
+    do i=1,nrep
+      call getfilenames(i,chi,infile,reffile,outfile,iname,rname,oname)
+      call getrefcoord(rname,nrestr,mask,natoms,rref,boxinfo,per,velin)
+      call getcoordextrema(rref,natoms,rrefall,nrestr,nrep,i,mask)
+    end do
 
 
 !----------- Write mean pos and forces
     do i=1,nrep
       call writeposforces(rav,fav,nrestr,i,nrep)
     end do
+
+!----------- Write RMSD
+
+    allocate(rmsd(nrep))
+    call getrmsd(fav, kref, nrep, nrestr,rmsd)
+    open(unit=40000, file="rmsd.dat")
+      write(40000,*) rmsd(1:nrep)
+    close(40000)
+
+!----------- Compute the free energy profile by umbrella integration
+    allocate(profile(2,nrep-1))
+    call getprofile(rav,fav,nrep,nrestr,profile)
+    call getbarrier(profile, nrep, barrier, minpoint, maxpoint)
 
 !----------- Computes tangent and nebforce
     call gettang(rav,tang,nrestr,nrep)
@@ -134,6 +152,7 @@ logical ::  per, velin, velout, relaxd, converged, wgrad
 
 !----------- moves the band
     if (.not. converged) then
+      ! rav=rrefall !TEST USAR RESTR POS
 
        do i=2,nrep-1
           if (.not. relaxd) call steep(rav,fperp,nrep,i,steep_size,maxforceband,nrestr,lastmforce,stepl,deltaA,dontg)
@@ -147,13 +166,13 @@ logical ::  per, velin, velout, relaxd, converged, wgrad
           write(9999,*) "-----------------------------------------------------"
         end if
 
-        rms=0.d0
+        rmsfneb=0.d0
         do i=1,nrep
-          call getmaxforce(nrestr,nrep,i,fav,maxforce,ftol,relaxd,maxforceat,rms)
+          call getmaxforce(nrestr,nrep,i,fav,maxforce,ftol,relaxd,maxforceat,rmsfneb)
         end do
-        rms=dsqrt(rms/dble(nrep*nrestr))
+        rmsfneb=dsqrt(rmsfneb/dble(nrep*nrestr))
 
-        write(9999,'(1x,a,f8.6)') "RMS(FNEB): ", rms/nrep
+        write(9999,'(1x,a,f8.6)') "rmsfneb(FNEB): ", rmsfneb/nrep
 
         if (nscycle .eq. 1) write(9999,*) "WARNING: Using only fperp to move the band!"
         if (nscycle .gt. 1) then
@@ -165,16 +184,47 @@ logical ::  per, velin, velout, relaxd, converged, wgrad
           write(9999,*) "-----------------------------------------------------"
         end if
 
+        steep_spring=steep_size
+        maxpreached=.False.
         do k=1,nscycle
+          if (.not. maxpreached) then
           !Computes spring force and others
           call getnebforce(rav,fav,tang,nrestr,nrep,kspring,maxforceband,ftol,converged,&
                           ftrue,ftang,fperp,fspring,.false.,dontg)
+
           !como wrmforce es false, acá usa fspring para determinar maxforceband
           !Moves band using spring force only
+          write(9999,'(A6,2x,I3,2x,A15,2x,f8.6,2x,A20,2x,f8.6)') "Step: ", k, "Step length", &
+          steep_spring, "Band max fspringN: ", maxforceband
+          ! write(*,*) k,maxforceband
           dontg=0.d0
-          do i=2,nrep-1
-            call steep(rav,fspring,nrep,i,steep_size,maxforceband,nrestr,lastmforce,stepl,deltaA,dontg)
+          ravprevsetp=rav
+          maxforcebandprevsetp=maxforceband
+          moved=.False.
+          do while (.not. moved)
+            do i=2,nrep-1
+              call steep(rav,fspring,nrep,i,steep_spring,maxforcebandprevsetp,nrestr,lastmforce,stepl,deltaA,dontg)
+            end do
+            call getnebforce(rav,fav,tang,nrestr,nrep,kspring,maxforceband,ftol,converged,&
+                            ftrue,ftang,fperp,fspring,.false.,dontg)
+            if ((maxforceband .lt. maxforcebandprevsetp) .or.  (stepl .lt. 1d-10)) then
+               moved=.True.
+            else
+               steep_spring=steep_spring*0.5d0
+               rav=ravprevsetp
+            end if
           end do
+          if (stepl .lt. 1d-10) then
+            write(9999,*) "Max precision reached"
+            maxpreached=.True.
+            ! write(9999,*) "Band max fspringLast: ", maxforceband
+          end if
+          end if
+          if (k .eq. nscycle) then
+            write(9999,*) "-----------------------------------------------------"
+            write(9999,*) "Band max fspringLast: ", maxforceband
+            write(9999,*) "-----------------------------------------------------"
+          end if
         end do
 
 
@@ -197,6 +247,13 @@ logical ::  per, velin, velout, relaxd, converged, wgrad
           call writenewcoord(oname,rref,boxinfo,natoms,nrestr,mask,per,velout,rav,nrep,i)
         end do
     end if !converged
+  write(9999,*) "-----------------------------------------------------"
+  write(9999,*) "                   Extrema info"
+  write(9999,*) "Barrier: ", barrier
+  write(9999,*) "Minimum point: ", minpoint
+  write(9999,*) "Maximum point: ", maxpoint
+  write(9999,*) "-----------------------------------------------------"
+
   end if !nrep gt 1
 
   close(unit=9999)

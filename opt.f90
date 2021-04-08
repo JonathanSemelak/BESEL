@@ -1,9 +1,9 @@
-subroutine getmaxforce(nrestr,nrep,rep,fav,maxforce,ftol,relaxd,maxforceat,rms)
+subroutine getmaxforce(nrestr,nrep,rep,fav,maxforce,ftol,relaxd,maxforceat,rmsfneb)
   implicit none
   double precision, dimension(3,nrestr,nrep), intent(in) :: fav
   integer, intent(in) :: nrep, rep, nrestr
   double precision, intent(in) :: ftol
-  double precision, intent(inout) :: maxforce, rms
+  double precision, intent(inout) :: maxforce, rmsfneb
   logical, intent(out) :: relaxd
   double precision :: fmax2
   integer :: i,j,maxforceat
@@ -16,7 +16,7 @@ subroutine getmaxforce(nrestr,nrep,rep,fav,maxforce,ftol,relaxd,maxforceat,rms)
     do j=1,3
       fmax2=fmax2+fav(j,i,rep)**2
     end do
-    rms=rms+fmax2
+    rmsfneb=rmsfneb+fmax2
     if (fmax2 .gt. maxforce) maxforce=fmax2
     if (fmax2 .gt. maxforce) maxforceat=i
   end do
@@ -52,7 +52,6 @@ step=stepl/maxforce
   if (stepl .lt. 1d-10) then
     moved=.true.
     stepl=0.d0
-    write(*,*) "Max precision reached"
   end if
 
 end subroutine steep

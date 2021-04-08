@@ -116,8 +116,7 @@ logical :: relaxdrep,relaxd,wrmforce
   end do
 
   if (wrmforce) then
-    write(9999,*) "-----------------------------------------------------------------"
-    write(9999,*) "Band max fspring: ", maxforceband2, "on replica: ", maxforcerep
+    write(9999,*) "Band max fspring0: ", maxforceband2, "on replica: ", maxforcerep
     write(9999,*) "-----------------------------------------------------------------"
   endif
 !---------------------
