@@ -90,3 +90,24 @@ end do
 rmsd=dsqrt(rmsd/dble(nrestr))
 
 end subroutine
+
+subroutine getselfdist(rav, rrefall, nrep, nrestr, selfdist)
+implicit none
+double precision, dimension(3,nrestr,nrep), intent(in) :: rav, rrefall
+integer, intent(in) :: nrestr, nrep
+double precision, dimension(2,nrestr,nrep-1), intent(out) :: selfdist
+integer :: i,j,n
+
+selfdist=0.d0
+do n=1,nrep-1
+  do i=1,nrestr
+    do j=1,3
+      selfdist(1,i,n)=selfdist(2,i,n)+(rrefall(j,i,n)-rrefall(j,i,n+1))**2
+      selfdist(2,i,n)=selfdist(2,i,n)+(rav(j,i,n)-rav(j,i,n+1))**2
+    end do
+    selfdist(1,i,n)=dsqrt(selfdist(1,i,n))
+    selfdist(2,i,n)=dsqrt(selfdist(2,i,n))
+  end do
+end do
+
+end subroutine

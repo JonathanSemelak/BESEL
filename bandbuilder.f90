@@ -8,13 +8,13 @@ use readandget
 use netcdf
 implicit none
 character(len=50) :: rcfile, pcfile, tsfile, prefix, chi, oname
-integer :: nrestr, nrep, i, k, middlepoint, natoms
+integer :: nrestr, nrep, i, j, k, middlepoint, natoms
 logical ::  usets, per, velin, velout
 double precision, dimension(3) :: BAND_slope
 double precision, dimension(3) :: BAND_const
 double precision, dimension(6):: boxinfo
 integer, allocatable, dimension (:) :: mask
-double precision, allocatable, dimension(:,:) :: rclas
+double precision, allocatable, dimension(:,:) :: rclas, selfdist
 double precision, allocatable, dimension(:,:,:) :: rav
 
 !reads imputfile
@@ -82,4 +82,35 @@ do i=1,nrep
 	    call writenewcoord(oname,rclas,boxinfo,natoms,nrestr,mask,per,velout,rav,nrep,i)
 end do
 
+allocate(selfdist(nrestr,nrep-1))
+call selfdistiniband(rav, nrep, nrestr, selfdist)
+
+open(unit=1111, file="selfdist.dat")
+do i=1,nrestr
+	do j=1,nrep-1
+		write(1111,'(2x, I6,2x, f20.10)') j, selfdist(i,j)
+	end do
+	write(1111,*)
+end do
+
 end program bandbuilder
+
+
+subroutine selfdistiniband(rav, nrep, nrestr, selfdist)
+
+implicit none
+double precision, dimension(3,nrestr,nrep), intent(in) :: rav
+integer, intent(in) :: nrestr, nrep
+double precision, dimension(nrestr,nrep-1), intent(out) :: selfdist
+integer :: i,j,n
+
+selfdist=0.d0
+do n=1,nrep-1
+  do i=1,nrestr
+    do j=1,3
+      selfdist(i,n)=selfdist(i,n)+(rav(j,i,n)-rav(j,i,n+1))**2
+    end do
+    selfdist(i,n)=dsqrt(selfdist(i,n))
+  end do
+end do
+end subroutine

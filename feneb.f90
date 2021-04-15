@@ -3,8 +3,8 @@ use netcdf
 use readandget
 implicit none
 character(len=50) :: infile, reffile, outfile, chi, iname, rname, oname
-integer :: nsteps, spatial, natoms, nrestr, nrep, nscycle,maxforceat
-integer :: i, j, k
+integer :: nsteps, spatial, natoms, nrestr, nrep, nscycle,maxforceat, rpoint, tgpoint, fpoint
+integer :: i, j, k, n
 integer, allocatable, dimension (:) :: mask
 real(4) :: coordinate
 real(4), allocatable, dimension (:) :: coordx,coordy,coordz
@@ -14,14 +14,14 @@ double precision :: stepl, deltaA, rmsfneb, minpoint, maxpoint, barrier
 double precision, dimension(6) :: boxinfo
 double precision, allocatable, dimension(:) :: rmsd
 double precision, allocatable, dimension(:,:) :: rref, profile
-double precision, allocatable, dimension(:,:,:) :: rav, fav, tang, ftang, ftrue, fperp, rrefall, ravprevsetp
-double precision, allocatable, dimension(:,:,:) :: fspring, dontg
+double precision, allocatable, dimension(:,:,:) :: rav, fav, tang, ftang, ftrue, fperp, rrefall, ravprevsetp, rcorr, fonref
+double precision, allocatable, dimension(:,:,:) :: fspring, dontg, selfdist
 logical ::  per, velin, velout, relaxd, converged, wgrad, moved, maxpreached
 
 !------------ Read input
     call readinput(nrep,infile,reffile,outfile,mask,nrestr,lastmforce, &
                  rav,fav,ftrue,ftang,fperp,fspring,tang,kref,kspring,steep_size, &
-                 ftol,per,velin,velout,wgrad,rrefall,nscycle,dontg,ravprevsetp)
+                 ftol,per,velin,velout,wgrad,rrefall,nscycle,dontg,ravprevsetp,rpoint, tgpoint, fpoint, rcorr)
 !------------
 
 
@@ -140,20 +140,113 @@ logical ::  per, velin, velout, relaxd, converged, wgrad, moved, maxpreached
 
 !----------- Compute the free energy profile by umbrella integration
     allocate(profile(2,nrep-1))
-    call getprofile(rav,fav,nrep,nrestr,profile)
-    call getbarrier(profile, nrep, barrier, minpoint, maxpoint)
-
 !----------- Computes tangent and nebforce
-    call gettang(rav,tang,nrestr,nrep)
+    write(9999,*) "-----------------------------------------------------"
+    write(9999,*) "r, tg, f points: ", rpoint, tgpoint, fpoint
+    write(9999,*) "-----------------------------------------------------"
+    if ((rpoint .eq. 0) .and. (tgpoint .eq. 0) .and. (fpoint .eq. 0)) then
+      call getprofile(rav,fav,nrep,nrestr,profile)
+      call gettang(rav,tang,nrestr,nrep)
+      call getnebforce(rav,fav,tang,nrestr,nrep,kspring,maxforceband,ftol,relaxd,&
+                          ftrue,ftang,fperp,fspring,.true.,dontg)
+    elseif ((rpoint .eq. 1) .and. (tgpoint .eq. 0) .and. (fpoint .eq. 0)) then
+      call getprofile(rav,fav,nrep,nrestr,profile)
+      call gettang(rav,tang,nrestr,nrep)
+      call getnebforce(rav,fav,tang,nrestr,nrep,kspring,maxforceband,ftol,relaxd,&
+                          ftrue,ftang,fperp,fspring,.true.,dontg)
+      rav=rrefall
+    elseif ((rpoint .eq. 0) .and. (tgpoint .eq. 1) .and. (fpoint .eq. 0)) then
+      call getprofile(rav,fav,nrep,nrestr,profile)
+      call gettang(rrefall,tang,nrestr,nrep)
+      call getnebforce(rav,fav,tang,nrestr,nrep,kspring,maxforceband,ftol,relaxd,&
+                          ftrue,ftang,fperp,fspring,.true.,dontg)
+    elseif ((rpoint .eq. 1) .and. (tgpoint .eq. 1) .and. (fpoint .eq. 0)) then
+      call getprofile(rav,fav,nrep,nrestr,profile)
+      call gettang(rrefall,tang,nrestr,nrep)
+      call getnebforce(rav,fav,tang,nrestr,nrep,kspring,maxforceband,ftol,relaxd,&
+                          ftrue,ftang,fperp,fspring,.true.,dontg)
+      rav=rrefall
+    elseif ((rpoint .eq. 1) .and. (tgpoint .eq. 1) .and. (fpoint .eq. 1)) then
+      call gettang(rrefall,tang,nrestr,nrep)
+      allocate(fonref(3,nrestr,nrep))
+      fonref=0.d0
+      do i=2,nrep-1
+        do j=1,nrestr
+          do k=1,3
+            fonref(k,j,i)=fav(k,j,i)*(1-((fav(k,j,i+1)-fav(k,j,i-1))/(rav(k,j,i+1)-rav(k,j,i-1)))*(1.d0/kref))
+          end do
+        end do
+      end do
+      fav=fonref
+      call getnebforce(rrefall,fav,tang,nrestr,nrep,kspring,maxforceband,ftol,relaxd,&
+                          ftrue,ftang,fperp,fspring,.true.,dontg)
+      call getprofile(rrefall,fonref,nrep,nrestr,profile)
+      rav=rrefall
+     elseif ((rpoint .eq. 2) .and. (tgpoint .eq. 2) .and. (fpoint .eq. 2)) then
+      call gettang(rrefall,tang,nrestr,nrep)
+      do i=2,nrep-1
+        do j=1,nrestr
+          do k=1,3
+            rcorr(k,j,i)=((rav(1,j,i)-rrefall(1,j,i))*tang(1,j,i)+&
+                         (rav(2,j,i)-rrefall(2,j,i))*tang(2,j,i)+&
+                         (rav(3,j,i)-rrefall(3,j,i))*tang(3,j,i))*tang(k,j,i)
+          end do
+        end do
+      end do
+      rcorr=rav+rcorr
+      allocate(fonref(3,nrestr,nrep))
+      fonref=0.d0
 
-    call getnebforce(rav,fav,tang,nrestr,nrep,kspring,maxforceband,ftol,relaxd,&
-                    ftrue,ftang,fperp,fspring,.true.,dontg)
+      do i=2,nrep-1
+        do j=1,nrestr
+          do k=1,3
+              fonref(k,j,i)=fav(k,j,i)+((fav(k,j,i+1)-fav(k,j,i-1))/(rav(k,j,i+1)-rav(k,j,i-1)))*(rcorr(k,j,i)-rav(k,j,i))
+          end do
+        end do
+      end do
+      ! fonref=fav
+      ! write(*,*) fonref
+      fav=fonref
+      call getprofile(rcorr,fonref,nrep,nrestr,profile)
+      call gettang(rcorr,tang,nrestr,nrep)
+      call getnebforce(rcorr,fav,tang,nrestr,nrep,kspring,maxforceband,ftol,relaxd,&
+                          ftrue,ftang,fperp,fspring,.true.,dontg)
+      rav=rcorr
+     else
+       write(9999,*) "Combination of r,tg and f point not allowed"
+       STOP
+     end if
+
+     call getbarrier(profile, nrep, barrier, minpoint, maxpoint)
+
+     allocate(selfdist(2,nrestr,nrep-1))
+     call getselfdist(rav, rrefall, nrep, nrestr, selfdist)
+
+     open(unit=1644, file="selfdist_rref.dat")
+     open(unit=1645, file="selfdist_rav.dat")
+     do i=1,nrestr
+       do n=1,nrep-1
+         write(1644,'(2x, I6,2x, f20.10)') n, selfdist(1,i,n)
+         write(1645,'(2x, I6,2x, f20.10)') n, selfdist(2,i,n)
+       end do
+       write(1644,*)
+       write(1645,*)
+     end do
+     close(1644)
+     close(1645)
+
+
+     ! if (tgpoint .eq. 2) call gettang(rcorr,tang,nrestr,nrep)
+
+
+     ! if (fpoint .eq. 2) call getnebforce(rav,fav,tang,nrestr,nrep,kspring,maxforceband,ftol,relaxd,&
+                      ! ftrue,ftang,fperp,fspring,.true.,dontg)
 ! fav ---> fneb
 
 !----------- moves the band
     if (.not. converged) then
-      ! rav=rrefall !TEST USAR RESTR POS
-
+       ! if (rpoint .eq. 1) rav=rrefall !TEST USAR RESTR POS
+       ! if (rpoint .eq. 2) rav=rcorr
        do i=2,nrep-1
           if (.not. relaxd) call steep(rav,fperp,nrep,i,steep_size,maxforceband,nrestr,lastmforce,stepl,deltaA,dontg)
         end do
@@ -227,6 +320,16 @@ logical ::  per, velin, velout, relaxd, converged, wgrad, moved, maxpreached
           end if
         end do
 
+        call getselfdist(rav, rrefall, nrep, nrestr, selfdist)
+
+        open(unit=1646, file="selfdist_afterstep.dat")
+        do i=1,nrestr
+          do n=1,nrep-1
+            write(1646,'(2x, I6,2x, f20.10)') n, selfdist(2,i,n)
+          end do
+          write(1646,*)
+        end do
+
 
     !------------ Get coordinates for previously optimized extrema
         !Reactants
@@ -238,7 +341,6 @@ logical ::  per, velin, velout, relaxd, converged, wgrad, moved, maxpreached
         call getfilenames(nrep,chi,infile,reffile,outfile,iname,rname,oname)
         call getrefcoord(rname,nrestr,mask,natoms,rref,boxinfo,per,velin)
         call getcoordextrema(rref,natoms,rav,nrestr,nrep,nrep,mask)
-
 
         do i=1,nrep
           ! call getfilenames(i,chi,infile,reffile,outfile,iname,rname,oname)
