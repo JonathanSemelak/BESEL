@@ -64,14 +64,14 @@ close (unit=1000)
 
 end subroutine readinput
 
-subroutine readinputbuilder(rcfile, pcfile, tsfile, prefix, nrestr, nrep, usets, per, velin, velout, rav, mask)
+subroutine readinputbuilder(rcfile, pcfile, tsfile, prefix, nrestr, nrep, usets, per, velin, velout, rav, mask,test)
 implicit none
 character(len=50) :: rcfile, pcfile, tsfile, prefix, exp, keyword, line, all
 integer :: nrestr, nrep, i, ierr
-logical ::  usets, per, velin, velout
+logical ::  usets, per, velin, velout, test
 integer, allocatable, dimension (:), intent(inout) :: mask
 double precision, allocatable, dimension(:,:,:), intent(inout) :: rav
-
+test = .false.
 usets = .false.
 open (unit=1000, file="bandbuilder.in", status='old', action='read') !read align.in
 do
@@ -88,6 +88,7 @@ do
    if (keyword == 'per') read(line,*) exp, per
    if (keyword == 'velin') read(line,*) exp, velin
    if (keyword == 'velout') read(line,*) exp, velout
+   if (keyword == 'test') read(line,*) exp, test
 end do
 close (unit=1000)
 
@@ -114,7 +115,8 @@ subroutine getfilenames(rep,chrep,infile,reffile,outfile,iname,rname,oname)
 
 implicit none
 integer, intent(in) :: rep
-character(len=50), intent(out) :: infile, reffile, outfile, chrep, iname, rname, oname
+character(len=50), intent(in) :: infile, reffile, outfile
+character(len=50), intent(out) :: chrep, iname, rname, oname
 
   if (rep .le. 9) write(chrep,'(I1)') rep
   if (rep .gt. 9 .and. rep .le. 99) write(chrep,'(I2)') rep

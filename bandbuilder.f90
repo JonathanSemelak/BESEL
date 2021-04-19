@@ -9,16 +9,18 @@ use netcdf
 implicit none
 character(len=50) :: rcfile, pcfile, tsfile, prefix, chi, oname
 integer :: nrestr, nrep, i, j, k, middlepoint, natoms
-logical ::  usets, per, velin, velout
+logical ::  usets, per, velin, velout, test
 double precision, dimension(3) :: BAND_slope
 double precision, dimension(3) :: BAND_const
 double precision, dimension(6):: boxinfo
 integer, allocatable, dimension (:) :: mask
-double precision, allocatable, dimension(:,:) :: rclas, selfdist
+double precision, allocatable, dimension(:,:) :: rclas, selfdist, rref
 double precision, allocatable, dimension(:,:,:) :: rav
 
+
 !reads imputfile
-call readinputbuilder(rcfile, pcfile, tsfile, prefix, nrestr, nrep, usets, per, velin, velout, rav, mask)
+call readinputbuilder(rcfile, pcfile, tsfile, prefix, nrestr, nrep, usets, per, velin, velout, rav, mask, test)
+if (.not. test) then
 
 if (usets) then
 	!reads middlepoint coordinates
@@ -92,7 +94,35 @@ do i=1,nrestr
 	end do
 	write(1111,*)
 end do
+!-------------TESTTTTTTTTTTTTTTTT
 
+
+else
+	allocate(rref(3,natoms))
+	do i=1,nrep
+		if (i .le. 9) write(chi,'(I1)') i
+		if (i .gt. 9 .and. i .le. 99) write(chi,'(I2)') i
+		if (i .gt. 99 .and. i .le. 999) write(chi,'(I3)') i
+		oname = trim(prefix) // "_"
+		oname = trim(oname) // trim(chi)
+		oname = trim(oname) // ".rst7"
+    ! call getfilenames(i,chi,infile,reffile,outfile,iname,rname,oname) !rname = NAME_r_i.rst7 ; i=replica
+	  call getrefcoord(oname,nrestr,mask,natoms,rref,boxinfo,per,velin)
+	  call getcoordextrema(rref,natoms,rav,nrestr,nrep,i,mask)
+  end do
+	allocate(selfdist(nrestr,nrep-1))
+	call selfdistiniband(rav, nrep, nrestr, selfdist)
+
+	open(unit=1111, file="selfdist.dat")
+	do i=1,nrestr
+		do j=1,nrep-1
+			write(1111,'(2x, I6,2x, f20.10)') j, selfdist(i,j)
+		end do
+		write(1111,*)
+	end do
+
+
+end if!END IF TEST
 end program bandbuilder
 
 

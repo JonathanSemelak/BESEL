@@ -102,7 +102,7 @@ selfdist=0.d0
 do n=1,nrep-1
   do i=1,nrestr
     do j=1,3
-      selfdist(1,i,n)=selfdist(2,i,n)+(rrefall(j,i,n)-rrefall(j,i,n+1))**2
+      selfdist(1,i,n)=selfdist(1,i,n)+(rrefall(j,i,n)-rrefall(j,i,n+1))**2
       selfdist(2,i,n)=selfdist(2,i,n)+(rav(j,i,n)-rav(j,i,n+1))**2
     end do
     selfdist(1,i,n)=dsqrt(selfdist(1,i,n))

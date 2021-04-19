@@ -14,7 +14,7 @@ close(1001)
 
 end subroutine writeposforces
 
-subroutine writenewcoord(oname,rref,boxinfo,natoms,nrestr,mask,per,velout,rav,nrep,rep)
+subroutine writenewcoord(oname,rref,boxinfo,natoms,nrestr,mask,per,velout,rav,nrep,rep,test)
 
 implicit none
 character(len=50), intent(in) :: oname
@@ -24,18 +24,20 @@ double precision, dimension(3,natoms), intent(in) :: rref
 double precision, dimension(3,natoms) :: rout
 double precision, dimension(6), intent(in) :: boxinfo
 integer, dimension(nrestr), intent(in) :: mask
-logical, intent(in) :: per, velout
+logical, intent(in) :: per, velout, test
 integer :: i, j, at, auxunit
 
 rout=rref
 auxunit=21000000+rep
 
+if (.not. test) then
 do i=1,nrestr
   do j=1,3
     at=mask(i)
     rout(j,at)=rav(j,i,rep)
   end do
 end do
+end if
 
 open (unit=auxunit, file=oname)
 write(auxunit,*) "FENEB restart, replica: ", rep
