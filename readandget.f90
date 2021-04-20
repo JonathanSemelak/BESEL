@@ -2,13 +2,13 @@ module readandget
 implicit none
 contains
 subroutine readinput(nrep,infile,reffile,outfile,mask,nrestr,lastmforce, &
-           rav,fav,ftrue,ftang,fperp,fspring,tang,kref,kspring,steep_size,ftol,per, &
+           rav,fav,ftrue,ftang,fperp,fspring,tang,kref,kspring,steep_size,steep_spring,ftol,per, &
            velin,velout,wgrad,rrefall,nscycle,dontg,ravprevsetp,rpoint, tgpoint, fpoint, rcorr)
 implicit none
 character(len=50) :: infile, reffile, outfile, line, exp, keyword
 integer :: nrestr, nrep, i, ierr, nscycle,rpoint, tgpoint, fpoint
 logical ::  per, velin, velout, wgrad
-double precision :: kref, kspring, steep_size, ftol, lastmforce
+double precision :: kref, kspring, steep_size, steep_spring, ftol, lastmforce
 integer, allocatable, dimension (:), intent(inout) :: mask
 double precision, allocatable, dimension(:,:,:), intent(inout) :: rav, fav, tang, ftang, ftrue,fperp, rrefall,ravprevsetp, rcorr
 double precision, allocatable, dimension(:,:,:), intent(inout) :: fspring, dontg
@@ -18,6 +18,9 @@ double precision, allocatable, dimension(:,:,:), intent(inout) :: fspring, dontg
  rpoint=0
  tgpoint=0
  fpoint=0
+ steep_spring=0.01d0
+ steep_size=0.01d0
+
 open (unit=1000, file='feneb.in', status='old', action='read') !read feneb.in
 do
    read (1000,"(a)",iostat=ierr) line ! read line into character variable
@@ -34,6 +37,7 @@ do
    if (keyword == 'kref') read(line,*) exp, kref
    if (keyword == 'kspring') read(line,*) exp, kspring
    if (keyword == 'steepsize') read(line,*) exp, steep_size
+   if (keyword == 'steepspring') read(line,*) exp, steep_spring
    if (keyword == 'ftol') read(line,*) exp, ftol
    if (keyword == 'lastmforce') read(line,*) exp, lastmforce
    if (keyword == 'wgrad') read(line,*) exp, wgrad

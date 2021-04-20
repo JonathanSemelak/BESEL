@@ -111,3 +111,26 @@ do n=1,nrep-1
 end do
 
 end subroutine
+
+subroutine getdistrightminusleft(rav, nrep, nrestr, equispaced)
+implicit none
+double precision, dimension(3,nrestr,nrep), intent(in) :: rav
+double precision :: distright, distleft
+integer, intent(in) :: nrestr, nrep
+logical, intent(inout) :: equispaced
+integer :: i,j
+
+equispaced=.True.
+
+do i=2,nrep-1
+  do j=1,nrestr
+      distright=(rav(1,j,i+1)-rav(1,j,i))**2+(rav(2,j,i+1)-rav(2,j,i))**2+(rav(3,j,i+1)-rav(3,j,i))**2
+      distleft=(rav(1,j,i)-rav(1,j,i-1))**2+(rav(2,j,i)-rav(2,j,i-1))**2+(rav(3,j,i)-rav(3,j,i-1))**2
+  end do
+  distright=sqrt(distright)
+  distleft=sqrt(distleft)
+  write(*,*) distright, distleft
+  equispaced=(equispaced .and. (abs(distright-distleft) .lt. 0.0001d0))
+end do
+
+end subroutine

@@ -16,11 +16,11 @@ double precision, allocatable, dimension(:) :: rmsd
 double precision, allocatable, dimension(:,:) :: rref, profile
 double precision, allocatable, dimension(:,:,:) :: rav, fav, tang, ftang, ftrue, fperp, rrefall, ravprevsetp, rcorr, fonref
 double precision, allocatable, dimension(:,:,:) :: fspring, dontg, selfdist
-logical ::  per, velin, velout, relaxd, converged, wgrad, moved, maxpreached, test
+logical ::  per, velin, velout, relaxd, converged, wgrad, moved, maxpreached, equispaced, test
 
 !------------ Read input
     call readinput(nrep,infile,reffile,outfile,mask,nrestr,lastmforce, &
-                 rav,fav,ftrue,ftang,fperp,fspring,tang,kref,kspring,steep_size, &
+                 rav,fav,ftrue,ftang,fperp,fspring,tang,kref,kspring,steep_size,steep_spring, &
                  ftol,per,velin,velout,wgrad,rrefall,nscycle,dontg,ravprevsetp,rpoint, tgpoint, fpoint, rcorr)
 !------------
  test=.False.
@@ -304,63 +304,39 @@ logical ::  per, velin, velout, relaxd, converged, wgrad, moved, maxpreached, te
           write(9999,*) "-----------------------------------------------------"
         end if
 
-        steep_spring=steep_size
-        maxpreached=.False.
-        do k=1,nscycle
-          if (.not. maxpreached) then
+        ! maxpreached=.False.
+        equispaced=.False.
+        k=1
+        do while ((k .le. nscycle) .and. (.not. equispaced))
+          ! if (.not. maxpreached) then
           !Computes spring force and others
+          call gettang(rav,tang,nrestr,nrep) !to test whether to recalculate tg or not
+
           call getnebforce(rav,fav,tang,nrestr,nrep,kspring,maxforceband,ftol,converged,&
                           ftrue,ftang,fperp,fspring,.false.,dontg)
 
           !como wrmforce es false, acá usa fspring para determinar maxforceband
           !Moves band using spring force only
-          write(9999,'(A6,2x,I3,2x,A15,2x,f8.6,2x,A20,2x,f8.6)') "Step: ", k, "Step length", &
+          ! write(9999,'(A6,2x,I3,2x,A15,2x,f8.6,2x,A20,2x,f8.6)') "Step: ", k, "Step length", &
+          write(9999,'(A6,2x,I7,2x,A15,2x,f20.10,2x,A20,2x,f20.10)') "Step: ", k, "Step length", &
           steep_spring, "Band max fspringN: ", maxforceband
-          ! write(*,*) k,maxforceband
           dontg=0.d0
           ravprevsetp=rav
           maxforcebandprevsetp=maxforceband
-          moved=.False.
-          do while (.not. moved)
+
             do i=2,nrep-1
               call steep(rav,fspring,nrep,i,steep_spring,maxforcebandprevsetp,nrestr,lastmforce,stepl,deltaA,dontg)
             end do
-            call getnebforce(rav,fav,tang,nrestr,nrep,kspring,maxforceband,ftol,converged,&
-                            ftrue,ftang,fperp,fspring,.false.,dontg)
-            if ((maxforceband .lt. maxforcebandprevsetp) .or.  (stepl .lt. 1d-10)) then
-               moved=.True.
-            else
-               steep_spring=steep_spring*0.9d0
-               rav=ravprevsetp
-            end if
-          end do
-          !-----------------------TEST
-          ! call getselfdist(rav, rrefall, nrep, nrestr, selfdist)
-          ! open(unit=1646, file="selfdist_tgopt.dat", position="append")
-          ! open(unit=1645, file="selfdist_rav.dat")
-          ! write(1646,*) k
-          ! do i=1,nrestr
-          !   do n=1,nrep-1
-          !     write(10000+i,'(2x, I6,2x, f20.10)') n, selfdist(2,i,n)
-          !     ! write(1645,'(2x, I6,2x, f20.10)') n, selfdist(2,i,n)
-          !   end do
-          !   write(10000+i,*)
-          !   ! write(1645,*)
-          ! end do
-          ! close(1646)
-          ! close(1645)
-          !------------------------TEST
-          ! if (stepl .lt. 1d-10) then
-          !   write(9999,*) "Max precision reached"
-          !   maxpreached=.True.
-          !   ! write(9999,*) "Band max fspringLast: ", maxforceband
-          ! end if
-          end if
-          if (k .eq. nscycle) then
+
+          call getdistrightminusleft(rav, nrep, nrestr, equispaced)
+          if ((k .eq. nscycle) .or. equispaced) then
             write(9999,*) "-----------------------------------------------------"
             write(9999,*) "Band max fspringLast: ", maxforceband
+            write(9999,*) "Total spring steps: ", k
+            write(9999,*) "Equispaced: ", equispaced
             write(9999,*) "-----------------------------------------------------"
           end if
+          k=k+1
         end do
 
         call getselfdist(rav, rrefall, nrep, nrestr, selfdist)
