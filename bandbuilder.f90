@@ -21,7 +21,6 @@ double precision, allocatable, dimension(:,:,:) :: rav
 !reads imputfile
 call readinputbuilder(rcfile, pcfile, tsfile, prefix, nrestr, nrep, usets, per, velin, velout, rav, mask, test)
 if (.not. test) then
-
 if (usets) then
 	!reads middlepoint coordinates
 	if (allocated(rclas)) deallocate(rclas)
@@ -81,7 +80,7 @@ do i=1,nrep
 			oname = trim(prefix) // "_"
   		oname = trim(oname) // trim(chi)
 			oname = trim(oname) // ".rst7"
-	    call writenewcoord(oname,rclas,boxinfo,natoms,nrestr,mask,per,velout,rav,nrep,i)
+	    call writenewcoord(oname,rclas,boxinfo,natoms,nrestr,mask,per,velout,rav,nrep,i,test)
 end do
 
 allocate(selfdist(nrestr,nrep-1))

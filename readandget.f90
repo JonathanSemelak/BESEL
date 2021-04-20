@@ -94,6 +94,7 @@ do
    if (keyword == 'velout') read(line,*) exp, velout
    if (keyword == 'test') read(line,*) exp, test
 end do
+
 close (unit=1000)
 
 allocate(mask(nrestr),rav(3,nrestr,nrep))
@@ -234,7 +235,7 @@ do while (i .le. natoms/2)
                           rref(1,2*i), rref(2,2*i), rref(3,2*i)
   i = i + 1
 enddo
-if (mod(natoms,2) .ne. 0) read(1002,'(6(f12.7))') rref(2*i,1:3)
+if (mod(natoms,2) .ne. 0) read(1002,'(3(f12.7))') rref(1:3,2*i-1) 
 if (velin) then
   i=1
   do while (i .le. natoms/2)

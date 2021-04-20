@@ -49,16 +49,16 @@ do while (i .le. natoms/2)
                           rout(1,2*i), rout(2,2*i), rout(3,2*i)
   i = i + 1
 enddo
-if (mod(natoms,2) .ne. 0) write(auxunit,'(6(f12.7))') rout(1:3,2*i)
+if (mod(natoms,2) .ne. 0) write(auxunit,'(3(f12.7))') rout(1:3,2*i-1)
 if (velout) then
   i=1
   do while (i .le. natoms/2)
     write(auxunit,'(6(f12.7))') 0.d0,0.d0,0.d0,0.d0,0.d0,0.d0
     i = i + 1
   enddo
- endif
-  if (mod(natoms,2) .ne. 0) write(auxunit,'(6(f12.7))') 0.d0, 0.d0, 0.d0
-  if (per) write(auxunit,'(6(f12.7))') boxinfo(1:6)
+  if (mod(natoms,2) .ne. 0) write(auxunit,'(3(f12.7))') 0.d0, 0.d0, 0.d0
+endif
+if (per) write(auxunit,'(6(f12.7))') boxinfo(1:6)
 close (unit=auxunit)
 
 end subroutine writenewcoord

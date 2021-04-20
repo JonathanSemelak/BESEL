@@ -129,7 +129,6 @@ do i=2,nrep-1
   end do
   distright=sqrt(distright)
   distleft=sqrt(distleft)
-  write(*,*) distright, distleft
   equispaced=(equispaced .and. (abs(distright-distleft) .lt. 0.0001d0))
 end do
 

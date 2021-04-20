@@ -16,7 +16,6 @@ do i=2,nrep-1
     tang(1:3,j,i) = rav(1:3,j,i+1) - rav(1:3,j,i-1)
     norm(j,i) = tang(1,j,i)**2 + tang(2,j,i)**2 + tang(3,j,i)**2
     norm(j,i) = dsqrt(norm(j,i))
-    write(*,*) i,j,norm(j,i)
     if (norm(j,i) .lt. 1d-5) then
       tang(1:3,j,i) = 0.d0
     else
