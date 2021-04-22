@@ -29,7 +29,6 @@ integer :: i, j, at, auxunit
 
 rout=rref
 auxunit=21000000+rep
-
 if (.not. test) then
 do i=1,nrestr
   do j=1,3

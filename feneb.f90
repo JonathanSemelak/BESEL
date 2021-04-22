@@ -4,7 +4,7 @@ use readandget
 implicit none
 character(len=50) :: infile, reffile, outfile, chi, iname, rname, oname, tempname
 integer :: nsteps, spatial, natoms, nrestr, nrep, nscycle,maxforceat, rpoint, tgpoint, fpoint
-integer :: i, j, k, n
+integer :: i, j, k, n, start, end
 integer, allocatable, dimension (:) :: mask
 real(4) :: coordinate
 real(4), allocatable, dimension (:) :: coordx,coordy,coordz
@@ -69,7 +69,6 @@ logical ::  per, velin, velout, relaxd, converged, wgrad, moved, maxpreached, eq
 
        call getfilenames(nrep,chi,infile,infile,outfile,iname,rname,oname) !toma ultima foto p/ siguiente paso
        call getrefcoord(rname,nrestr,mask,natoms,rref,boxinfo,per,velin)
-
        call writenewcoord(oname,rref,boxinfo,natoms,nrestr,mask,per,velout,rav,nrep,nrep,test)
        write(9999,*) "System converged: F"
     else
@@ -101,8 +100,15 @@ logical ::  per, velin, velout, relaxd, converged, wgrad, moved, maxpreached, eq
     fav=0.d0
 
 !------------ Band loop
-    do i=1,nrep
+    if (rextrema) then
+      start=2
+      end=nrep-1
+    else
+      start=1
+      end=nrep
+    endif
 
+    do i=start,end
       call getfilenames(i,chi,infile,reffile,outfile,iname,rname,oname)
       call getdims(iname,nsteps,spatial,natoms)
 
@@ -134,7 +140,7 @@ logical ::  per, velin, velout, relaxd, converged, wgrad, moved, maxpreached, eq
         close(40000)
 !----------- Puts reference values in a single array (rrefall). Currently not used.!TESTTTTTTTT
     test=.True.
-    do i=1,nrep
+    do i=start,end
       call getfilenames(i,chi,infile,reffile,outfile,iname,rname,oname) !rname = NAME_r_i.rst7 ; i=replica
       !-----------------test
       call getrefcoord(rname,nrestr,mask,natoms,rref,boxinfo,per,velin)
@@ -355,6 +361,7 @@ logical ::  per, velin, velout, relaxd, converged, wgrad, moved, maxpreached, eq
 
 
     !------------ Get coordinates for previously optimized extrema
+    if (.not. rextrema) then
         !Reactants
         call getfilenames(1,chi,infile,reffile,outfile,iname,rname,oname)
         call getrefcoord(rname,nrestr,mask,natoms,rref,boxinfo,per,velin)
@@ -367,12 +374,14 @@ logical ::  per, velin, velout, relaxd, converged, wgrad, moved, maxpreached, eq
         call getcoordextrema(rref,natoms,rav,nrestr,nrep,nrep,mask)
         call writenewcoord(oname,rref,boxinfo,natoms,nrestr,mask,per,velout,rav,nrep,nrep,test)
         !
+    end if
         do i=2,nrep-1
           ! call getfilenames(i,chi,infile,reffile,outfile,iname,rname,oname)
-          call getfilenames(i,chi,infile,infile,outfile,iname,rname,oname) !toma ultima foto p/ siguiente paso
-          call getrefcoord(rname,nrestr,mask,natoms,rref,boxinfo,per,.True.)
-          call writenewcoord(oname,rref,boxinfo,natoms,nrestr,mask,per,velout,rav,nrep,i,test)
-        end do
+         call getfilenames(i,chi,infile,infile,outfile,iname,rname,oname) !toma ultima foto p/ siguiente paso
+         call getrefcoord(rname,nrestr,mask,natoms,rref,boxinfo,per,.True.)
+         call writenewcoord(oname,rref,boxinfo,natoms,nrestr,mask,per,velout,rav,nrep,i,test)
+       end do
+
     end if !converged
   write(9999,*) "-----------------------------------------------------"
   write(9999,*) "                   Extrema info"

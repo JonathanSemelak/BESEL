@@ -148,7 +148,6 @@ integer(kind=4), intent(out) :: nsteps,spatial,natoms
 integer(kind=4) :: ncid
 character(len=50), intent(in) :: iname
 character(len=50) :: xname, yname, zname
-
 call check(nf90_open(iname, nf90_nowrite, ncid))
 call check(nf90_inquire_dimension(ncid,1,xname,nsteps))
 call check(nf90_inquire_dimension(ncid,2,yname,spatial))
@@ -248,6 +247,7 @@ if (velin) then
 endif
 if (per) read(1002,'(6(f12.7))') boxinfo(1:6)
 close (unit=1002)
+
 end subroutine getrefcoord
 
 subroutine getcoordextrema(rref,natoms,rav,nrestr,nrep,rep,mask)
