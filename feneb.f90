@@ -118,7 +118,7 @@ logical ::  per, velin, velout, relaxd, converged, wgrad, moved, maxpreached, eq
       if (allocated(rref)) deallocate(rref)
       allocate(coordx(nsteps),coordy(nsteps),coordz(nsteps),rref(3,natoms))
 
-      call getrefcoord(rname,nrestr,mask,natoms,rref,boxinfo,per,velin)
+      call getrefcoord(rname,nrestr,mask,natoms,rref,boxinfo,per,.True.)
 
       call getavcoordanforces(iname,nsteps,natoms,spatial,coordx,coordy, coordz,&
                     nrestr,mask,kref,rav,fav,nrep,i,rref,wgrad,dontg,skip)
