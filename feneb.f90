@@ -68,7 +68,7 @@ logical ::  per, velin, velout, relaxd, converged, wgrad, moved, maxpreached, eq
        end if
 
        call getfilenames(nrep,chi,infile,infile,outfile,iname,rname,oname) !toma ultima foto p/ siguiente paso
-       call getrefcoord(rname,nrestr,mask,natoms,rref,boxinfo,per,velin)
+       call getrefcoord(rname,nrestr,mask,natoms,rref,boxinfo,per,.True.)
        call writenewcoord(oname,rref,boxinfo,natoms,nrestr,mask,per,velout,rav,nrep,nrep,test)
        write(9999,*) "System converged: F"
     else
