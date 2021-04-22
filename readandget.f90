@@ -3,10 +3,10 @@ implicit none
 contains
 subroutine readinput(nrep,infile,reffile,outfile,mask,nrestr,lastmforce, &
            rav,fav,ftrue,ftang,fperp,fspring,tang,kref,kspring,steep_size,steep_spring,ftol,per, &
-           velin,velout,wgrad,rrefall,nscycle,dontg,ravprevsetp,rpoint, tgpoint, fpoint, rcorr, rextrema)
+           velin,velout,wgrad,rrefall,nscycle,dontg,ravprevsetp,rpoint, tgpoint, fpoint, rcorr, rextrema, skip)
 implicit none
 character(len=50) :: infile, reffile, outfile, line, exp, keyword
-integer :: nrestr, nrep, i, ierr, nscycle,rpoint, tgpoint, fpoint
+integer :: nrestr, nrep, i, ierr, nscycle,rpoint, tgpoint, fpoint, skip
 logical ::  per, velin, velout, wgrad, rextrema
 double precision :: kref, kspring, steep_size, steep_spring, ftol, lastmforce
 integer, allocatable, dimension (:), intent(inout) :: mask
@@ -21,7 +21,7 @@ double precision, allocatable, dimension(:,:,:), intent(inout) :: fspring, dontg
  fpoint=0
  steep_spring=0.01d0
  steep_size=0.01d0
-
+ skip=0
 open (unit=1000, file='feneb.in', status='old', action='read') !read feneb.in
 do
    read (1000,"(a)",iostat=ierr) line ! read line into character variable
@@ -47,6 +47,7 @@ do
    if (keyword == 'tgpoint') read(line,*) exp, tgpoint
    if (keyword == 'fpoint') read(line,*) exp, fpoint
    if (keyword == 'rextrema') read(line,*) exp, rextrema
+   if (keyword == 'skip') read(line,*) exp, skip
 end do
 ! write(*,*) "asd"
 close (unit=1000)
@@ -157,7 +158,7 @@ end subroutine getdims
 
 subroutine getavcoordanforces(iname,nsteps,natoms,spatial, &
                             coordx,coordy,coordz,nrestr,mask, &
-                            kref,rav,fav,nrep,rep,rref,wgrad,dontg)
+                            kref,rav,fav,nrep,rep,rref,wgrad,dontg,skip)
 use netcdf
 implicit none
 real (kind=4), DIMENSION(nsteps) :: coordx, coordy, coordz, ref, av
@@ -170,7 +171,7 @@ double precision, dimension(3,nrestr,nrep) :: rav,fav,dontg
 double precision, dimension(3,natoms), intent(inout) :: rref
 integer, dimension(3) :: point,endp
 integer, dimension(nrestr) :: mask
-integer :: i,j,k,ati,atf,nrep,rep,auxunit,auxunit2
+integer :: i,j,k,ati,atf,nrep,rep,auxunit,auxunit2, skip
 logical :: wgrad
 
 call check(nf90_open(iname, nf90_nowrite, ncid))
@@ -197,7 +198,7 @@ do i = 1,nrestr !natoms
   endp = (/ 1,1,nsteps /)
   call check(nf90_get_var(ncid,3,coordz,start = point,count = endp))
 
-  do k=1,nsteps
+  do k=skip+1,nsteps
     av(1)=(av(1)*(dble(k-1))+coordx(k))/dble(k)
     av(2)=(av(2)*(dble(k-1))+coordy(k))/dble(k)
     av(3)=(av(3)*(dble(k-1))+coordz(k))/dble(k)

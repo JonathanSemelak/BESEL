@@ -4,7 +4,7 @@ use readandget
 implicit none
 character(len=50) :: infile, reffile, outfile, chi, iname, rname, oname, tempname
 integer :: nsteps, spatial, natoms, nrestr, nrep, nscycle,maxforceat, rpoint, tgpoint, fpoint
-integer :: i, j, k, n, start, end
+integer :: i, j, k, n, start, end, skip
 integer, allocatable, dimension (:) :: mask
 real(4) :: coordinate
 real(4), allocatable, dimension (:) :: coordx,coordy,coordz
@@ -22,7 +22,7 @@ logical ::  per, velin, velout, relaxd, converged, wgrad, moved, maxpreached, eq
     call readinput(nrep,infile,reffile,outfile,mask,nrestr,lastmforce, &
                  rav,fav,ftrue,ftang,fperp,fspring,tang,kref,kspring,steep_size,steep_spring, &
                  ftol,per,velin,velout,wgrad,rrefall,nscycle,dontg,ravprevsetp,rpoint, tgpoint, &
-                 fpoint, rcorr, rextrema)
+                 fpoint, rcorr, rextrema, skip)
 !------------
  test=.False.
 
@@ -49,7 +49,7 @@ logical ::  per, velin, velout, relaxd, converged, wgrad, moved, maxpreached, eq
     call getrefcoord(rname,nrestr,mask,natoms,rref,boxinfo,per,velin)
 
     call getavcoordanforces(iname,nsteps,natoms,spatial,coordx,coordy,coordz,&
-                        nrestr,mask,kref,rav,fav,nrep,nrep,rref,wgrad,dontg)
+                        nrestr,mask,kref,rav,fav,nrep,nrep,rref,wgrad,dontg,skip)
 
     call writeposforces(rav,fav,nrestr,nrep,nrep)
 
@@ -121,7 +121,7 @@ logical ::  per, velin, velout, relaxd, converged, wgrad, moved, maxpreached, eq
       call getrefcoord(rname,nrestr,mask,natoms,rref,boxinfo,per,velin)
 
       call getavcoordanforces(iname,nsteps,natoms,spatial,coordx,coordy, coordz,&
-                    nrestr,mask,kref,rav,fav,nrep,i,rref,wgrad,dontg)
+                    nrestr,mask,kref,rav,fav,nrep,i,rref,wgrad,dontg,skip)
     end do
 
     if (rextrema) call getposforcesextrema(rav,fav,nrestr,nrep)
