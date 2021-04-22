@@ -3,11 +3,11 @@ implicit none
 contains
 subroutine readinput(nrep,infile,reffile,outfile,mask,nrestr,lastmforce, &
            rav,fav,ftrue,ftang,fperp,fspring,tang,kref,kspring,steep_size,steep_spring,ftol,per, &
-           velin,velout,wgrad,rrefall,nscycle,dontg,ravprevsetp,rpoint, tgpoint, fpoint, rcorr)
+           velin,velout,wgrad,rrefall,nscycle,dontg,ravprevsetp,rpoint, tgpoint, fpoint, rcorr, rextrema)
 implicit none
 character(len=50) :: infile, reffile, outfile, line, exp, keyword
 integer :: nrestr, nrep, i, ierr, nscycle,rpoint, tgpoint, fpoint
-logical ::  per, velin, velout, wgrad
+logical ::  per, velin, velout, wgrad, rextrema
 double precision :: kref, kspring, steep_size, steep_spring, ftol, lastmforce
 integer, allocatable, dimension (:), intent(inout) :: mask
 double precision, allocatable, dimension(:,:,:), intent(inout) :: rav, fav, tang, ftang, ftrue,fperp, rrefall,ravprevsetp, rcorr
@@ -15,6 +15,7 @@ double precision, allocatable, dimension(:,:,:), intent(inout) :: fspring, dontg
 
 ! set some default variables
  nscycle=1
+ rextrema=.False.
  rpoint=0
  tgpoint=0
  fpoint=0
@@ -45,6 +46,7 @@ do
    if (keyword == 'rpoint') read(line,*) exp, rpoint
    if (keyword == 'tgpoint') read(line,*) exp, tgpoint
    if (keyword == 'fpoint') read(line,*) exp, fpoint
+   if (keyword == 'rextrema') read(line,*) exp, rextrema
 end do
 ! write(*,*) "asd"
 close (unit=1000)
@@ -235,7 +237,7 @@ do while (i .le. natoms/2)
                           rref(1,2*i), rref(2,2*i), rref(3,2*i)
   i = i + 1
 enddo
-if (mod(natoms,2) .ne. 0) read(1002,'(3(f12.7))') rref(1:3,2*i-1) 
+if (mod(natoms,2) .ne. 0) read(1002,'(3(f12.7))') rref(1:3,2*i-1)
 if (velin) then
   i=1
   do while (i .le. natoms/2)
@@ -264,6 +266,27 @@ integer, dimension(nrestr) :: mask
   end do
 
 end subroutine getcoordextrema
+
+subroutine getposforcesextrema(rav,fav,nrestr,nrep)
+implicit none
+double precision, dimension(3,nrestr,nrep), intent(inout) :: rav, fav
+integer, intent(in) :: nrestr,nrep
+integer :: i, exp
+
+write(9999,*) "Reading extrema coordinates and forces from feneb.extrema1 and feneb.extrema2 files"
+
+open(unit=210421, file="feneb.extrema1", status='old', action='read')
+do i=1,nrestr
+  read(210421,'(2x, I6,2x, 6(f20.10,2x))') exp, rav(1:3,exp,1), fav(1:3,exp,1)
+end do
+close(210421)
+open(unit=210422, file="feneb.extrema2", status='old', action='read')
+do i=1,nrestr
+  read(210422,'(2x, I6,2x, 6(f20.10,2x))') exp, rav(1:3,exp,nrep), fav(1:3,exp,nrep)
+end do
+close(210422)
+end subroutine getposforcesextrema
+
 
 subroutine check(istatus)
 use netcdf

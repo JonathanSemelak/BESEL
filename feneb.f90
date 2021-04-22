@@ -16,12 +16,13 @@ double precision, allocatable, dimension(:) :: rmsd
 double precision, allocatable, dimension(:,:) :: rref, profile
 double precision, allocatable, dimension(:,:,:) :: rav, fav, tang, ftang, ftrue, fperp, rrefall, ravprevsetp, rcorr, fonref
 double precision, allocatable, dimension(:,:,:) :: fspring, dontg, selfdist
-logical ::  per, velin, velout, relaxd, converged, wgrad, moved, maxpreached, equispaced, test
+logical ::  per, velin, velout, relaxd, converged, wgrad, moved, maxpreached, equispaced, rextrema, test
 
 !------------ Read input
     call readinput(nrep,infile,reffile,outfile,mask,nrestr,lastmforce, &
                  rav,fav,ftrue,ftang,fperp,fspring,tang,kref,kspring,steep_size,steep_spring, &
-                 ftol,per,velin,velout,wgrad,rrefall,nscycle,dontg,ravprevsetp,rpoint, tgpoint, fpoint, rcorr)
+                 ftol,per,velin,velout,wgrad,rrefall,nscycle,dontg,ravprevsetp,rpoint, tgpoint, &
+                 fpoint, rcorr, rextrema)
 !------------
  test=.False.
 
@@ -83,16 +84,18 @@ logical ::  per, velin, velout, relaxd, converged, wgrad, moved, maxpreached, eq
     write(9999,*) "---------------------------------------------------"
 !------------ Get coordinates for previously optimized extrema
 !------------ And set forces to zero
-    !Reactants
-    call getfilenames(1,chi,infile,reffile,outfile,iname,rname,oname)
-    call getrefcoord(rname,nrestr,mask,natoms,rref,boxinfo,per,velin)
-    call getcoordextrema(rref,natoms,rav,nrestr,nrep,1,mask)
 
 
-    !Products
-    call getfilenames(nrep,chi,infile,reffile,outfile,iname,rname,oname)
-    call getrefcoord(rname,nrestr,mask,natoms,rref,boxinfo,per,velin)
-    call getcoordextrema(rref,natoms,rav,nrestr,nrep,nrep,mask)
+    ! !Reactants
+    ! call getfilenames(1,chi,infile,reffile,outfile,iname,rname,oname)
+    ! call getrefcoord(rname,nrestr,mask,natoms,rref,boxinfo,per,velin)
+    ! call getcoordextrema(rref,natoms,rav,nrestr,nrep,1,mask)
+    !
+    !
+    ! !Products
+    ! call getfilenames(nrep,chi,infile,reffile,outfile,iname,rname,oname)
+    ! call getrefcoord(rname,nrestr,mask,natoms,rref,boxinfo,per,velin)
+    ! call getcoordextrema(rref,natoms,rav,nrestr,nrep,nrep,mask)
 
     !Forces set to zero
     fav=0.d0
@@ -115,7 +118,20 @@ logical ::  per, velin, velout, relaxd, converged, wgrad, moved, maxpreached, eq
                     nrestr,mask,kref,rav,fav,nrep,i,rref,wgrad,dontg)
     end do
 
+    if (rextrema) call getposforcesextrema(rav,fav,nrestr,nrep)
 
+    !----------- Write mean pos and forces
+        do i=1,nrep
+          call writeposforces(rav,fav,nrestr,i,nrep)
+        end do
+
+    !----------- Write RMSD
+
+        allocate(rmsd(nrep))
+        call getrmsd(fav, kref, nrep, nrestr,rmsd)
+        open(unit=40000, file="rmsd.dat")
+          write(40000,*) rmsd(1:nrep)
+        close(40000)
 !----------- Puts reference values in a single array (rrefall). Currently not used.!TESTTTTTTTT
     test=.True.
     do i=1,nrep
@@ -152,18 +168,6 @@ logical ::  per, velin, velout, relaxd, converged, wgrad, moved, maxpreached, eq
     ! end do
     ! end do
 
-!----------- Write mean pos and forces
-    do i=1,nrep
-      call writeposforces(rav,fav,nrestr,i,nrep)
-    end do
-
-!----------- Write RMSD
-
-    allocate(rmsd(nrep))
-    call getrmsd(fav, kref, nrep, nrestr,rmsd)
-    open(unit=40000, file="rmsd.dat")
-      write(40000,*) rmsd(1:nrep)
-    close(40000)
 
 !----------- Compute the free energy profile by umbrella integration
     allocate(profile(2,nrep-1))
@@ -352,18 +356,18 @@ logical ::  per, velin, velout, relaxd, converged, wgrad, moved, maxpreached, eq
 
     !------------ Get coordinates for previously optimized extrema
         !Reactants
-        ! call getfilenames(1,chi,infile,reffile,outfile,iname,rname,oname)
-        ! call getrefcoord(rname,nrestr,mask,natoms,rref,boxinfo,per,velin)
-        ! call getcoordextrema(rref,natoms,rav,nrestr,nrep,1,mask)
-        ! call writenewcoord(oname,rref,boxinfo,natoms,nrestr,mask,per,velout,rav,nrep,1,test)
+        call getfilenames(1,chi,infile,reffile,outfile,iname,rname,oname)
+        call getrefcoord(rname,nrestr,mask,natoms,rref,boxinfo,per,velin)
+        call getcoordextrema(rref,natoms,rav,nrestr,nrep,1,mask)
+        call writenewcoord(oname,rref,boxinfo,natoms,nrestr,mask,per,velout,rav,nrep,1,test)
         !
         ! !Products
-        ! call getfilenames(nrep,chi,infile,reffile,outfile,iname,rname,oname)
-        ! call getrefcoord(rname,nrestr,mask,natoms,rref,boxinfo,per,velin)
-        ! call getcoordextrema(rref,natoms,rav,nrestr,nrep,nrep,mask)
-        ! call writenewcoord(oname,rref,boxinfo,natoms,nrestr,mask,per,velout,rav,nrep,nrep,test)
+        call getfilenames(nrep,chi,infile,reffile,outfile,iname,rname,oname)
+        call getrefcoord(rname,nrestr,mask,natoms,rref,boxinfo,per,velin)
+        call getcoordextrema(rref,natoms,rav,nrestr,nrep,nrep,mask)
+        call writenewcoord(oname,rref,boxinfo,natoms,nrestr,mask,per,velout,rav,nrep,nrep,test)
         !
-        do i=1,nrep
+        do i=2,nrep-1
           ! call getfilenames(i,chi,infile,reffile,outfile,iname,rname,oname)
           call getfilenames(i,chi,infile,infile,outfile,iname,rname,oname) !toma ultima foto p/ siguiente paso
           call getrefcoord(rname,nrestr,mask,natoms,rref,boxinfo,per,.True.)

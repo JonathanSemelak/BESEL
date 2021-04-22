@@ -1,14 +1,18 @@
-infile DCE_f
-reffile DCE_r
-outfile DCE_o
+infile DALA_f
+reffile DALA_r
+outfile DALA_o
 per F
 velin F
 velout F
-nrep 25
-nrestr 8
-kref 400
-kspring 55
-steepsize 0.1
-ftol 2.5
-lastmforce 0
-mask 1 2 3 4 5 6 7 8
+nrep 50
+nrestr 5
+kref 1000
+kspring 500
+steepsize 0.001d0
+steepspring 0.001d0
+ftol 0.01
+lastmforce 99999
+mask 5 7 9 15 17
+wgrad F
+nscycle 50000
+rextrema T
