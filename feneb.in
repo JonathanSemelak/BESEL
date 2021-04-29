@@ -1,18 +1,19 @@
 infile DALA_f
 reffile DALA_r
 outfile DALA_o
+topfile DALA.prmtop
 per F
 velin F
 velout F
 nrep 50
-nrestr 5
+nrestr 22
 kref 1000
 kspring 500
 steepsize 0.001d0
-steepspring 0.001d0
 ftol 0.01
 lastmforce 99999
-mask 5 7 9 15 17
+all
 wgrad F
-nscycle 50000
-rextrema T
+nscycle 100000
+wtemp T 1 4999 100 0.001
+

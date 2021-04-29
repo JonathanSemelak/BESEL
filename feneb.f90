@@ -2,27 +2,30 @@
 use netcdf
 use readandget
 implicit none
-character(len=50) :: infile, reffile, outfile, chi, iname, rname, oname, tempname
+character(len=50) :: infile, reffile, outfile,topfile, chi, iname, rname, oname, tempname
 integer :: nsteps, spatial, natoms, nrestr, nrep, nscycle,maxforceat, rpoint, tgpoint, fpoint
-integer :: i, j, k, n, start, end, skip
+integer :: i, j, k, n, start, end, skip, wtempstart, wtempend, wtempfrec, tempfilesize
 integer, allocatable, dimension (:) :: mask
 real(4) :: coordinate
 real(4), allocatable, dimension (:) :: coordx,coordy,coordz
 integer, dimension (3) :: point
 double precision :: kref, steep_size, ftol, maxforce, kspring, maxforceband, lastmforce, maxforcebandprevsetp, steep_spring
-double precision :: stepl, deltaA, rmsfneb, minpoint, maxpoint, barrier
+double precision :: stepl, deltaA, rmsfneb, minpoint, maxpoint, barrier, dt
 double precision, dimension(6) :: boxinfo
-double precision, allocatable, dimension(:) :: rmsd
-double precision, allocatable, dimension(:,:) :: rref, profile
+double precision, allocatable, dimension(:) :: rmsd, mass
+double precision, allocatable, dimension(:,:) :: rref, profile, temp
 double precision, allocatable, dimension(:,:,:) :: rav, fav, tang, ftang, ftrue, fperp, rrefall, ravprevsetp, rcorr, fonref
 double precision, allocatable, dimension(:,:,:) :: fspring, dontg, selfdist
-logical ::  per, velin, velout, relaxd, converged, wgrad, moved, maxpreached, equispaced, rextrema, test
+logical ::  per, velin, velout, relaxd, converged, wgrad, wtemp, moved, maxpreached, equispaced, rextrema, test
+
 
 !------------ Read input
-    call readinput(nrep,infile,reffile,outfile,mask,nrestr,lastmforce, &
+    call readinput(nrep,infile,reffile,outfile,topfile,mask,nrestr,lastmforce, &
                  rav,fav,ftrue,ftang,fperp,fspring,tang,kref,kspring,steep_size,steep_spring, &
-                 ftol,per,velin,velout,wgrad,rrefall,nscycle,dontg,ravprevsetp,rpoint, tgpoint, &
+                 ftol,per,velin,velout,wgrad,wtemp,dt,wtempstart,wtempend,wtempfrec,mass,rrefall, &
+                 nscycle,dontg,ravprevsetp,rpoint, tgpoint, &
                  fpoint, rcorr, rextrema, skip)
+
 !------------
  test=.False.
 
@@ -37,8 +40,10 @@ logical ::  per, velin, velout, relaxd, converged, wgrad, moved, maxpreached, eq
 
     call getfilenames(nrep,chi,infile,reffile,outfile,iname,rname,oname)
     call getdims(iname,nsteps,spatial,natoms)
-
-
+    tempfilesize=((nsteps-1))
+    allocate(temp(tempfilesize,nrep))
+    temp=0.d0
+    call readtop(topfile,natoms,mask,mass,nrestr)
     if (allocated(coordx)) deallocate(coordx)
     if (allocated(coordy)) deallocate(coordy)
     if (allocated(coordz)) deallocate(coordz)
@@ -49,7 +54,8 @@ logical ::  per, velin, velout, relaxd, converged, wgrad, moved, maxpreached, eq
     call getrefcoord(rname,nrestr,mask,natoms,rref,boxinfo,per,velin)
 
     call getavcoordanforces(iname,nsteps,natoms,spatial,coordx,coordy,coordz,&
-                        nrestr,mask,kref,rav,fav,nrep,nrep,rref,wgrad,dontg,skip)
+                        nrestr,mask,kref,rav,fav,nrep,nrep,rref,wgrad,dontg,&
+                        skip,wtemp,dt,mass,tempfilesize,temp)
 
     call writeposforces(rav,fav,nrestr,nrep,nrep)
 
@@ -111,18 +117,33 @@ logical ::  per, velin, velout, relaxd, converged, wgrad, moved, maxpreached, eq
     do i=start,end
       call getfilenames(i,chi,infile,reffile,outfile,iname,rname,oname)
       call getdims(iname,nsteps,spatial,natoms)
-
+      tempfilesize=(nsteps-1)
+      if(i .eq. start) allocate(temp(tempfilesize,nrep))
+      if(i .eq. start) call readtop(topfile,natoms,mask,mass,nrestr)
       if (allocated(coordx)) deallocate(coordx)
       if (allocated(coordy)) deallocate(coordy)
       if (allocated(coordz)) deallocate(coordz)
       if (allocated(rref)) deallocate(rref)
       allocate(coordx(nsteps),coordy(nsteps),coordz(nsteps),rref(3,natoms))
 
-      call getrefcoord(rname,nrestr,mask,natoms,rref,boxinfo,per,.True.)
-
+      call getrefcoord(rname,nrestr,mask,natoms,rref,boxinfo,per,velin)
       call getavcoordanforces(iname,nsteps,natoms,spatial,coordx,coordy, coordz,&
-                    nrestr,mask,kref,rav,fav,nrep,i,rref,wgrad,dontg,skip)
+                    nrestr,mask,kref,rav,fav,nrep,i,rref,wgrad,dontg,&
+                    skip,wtemp,dt,mass,tempfilesize,temp)
     end do
+
+    if (wtemp) then
+      open(unit=2203280, file="temperature.dat")
+      do i=start,end
+        do j=wtempstart, wtempend
+          if (mod(j,wtempfrec) .eq. 0) write(2203280,*) j, temp(j,i)
+        end do
+        write(2203280,*)
+      end do
+      close(2203280)
+    end if
+
+
 
     if (rextrema) call getposforcesextrema(rav,fav,nrestr,nrep)
 
@@ -132,7 +153,6 @@ logical ::  per, velin, velout, relaxd, converged, wgrad, moved, maxpreached, eq
         end do
 
     !----------- Write RMSD
-
         allocate(rmsd(nrep))
         call getrmsd(fav, kref, nrep, nrestr,rmsd)
         open(unit=40000, file="rmsd.dat")
@@ -141,6 +161,7 @@ logical ::  per, velin, velout, relaxd, converged, wgrad, moved, maxpreached, eq
 !----------- Puts reference values in a single array (rrefall). Currently not used.!TESTTTTTTTT
     test=.True.
     do i=start,end
+
       call getfilenames(i,chi,infile,reffile,outfile,iname,rname,oname) !rname = NAME_r_i.rst7 ; i=replica
       !-----------------test
       call getrefcoord(rname,nrestr,mask,natoms,rref,boxinfo,per,velin)
@@ -273,6 +294,12 @@ logical ::  per, velin, velout, relaxd, converged, wgrad, moved, maxpreached, eq
      close(1645)
 
 
+     ! open(unit=16450, file="temp.dat")
+
+     ! do j=1,tempfilesize
+     !   write(*,*) temp(j,1:nrep-2)
+     ! end do
+
      ! if (tgpoint .eq. 2) call gettang(rcorr,tang,nrestr,nrep)
 
 
@@ -358,7 +385,6 @@ logical ::  per, velin, velout, relaxd, converged, wgrad, moved, maxpreached, eq
           end do
           write(1646,*)
         end do
-
 
     !------------ Get coordinates for previously optimized extrema
     if (.not. rextrema) then
