@@ -36,13 +36,10 @@ logical ::  per, velin, velout, relaxd, converged, wgrad, wtemp, moved, maxpreac
     write(9999,*) "Performing FE full optmization for a single replica"
     write(9999,*) "---------------------------------------------------"
 
-
-
     call getfilenames(nrep,chi,infile,reffile,outfile,iname,rname,oname)
     call getdims(iname,nsteps,spatial,natoms)
-    tempfilesize=((nsteps-1))
-    allocate(temp(tempfilesize,nrep))
-    temp=0.d0
+    tempfilesize=(nsteps-1-skip)
+    if(wtemp) call readtop(topfile,natoms,mask,mass,nrestr)
     call readtop(topfile,natoms,mask,mass,nrestr)
     if (allocated(coordx)) deallocate(coordx)
     if (allocated(coordy)) deallocate(coordy)
