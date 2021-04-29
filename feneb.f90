@@ -114,12 +114,13 @@ logical ::  per, velin, velout, relaxd, converged, wgrad, wtemp, moved, maxpreac
       end=nrep
     endif
 
+    write(*,*) start, end
     do i=start,end
       call getfilenames(i,chi,infile,reffile,outfile,iname,rname,oname)
       call getdims(iname,nsteps,spatial,natoms)
-      tempfilesize=(nsteps-1)
+      tempfilesize=(nsteps-1-skip)
       if(i .eq. start) allocate(temp(tempfilesize,nrep))
-      if(i .eq. start) call readtop(topfile,natoms,mask,mass,nrestr)
+      if(i .eq. start .and. wtemp) call readtop(topfile,natoms,mask,mass,nrestr)
       if (allocated(coordx)) deallocate(coordx)
       if (allocated(coordy)) deallocate(coordy)
       if (allocated(coordz)) deallocate(coordz)

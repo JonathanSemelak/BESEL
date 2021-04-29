@@ -120,7 +120,7 @@ do while (i .le. (nrestr/3)*3)
   i = i + 3
 enddo
 write(9999,*) mass(i:nrestr)
-write(9999,*) 
+write(9999,*)
 
 
 end subroutine readtop
@@ -260,10 +260,10 @@ do i = 1,nrestr !natoms
   call check(nf90_get_var(ncid,3,coordz,start = point,count = endp))
 
   do k=skip+1,nsteps
-    av(1)=(av(1)*(dble(k-1))+coordx(k))/dble(k)
-    av(2)=(av(2)*(dble(k-1))+coordy(k))/dble(k)
-    av(3)=(av(3)*(dble(k-1))+coordz(k))/dble(k)
-    if (wgrad) write(auxunit,*) k, av(1:3)
+    av(1)=(av(1)*(dble(k-1-skip))+coordx(k-skip))/dble(k-skip)
+    av(2)=(av(2)*(dble(k-1-skip))+coordy(k-skip))/dble(k-skip)
+    av(3)=(av(3)*(dble(k-1-skip))+coordz(k-skip))/dble(k-skip)
+    if (wgrad) write(auxunit,*) k-skip, av(1:3)
   end do
   rav(1:3,i,rep)=av(1:3)
 
@@ -274,7 +274,7 @@ do i = 1,nrestr !natoms
 !For comparision with .rst7 file, remember that
 !AMBER VEL UNITS are Angstroms per 1/20.455 ps
   if (wtemp) then
-    do k=1,nsteps-1
+    do k=skip+1,nsteps-1
        ! if (mod(k,wtempfrec) .eq. 0) then
        vat=((coordx(k+1)-coordx(k))/dt)**2 + &
            ((coordy(k+1)-coordy(k))/dt)**2 + &

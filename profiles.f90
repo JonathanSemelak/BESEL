@@ -8,7 +8,6 @@ integer :: i,j
 
 profile=0.d0
 profileall=0.d0
-
 do i=1,nrestr
   do j=1,nrep-1
     profileall(1,i,j)=(dble(j)+dble(j+1))/2.d0
