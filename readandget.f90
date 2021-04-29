@@ -120,7 +120,8 @@ do while (i .le. (nrestr/3)*3)
   i = i + 3
 enddo
 write(9999,*) mass(i:nrestr)
-write(9999,*)
+write(9999,*) 
+
 
 end subroutine readtop
 
