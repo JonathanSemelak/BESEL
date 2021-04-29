@@ -114,7 +114,6 @@ logical ::  per, velin, velout, relaxd, converged, wgrad, wtemp, moved, maxpreac
       end=nrep
     endif
 
-    write(*,*) start, end
     do i=start,end
       call getfilenames(i,chi,infile,reffile,outfile,iname,rname,oname)
       call getdims(iname,nsteps,spatial,natoms)

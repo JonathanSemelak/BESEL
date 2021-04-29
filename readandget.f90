@@ -279,7 +279,7 @@ do i = 1,nrestr !natoms
        vat=((coordx(k+1)-coordx(k))/dt)**2 + &
            ((coordy(k+1)-coordy(k))/dt)**2 + &
            ((coordz(k+1)-coordz(k))/dt)**2
-       temp(k,rep)=temp(k,rep)+ &
+       temp(k-skip,rep)=temp(k-skip,rep)+ &
        (mass(i)*vat*10d0/(8.314472d0*3.d0*nrestr))
        ! end if
     end do
