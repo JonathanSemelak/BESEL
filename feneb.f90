@@ -57,12 +57,9 @@ logical ::  per, velin, velout, relaxd, converged, wgrad, wtemp, moved, maxpreac
 
   if (wtemp) then
     open(unit=2203280, file="temperature.dat")
-    do i=start,end
       do j=wtempstart, wtempend
         if (mod(j,wtempfrec) .eq. 0) write(2203280,*) j, temp(j,i)
       end do
-    write(2203280,*)
-    end do
     close(2203280)
   end if
 
