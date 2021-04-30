@@ -38,7 +38,7 @@ logical ::  per, velin, velout, relaxd, converged, wgrad, wtemp, moved, maxpreac
 
     call getfilenames(nrep,chi,infile,reffile,outfile,iname,rname,oname)
     call getdims(iname,nsteps,spatial,natoms)
-    tempfilesize=(nsteps-1-skip)
+    tempfilesize=(nsteps-1)
     allocate(temp(tempfilesize,nrep))
     if(wtemp) call readtop(topfile,natoms,mask,mass,nrestr)
     call readtop(topfile,natoms,mask,mass,nrestr)
@@ -58,7 +58,7 @@ logical ::  per, velin, velout, relaxd, converged, wgrad, wtemp, moved, maxpreac
   if (wtemp) then
     open(unit=2203280, file="temperature.dat")
       do j=wtempstart, wtempend
-        if (mod(j,wtempfrec) .eq. 0) write(2203280,*) j, temp(j,i)
+        if (mod(j,wtempfrec) .eq. 0) write(2203280,*) j, temp(j,1)
       end do
     close(2203280)
   end if
@@ -123,7 +123,7 @@ logical ::  per, velin, velout, relaxd, converged, wgrad, wtemp, moved, maxpreac
     do i=start,end
       call getfilenames(i,chi,infile,reffile,outfile,iname,rname,oname)
       call getdims(iname,nsteps,spatial,natoms)
-      tempfilesize=(nsteps-1-skip)
+      tempfilesize=(nsteps-1)
       if(i .eq. start) allocate(temp(tempfilesize,nrep))
       if(i .eq. start .and. wtemp) call readtop(topfile,natoms,mask,mass,nrestr)
       if (allocated(coordx)) deallocate(coordx)
