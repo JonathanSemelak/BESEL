@@ -274,7 +274,7 @@ do i = 1,nrestr !natoms
 !For comparision with .rst7 file, remember that
 !AMBER VEL UNITS are Angstroms per 1/20.455 ps
   if (wtemp) then
-    do k=skip+1,nsteps-1
+    do k=1,nsteps-1
        ! if (mod(k,wtempfrec) .eq. 0) then
        vat=((coordx(k+1)-coordx(k))/dt)**2 + &
            ((coordy(k+1)-coordy(k))/dt)**2 + &
