@@ -126,15 +126,16 @@ write(9999,*)
 end subroutine readtop
 
 
-subroutine readinputbuilder(rcfile, pcfile, tsfile, prefix, nrestr, nrep, usets, per, velin, velout, rav, mask,test)
+subroutine readinputbuilder(rcfile, pcfile, tsfile, prefix, nrestr, nrep, usets, per, velin, velout, rav, mask, method, onlytest)
 implicit none
 character(len=50) :: rcfile, pcfile, tsfile, prefix, exp, keyword, line, all
-integer :: nrestr, nrep, i, ierr
-logical ::  usets, per, velin, velout, test
+integer :: nrestr, nrep, i, ierr, method
+logical ::  usets, per, velin, velout, onlytest
 integer, allocatable, dimension (:), intent(inout) :: mask
 double precision, allocatable, dimension(:,:,:), intent(inout) :: rav
-test = .false.
+onlytest = .false.
 usets = .false.
+method = 0
 open (unit=1000, file="bandbuilder.in", status='old', action='read') !read align.in
 do
    read (1000,"(a)",iostat=ierr) line ! read line into character variable
@@ -150,13 +151,13 @@ do
    if (keyword == 'per') read(line,*) exp, per
    if (keyword == 'velin') read(line,*) exp, velin
    if (keyword == 'velout') read(line,*) exp, velout
-   if (keyword == 'test') read(line,*) exp, test
+   if (keyword == 'onlytest') read(line,*) exp, onlytest
+   if (keyword == 'method') read(line,*) exp, method
 end do
 
 close (unit=1000)
 
 allocate(mask(nrestr),rav(3,nrestr,nrep))
-
 open (unit=1000, file="bandbuilder.in", status='old', action='read') !read align.in
 do
    read (1000,"(a)",iostat=ierr) line ! read line into character variable
