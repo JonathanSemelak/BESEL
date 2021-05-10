@@ -126,16 +126,16 @@ write(9999,*)
 end subroutine readtop
 
 
-subroutine readinputbuilder(rcfile, pcfile, tsfile, prefix, nrestr, nrep, usets, per, velin, velout, rav, mask, method, onlytest)
+subroutine readinputbuilder(rcfile, pcfile, tsfile, prefix, nrestr, nrep, usets, per, velin, velout, rav, mask, iddp, onlytest)
 implicit none
 character(len=50) :: rcfile, pcfile, tsfile, prefix, exp, keyword, line, all
-integer :: nrestr, nrep, i, ierr, method
-logical ::  usets, per, velin, velout, onlytest
+integer :: nrestr, nrep, i, ierr
+logical ::  usets, per, velin, velout, onlytest, iddp
 integer, allocatable, dimension (:), intent(inout) :: mask
 double precision, allocatable, dimension(:,:,:), intent(inout) :: rav
 onlytest = .false.
 usets = .false.
-method = 0
+iddp = .false.
 open (unit=1000, file="bandbuilder.in", status='old', action='read') !read align.in
 do
    read (1000,"(a)",iostat=ierr) line ! read line into character variable
@@ -152,7 +152,7 @@ do
    if (keyword == 'velin') read(line,*) exp, velin
    if (keyword == 'velout') read(line,*) exp, velout
    if (keyword == 'onlytest') read(line,*) exp, onlytest
-   if (keyword == 'method') read(line,*) exp, method
+   if (keyword == 'iddp') read(line,*) exp, iddp
 end do
 
 close (unit=1000)

@@ -361,8 +361,10 @@ logical ::  per, velin, velout, relaxd, converged, wgrad, wtemp, moved, maxpreac
           !como wrmforce es false, acá usa fspring para determinar maxforceband
           !Moves band using spring force only
           ! write(9999,'(A6,2x,I3,2x,A15,2x,f8.6,2x,A20,2x,f8.6)') "Step: ", k, "Step length", &
-          write(9999,'(A6,2x,I7,2x,A15,2x,f20.10,2x,A20,2x,f20.10)') "Step: ", k, "Step length", &
-          steep_spring, "Band max fspringN: ", maxforceband
+
+          !NO QUIERO TANTO OUTPUT
+          !write(9999,'(A6,2x,I7,2x,A15,2x,f20.10,2x,A20,2x,f20.10)') "Step: ", k, "Step length", &
+          ! steep_spring, "Band max fspringN: ", maxforceband
           dontg=0.d0
           ravprevsetp=rav
           maxforcebandprevsetp=maxforceband

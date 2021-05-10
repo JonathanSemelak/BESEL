@@ -12,6 +12,6 @@ gfortran -c profiles.f90
 
 gfortran readandget.o writeall.o opt.o neb.o profiles.o feneb.f90 -o feneb `$NETCDFALL`
 
-gfortran readandget.o writeall.o bandbuilder.f90 -o bandbuilder `$NETCDFALL`
+gfortran readandget.o opt.o neb.o writeall.o profiles.o bandbuilder.f90 -o bandbuilder `$NETCDFALL`
 
 gfortran getdihe.f90 -o getdihe

@@ -26,6 +26,7 @@ subroutine getmaxforce(nrestr,nrep,rep,fav,maxforce,ftol,relaxd,maxforceat,rmsfn
 end subroutine getmaxforce
 
 subroutine steep(rav,fav,nrep,rep,steep_size,maxforce,nrestr,lastmforce,stepl,deltaA,dontg)
+
 implicit none
 double precision, dimension(3,nrestr,nrep), intent(inout) :: rav
 double precision, dimension(3,nrestr,nrep) :: rnew
@@ -52,6 +53,7 @@ step=stepl/maxforce
   if (stepl .lt. 1d-10) then
     moved=.true.
     stepl=0.d0
+    write(*,*) "ZERO PERRA"
   end if
 
 end subroutine steep
