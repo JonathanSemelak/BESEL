@@ -223,9 +223,6 @@ do i=1,nrestr
 end do
 close(1111)
 
-
-
-
 end program bandbuilder
 
 
