@@ -21,7 +21,7 @@ do while((.not.H0) .and. (.not.toosmall))
   coordav=0.d0
   do k=nskip+1,nsteps
     coordav(k-nskip)=(coordav(k-nskip-1)*(dble(k-1-nskip))+coord(k))/dble(k-nskip)
-    write(8888,*) nskip, k-nskip, coord(k), coordav(k-nskip)
+    ! write(8888,*) nskip, k-nskip, coord(k), coordav(k-nskip)
   end do
   ! write(8888,*)
 
@@ -118,6 +118,12 @@ endif
 ! write(*,*) H0, toosmall
 ! write(*,*) "ASD1"
 end do
+
+
+do i=1,nsegment
+    write(8888,*) i, segmentedcoord(i)
+end do
+write(8888,*)
 ! write(*,*) "ASD2"
 
 goodrav=0.d0
@@ -133,14 +139,14 @@ goodrav=goodrav/dble(nsegment)
 ! write(*,*) "ASD5"
 
 devav=0.d0
-do j=1,nsteps-nskip
-   devav=devav+(coordav(j)-goodrav)**2
+do j=1,nsteps
+   devav=devav+(coord(j)-goodrav)**2
 end do
 devav=dsqrt(devav/(nsteps-nskip-1))
 ! write(*,*) "ASD6"
 
 
-write(6666,*) goodrav
+! write(6666,*) goodrav
 write(7777,*) devav
 ! write(*,*) "ASD7"
 

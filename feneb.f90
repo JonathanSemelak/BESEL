@@ -69,8 +69,9 @@ logical ::  dostat, H0, H0T
       write(9999,*) "MK test H0"
       coordstat(1:nsteps)=coordall(1,j,1:nsteps)
       call getsstatistics(coordstat,nsteps,skip,nevalfluc,dt,Z,H0,minsegmentlenght,goodrav)
-      write(*,*) "ASD2"
+      ! write(*,*) "ASD2"
       write(9999,*) "coord x:",H0
+      ! write(*,*) rav(1,j,nrep),goodrav
       rav(1,j,nrep)=goodrav
       fav(1,j,nrep)=kref*(rav(1,j,nrep)-rref(1,atj))
       H0T=(H0T.and.H0)
@@ -78,16 +79,18 @@ logical ::  dostat, H0, H0T
       coordstat(1:nsteps)=coordall(2,j,1:nsteps)
 
       call getsstatistics(coordstat,nsteps,skip,nevalfluc,dt,Z,H0,minsegmentlenght,goodrav)
-      write(*,*) "ASD2"
+      ! write(*,*) "ASD2"
       write(9999,*) "coord y:",H0
+      ! write(*,*) rav(2,j,nrep),goodrav
       rav(2,j,nrep)=goodrav
       fav(2,j,nrep)=kref*(rav(2,j,nrep)-rref(2,atj))
       H0T=(H0T.and.H0)
 
       coordstat(1:nsteps)=coordall(3,j,1:nsteps)
       call getsstatistics(coordstat,nsteps,skip,nevalfluc,dt,Z,H0,minsegmentlenght,goodrav)
-      write(*,*) "ASD2"
+      ! write(*,*) "ASD2"
       write(9999,*) "coord z:",H0
+      ! write(*,*) rav(3,j,nrep),goodrav
       rav(3,j,nrep)=goodrav
       fav(3,j,nrep)=kref*(rav(3,j,nrep)-rref(3,atj))
       H0T=(H0T.and.H0)
