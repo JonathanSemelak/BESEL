@@ -3,28 +3,30 @@ use netcdf
 use readandget
 implicit none
 character(len=50) :: infile, reffile, outfile,topfile, chi, iname, rname, oname, tempname
-integer :: nsteps, spatial, natoms, nrestr, nrep, nscycle,maxforceat, rpoint, tgpoint, fpoint
-integer :: i, j, k, n, start, end, skip, wtempstart, wtempend, wtempfrec, tempfilesize
+integer :: nsteps, spatial, natoms, nrestr, nrep, nscycle,maxforceat, atj
+integer :: i, j, k, n, start, end, skip, wtempstart, wtempend, wtempfrec, tempfilesize, minsegmentlenght, nevalfluc
 integer, allocatable, dimension (:) :: mask
 real(4) :: coordinate
-real(4), allocatable, dimension (:) :: coordx,coordy,coordz
+real(4), allocatable, dimension (:) :: coordx,coordy,coordz, coordstat
 integer, dimension (3) :: point
 double precision :: kref, steep_size, ftol, maxforce, kspring, maxforceband, lastmforce, maxforcebandprevsetp, steep_spring
-double precision :: stepl, deltaA, rmsfneb, minpoint, maxpoint, barrier, dt
+double precision :: stepl, deltaA, rmsfneb, minpoint, maxpoint, barrier, dt, Z, goodrav
 double precision, dimension(6) :: boxinfo
 double precision, allocatable, dimension(:) :: rmsd, mass
 double precision, allocatable, dimension(:,:) :: rref, profile, temp
-double precision, allocatable, dimension(:,:,:) :: rav, fav, tang, ftang, ftrue, fperp, rrefall, ravprevsetp, rcorr, fonref
-double precision, allocatable, dimension(:,:,:) :: fspring, dontg, selfdist
+double precision, allocatable, dimension(:,:,:) :: rav, fav, tang, ftang, ftrue, fperp, rrefall, ravprevsetp
+double precision, allocatable, dimension(:,:,:) :: fspring, dontg, selfdist,coordall
 logical ::  per, velin, velout, relaxd, converged, wgrad, wtemp, moved, maxpreached, equispaced, rextrema, test
+logical ::  dostat, H0, H0T
+
 
 
 !------------ Read input
     call readinput(nrep,infile,reffile,outfile,topfile,mask,nrestr,lastmforce, &
                  rav,fav,ftrue,ftang,fperp,fspring,tang,kref,kspring,steep_size,steep_spring, &
                  ftol,per,velin,velout,wgrad,wtemp,dt,wtempstart,wtempend,wtempfrec,mass,rrefall, &
-                 nscycle,dontg,ravprevsetp,rpoint, tgpoint, &
-                 fpoint, rcorr, rextrema, skip)
+                 nscycle,dontg,ravprevsetp, &
+                 rextrema, skip,dostat, minsegmentlenght,nevalfluc)
 
 !------------
  test=.False.
@@ -38,6 +40,7 @@ logical ::  per, velin, velout, relaxd, converged, wgrad, wtemp, moved, maxpreac
 
     call getfilenames(nrep,chi,infile,reffile,outfile,iname,rname,oname)
     call getdims(iname,nsteps,spatial,natoms)
+    ! nsteps=1000 ! TEST
     tempfilesize=(nsteps-1)
     allocate(temp(tempfilesize,nrep))
     if(wtemp) call readtop(topfile,natoms,mask,mass,nrestr)
@@ -48,20 +51,56 @@ logical ::  per, velin, velout, relaxd, converged, wgrad, wtemp, moved, maxpreac
     if (allocated(rref)) deallocate(rref)
 
     allocate(coordx(nsteps),coordy(nsteps),coordz(nsteps),rref(3,natoms))
-
+    allocate(coordall(3,nrestr,nsteps),coordstat(nsteps))
     call getrefcoord(rname,nrestr,mask,natoms,rref,boxinfo,per,velin)
 
     call getavcoordanforces(iname,nsteps,natoms,spatial,coordx,coordy,coordz,&
-                        nrestr,mask,kref,rav,fav,nrep,nrep,rref,wgrad,dontg,&
+                        coordall,nrestr,mask,kref,rav,fav,nrep,nrep,rref,wgrad,dontg,&
                         skip,wtemp,dt,mass,tempfilesize,temp)
 
-  if (wtemp) then
-    open(unit=2203280, file="temperature.dat")
+    if (dostat) then
+    write(9999,*) "---------------------------------------------------"
+    write(9999,*) "Statistic stuff"
+    write(9999,*) "---------------------------------------------------"
+    H0T=.True.
+    do j=1,nrestr
+      atj=mask(j)
+      write(9999,*) "Atom:",j
+      write(9999,*) "MK test H0"
+      coordstat(1:nsteps)=coordall(1,j,1:nsteps)
+      call getsstatistics(coordstat,nsteps,skip,nevalfluc,dt,Z,H0,minsegmentlenght,goodrav)
+      write(9999,*) "coord x:",H0
+      rav(1,j,nrep)=goodrav
+      fav(1,j,nrep)=kref*(rav(1,j,nrep)-rref(1,atj))
+      H0T=(H0T.and.H0)
+
+      coordstat(1:nsteps)=coordall(2,j,1:nsteps)
+
+
+      call getsstatistics(coordstat,nsteps,skip,nevalfluc,dt,Z,H0,minsegmentlenght,goodrav)
+      write(9999,*) "coord y:",H0
+      rav(2,j,nrep)=goodrav
+      fav(2,j,nrep)=kref*(rav(2,j,nrep)-rref(2,atj))
+      H0T=(H0T.and.H0)
+
+      coordstat(1:nsteps)=coordall(3,j,1:nsteps)
+      call getsstatistics(coordstat,nsteps,skip,nevalfluc,dt,Z,H0,minsegmentlenght,goodrav)
+      write(9999,*) "coord z:",H0
+      rav(3,j,nrep)=goodrav
+      fav(3,j,nrep)=kref*(rav(3,j,nrep)-rref(3,atj))
+      H0T=(H0T.and.H0)
+    end do
+    write(*,*) "Trend free:", H0T
+    write(9999,*) "---------------------------------------------------"
+
+    end if
+    if (wtemp) then
+      open(unit=2203280, file="temperature.dat")
       do j=wtempstart, wtempend
         if (mod(j,wtempfrec) .eq. 0) write(2203280,*) j, temp(j,1)
       end do
-    close(2203280)
-  end if
+      close(2203280)
+    end if
 
     call writeposforces(rav,fav,nrestr,nrep,nrep)
 
@@ -121,7 +160,7 @@ logical ::  per, velin, velout, relaxd, converged, wgrad, wtemp, moved, maxpreac
 
       call getrefcoord(rname,nrestr,mask,natoms,rref,boxinfo,per,velin)
       call getavcoordanforces(iname,nsteps,natoms,spatial,coordx,coordy, coordz,&
-                    nrestr,mask,kref,rav,fav,nrep,i,rref,wgrad,dontg,&
+                    coordall,nrestr,mask,kref,rav,fav,nrep,i,rref,wgrad,dontg,&
                     skip,wtemp,dt,mass,tempfilesize,temp)
     end do
 

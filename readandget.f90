@@ -3,33 +3,33 @@ implicit none
 contains
 subroutine readinput(nrep,infile,reffile,outfile,topfile,mask,nrestr,lastmforce, &
            rav,fav,ftrue,ftang,fperp,fspring,tang,kref,kspring,steep_size,steep_spring,ftol,per, &
-           velin,velout,wgrad,wtemp,dt,wtempstart,wtempend,wtempfrec,mass,rrefall,nscycle,dontg,ravprevsetp,rpoint, &
-           tgpoint, fpoint, rcorr, rextrema, skip)
+           velin,velout,wgrad,wtemp,dt,wtempstart,wtempend,wtempfrec,mass,rrefall,nscycle,dontg,ravprevsetp, &
+           rextrema, skip, dostat, minsegmentlenght, nevalfluc)
 implicit none
 character(len=50) :: infile, reffile, outfile, line, exp, keyword, topfile
-integer :: nrestr, nrep, i, ierr, nscycle,rpoint, tgpoint, fpoint, skip, wtempfrec, wtempstart, wtempend
-logical ::  per, velin, velout, wgrad, rextrema, wtemp
+integer :: nrestr, nrep, i, ierr, nscycle,skip, wtempfrec, wtempstart, wtempend
+integer :: minsegmentlenght, nevalfluc
+logical ::  per, velin, velout, wgrad, rextrema, wtemp, dostat
 double precision :: kref, kspring, steep_size, steep_spring, ftol, lastmforce, dt
 integer, allocatable, dimension (:), intent(inout) :: mask
-double precision, allocatable, dimension(:,:,:), intent(inout) :: rav, fav, tang, ftang, ftrue,fperp, rrefall,ravprevsetp, rcorr
+double precision, allocatable, dimension(:,:,:), intent(inout) :: rav, fav, tang, ftang, ftrue,fperp, rrefall,ravprevsetp
 double precision, allocatable, dimension(:,:,:), intent(inout) :: fspring, dontg
 double precision, allocatable, dimension(:), intent(inout) :: mass
 ! double precision, allocatable, dimension(:,:), intent(inout) :: temp
 
-
 ! set some default variables
  nscycle=1
  rextrema=.False.
- rpoint=0
- tgpoint=0
- fpoint=0
  steep_spring=0.01d0
  steep_size=0.01d0
  skip=0
  !VELTEST
  wtemp=.False.
+ dostat=.False.
  wtempfrec=1
  dt=0.001
+ minsegmentlenght=100
+ nevalfluc=1000
 open (unit=1000, file='feneb.in', status='old', action='read') !read feneb.in
 do
    read (1000,"(a)",iostat=ierr) line ! read line into character variable
@@ -52,18 +52,17 @@ do
    if (keyword == 'lastmforce') read(line,*) exp, lastmforce
    if (keyword == 'wgrad') read(line,*) exp, wgrad
    if (keyword == 'nscycle') read(line,*) exp, nscycle
-   if (keyword == 'rpoint') read(line,*) exp, rpoint
-   if (keyword == 'tgpoint') read(line,*) exp, tgpoint
-   if (keyword == 'fpoint') read(line,*) exp, fpoint
    if (keyword == 'rextrema') read(line,*) exp, rextrema
    if (keyword == 'skip') read(line,*) exp, skip
-   if (keyword == 'wtemp') read(line,*) exp, wtemp, wtempstart, wtempend, wtempfrec, dt
+   if (keyword == 'dt') read(line,*) exp, dt
+   if (keyword == 'wtemp') read(line,*) exp, wtemp, wtempstart, wtempend, wtempfrec
+   if (keyword == 'dostat') read(line,*) exp, dostat, nevalfluc, minsegmentlenght
 end do
 close (unit=1000)
 if (nrep .gt. 1) allocate(tang(3,nrestr,nrep),ftang(3,nrestr,nrep),ftrue(3,nrestr,nrep),&
                           fperp(3,nrestr,nrep),fspring(3,nrestr,nrep),dontg(3,nrestr,nrep))
 allocate(mass(nrestr),mask(nrestr),rav(3,nrestr,nrep),fav(3,nrestr,nrep),rrefall(3,nrestr,nrep),&
-        ravprevsetp(3,nrestr,nrep),rcorr(3,nrestr,nrep))
+        ravprevsetp(3,nrestr,nrep))
 
 open (unit=1000, file="feneb.in", status='old', action='read') !read feneb.in now that mask is allocated
 do
@@ -215,7 +214,7 @@ call check(nf90_close(ncid))
 end subroutine getdims
 
 subroutine getavcoordanforces(iname,nsteps,natoms,spatial, &
-                            coordx,coordy,coordz,nrestr,mask, &
+                            coordx,coordy,coordz,coordall,nrestr,mask, &
                             kref,rav,fav,nrep,rep,rref,wgrad,dontg, &
                             skip,wtemp,dt,mass,tempfilesize,temp)
 use netcdf
@@ -227,6 +226,7 @@ character(len=50), intent(in) :: iname
 character(len=50) :: xname, vname, chi, chrep
 double precision :: kref, n1, dt, vat, ekin
 double precision, dimension(3,nrestr,nrep) :: rav,fav,dontg
+double precision, dimension(3,nrestr,nsteps) :: coordall
 double precision, dimension(3,natoms), intent(inout) :: rref
 double precision, dimension(tempfilesize,rep), intent(inout) :: temp
 double precision, dimension(nrestr), intent(in) :: mass
@@ -261,10 +261,20 @@ do i = 1,nrestr !natoms
   call check(nf90_get_var(ncid,3,coordz,start = point,count = endp))
 
   do k=skip+1,nsteps
-    av(1)=(av(1)*(dble(k-1-skip))+coordx(k-skip))/dble(k-skip)
-    av(2)=(av(2)*(dble(k-1-skip))+coordy(k-skip))/dble(k-skip)
-    av(3)=(av(3)*(dble(k-1-skip))+coordz(k-skip))/dble(k-skip)
+    ! av(1)=(av(1)*(dble(k-1-skip))+coordx(k-skip))/dble(k-skip)
+    ! av(2)=(av(2)*(dble(k-1-skip))+coordy(k-skip))/dble(k-skip)
+    ! av(3)=(av(3)*(dble(k-1-skip))+coordz(k-skip))/dble(k-skip)
+    av(1)=(av(1)*(dble(k-1-skip))+coordx(k))/dble(k-skip)
+    av(2)=(av(2)*(dble(k-1-skip))+coordy(k))/dble(k-skip)
+    av(3)=(av(3)*(dble(k-1-skip))+coordz(k))/dble(k-skip)
     if (wgrad) write(auxunit,*) k-skip, av(1:3)
+    ! if (wgrad) write(auxunit,*) k-skip, coordx(k)-rref(1,ati), &
+    !                                     coordy(k)-rref(2,ati), &
+    !                                     coordz(k)-rref(3,ati)
+    ! coordall(1,i,k-skip)=av(1)
+    ! coordall(2,i,k-skip)=av(2)
+    ! coordall(3,i,k-skip)=av(3)
+    ! write(*,*) i,k, coordall(1:3,i,k)
   end do
   rav(1:3,i,rep)=av(1:3)
 
@@ -285,6 +295,14 @@ do i = 1,nrestr !natoms
        ! end if
     end do
   end if
+  do k=1,nsteps
+    av(1)=(av(1)*(dble(k-1))+coordx(k))/dble(k)
+    av(2)=(av(2)*(dble(k-1))+coordy(k))/dble(k)
+    av(3)=(av(3)*(dble(k-1))+coordz(k))/dble(k)
+    coordall(1,i,k)=av(1)
+    coordall(2,i,k)=av(2)
+    coordall(3,i,k)=av(3)
+  end do
 enddo
 
 ! write(*,*) temp(1:tempfilesize,rep)

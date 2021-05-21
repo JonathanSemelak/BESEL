@@ -9,8 +9,9 @@ gfortran -c opt.f90
 gfortran -c neb.f90
 gfortran -c writeall.f90
 gfortran -c profiles.f90
+gfortran -c statistics.f90
 
-gfortran readandget.o writeall.o opt.o neb.o profiles.o feneb.f90 -o feneb `$NETCDFALL`
+gfortran readandget.o writeall.o opt.o neb.o profiles.o statistics.o feneb.f90 -o feneb `$NETCDFALL`
 
 gfortran readandget.o opt.o neb.o writeall.o profiles.o bandbuilder.f90 -o bandbuilder `$NETCDFALL`
 
