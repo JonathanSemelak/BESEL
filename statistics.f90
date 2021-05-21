@@ -8,7 +8,7 @@ double precision ::  dt, S, m, Z, xi, xj, U, V, devav, goodrav
 integer :: i,j,k,start,end,count,N
 logical :: toosmall
 logical, intent(inout) :: H0
-nmax=0
+! nmax=0
 H0=.False.
 toosmall=.False.
 nskip=skip
@@ -16,12 +16,12 @@ nskip=skip
 do while((.not.H0) .and. (.not.toosmall))
   ! write(*,*) (.not.H0), (.not.toosmall), ((.not.H0) .and. (.not.toosmall))
   if (allocated(coordav)) deallocate(coordav)
-  write(*,*) nsteps, nskip, nsteps-nskip
+  ! write(*,*) nsteps, nskip, nsteps-nskip
   allocate(coordav(nsteps-nskip))
   coordav=0.d0
   do k=nskip+1,nsteps
     coordav(k-nskip)=(coordav(k-nskip-1)*(dble(k-1-nskip))+coord(k))/dble(k-nskip)
-    ! write(8888,*) k-nskip, coord(k), coordav(k-nskip)
+    write(8888,*) nskip, k-nskip, coord(k), coordav(k-nskip)
   end do
   ! write(8888,*)
 
@@ -29,10 +29,11 @@ do while((.not.H0) .and. (.not.toosmall))
 if ((nsteps-nskip).le.nevalfluc) toosmall=.True.
 if ((nsteps-nskip).le.nevalfluc) write(*,*) "Not enough data 1"
 
-
-do i=nskip+2, nskip+nevalfluc-1
+nmax=0
+do i=2, nevalfluc-1
   ! write(*,*)  coord(i-1),coord(i-1),coord(i)
  if ((coordav(i) .gt. coordav(i-1)) .and. (coordav(i) .gt. coordav(i+1))) nmax=nmax+1
+
 end do
 
 if (nmax.eq.0) then
@@ -107,29 +108,40 @@ V=V*dsqrt(dble(2*N+5))
 Z=(S-m)/V
 U=1.96d0
 H0=.False.
-write(*,*) nskip,abs(Z)
+! write(*,*) nskip,abs(Z)
 if (abs(Z).lt.U) then
    H0=.True.
    write(*,*) "Gotta drop ", nskip, " steps"
 else
   nskip=nskip+1000
 endif
+! write(*,*) H0, toosmall
+! write(*,*) "ASD1"
 end do
+! write(*,*) "ASD2"
 
 goodrav=0.d0
+! write(*,*) "ASD3"
+
 do i=1,nsegment
   goodrav=goodrav+segmentedcoord(i)
 end do
+! write(*,*) "ASD4"
+
 goodrav=goodrav/dble(nsegment)
 
+! write(*,*) "ASD5"
+
 devav=0.d0
-do j=nskip+1, nsteps
+do j=1,nsteps-nskip
    devav=devav+(coordav(j)-goodrav)**2
 end do
-devav=dsqrt(devav/(nsteps-1))
+devav=dsqrt(devav/(nsteps-nskip-1))
+! write(*,*) "ASD6"
+
 
 write(6666,*) goodrav
 write(7777,*) devav
-! write(*,*)
+! write(*,*) "ASD7"
 
 end subroutine getsstatistics
