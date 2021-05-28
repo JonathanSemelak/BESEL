@@ -27,7 +27,6 @@ do while((.not.H0) .and. (.not.toosmall))
 
   nmax=0
   do i=2, nevalfluc-1
-  ! write(*,*)  coord(i-1),coord(i-1),coord(i)
     if ((coordav(i) .gt. coordav(i-1)) .and. (coordav(i) .gt. coordav(i+1))) nmax=nmax+1
   end do
 
@@ -118,7 +117,7 @@ do while((.not.H0) .and. (.not.toosmall))
     write(*,*) "Steps used for analysis:",N*segmentlenght
     write(*,*) "Segments:", N
     write(*,*) "Droped:", nskip
-    write(*,*) "Total:", nskip+N*segmentlenght 
+    write(*,*) "Total:", nskip+N*segmentlenght
   else
     nskip=nskip+1000
   endif

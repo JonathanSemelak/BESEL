@@ -1,4 +1,4 @@
- program feneb
+program feneb
 use netcdf
 use readandget
 implicit none
@@ -17,18 +17,17 @@ double precision, allocatable, dimension(:,:) :: rref, profile, temp
 double precision, allocatable, dimension(:,:,:) :: rav, fav, tang, ftang, ftrue, fperp, rrefall, ravprevsetp
 double precision, allocatable, dimension(:,:,:) :: fspring, dontg, selfdist,coordall
 logical ::  per, velin, velout, relaxd, converged, wgrad, wtemp, moved, maxpreached, equispaced, rextrema, test
-logical ::  dostat, H0, H0T
-
-
+logical ::  dostat, H0, H0T, rfromtraj
 
 !------------ Read input
     call readinput(nrep,infile,reffile,outfile,topfile,mask,nrestr,lastmforce, &
                  rav,fav,ftrue,ftang,fperp,fspring,tang,kref,kspring,steep_size,steep_spring, &
                  ftol,per,velin,velout,wgrad,wtemp,dt,wtempstart,wtempend,wtempfrec,mass,rrefall, &
                  nscycle,dontg,ravprevsetp, &
-                 rextrema, skip,dostat, minsegmentlenght,nevalfluc)
+                 rextrema, skip,dostat, minsegmentlenght,nevalfluc,rfromtraj)
 
 !------------
+
  test=.False.
 
  open(unit=9999, file="feneb.out") !Opten file for feneb output
@@ -40,65 +39,66 @@ logical ::  dostat, H0, H0T
 
     call getfilenames(nrep,chi,infile,reffile,outfile,iname,rname,oname)
     call getdims(iname,nsteps,spatial,natoms)
-    ! nsteps=1000 ! TEST
     tempfilesize=(nsteps-1)
     allocate(temp(tempfilesize,nrep))
     if(wtemp) call readtop(topfile,natoms,mask,mass,nrestr)
-    call readtop(topfile,natoms,mask,mass,nrestr)
     if (allocated(coordx)) deallocate(coordx)
     if (allocated(coordy)) deallocate(coordy)
     if (allocated(coordz)) deallocate(coordz)
     if (allocated(rref)) deallocate(rref)
 
     allocate(coordx(nsteps),coordy(nsteps),coordz(nsteps),rref(3,natoms))
-    allocate(coordall(3,nrestr,nsteps),coordstat(nsteps))
     call getrefcoord(rname,nrestr,mask,natoms,rref,boxinfo,per,velin)
 
-    call getavcoordanforces(iname,nsteps,natoms,spatial,coordx,coordy,coordz,&
-                        coordall,nrestr,mask,kref,rav,fav,nrep,nrep,rref,wgrad,dontg,&
-                        skip,wtemp,dt,mass,tempfilesize,temp)
+    ! call getavcoordanforces(iname,nsteps,natoms,spatial,coordx,coordy,coordz,&
+    !                     coordall,nrestr,mask,kref,rav,fav,nrep,nrep,rref,wgrad,dontg,&
+    !                     skip,wtemp,dt,mass,tempfilesize,temp)
+
+    if (rfromtraj) then
+      if (allocated(coordall)) deallocate(coordall,coordstat)
+      call getcoordfromfenebtraj(nsteps,coordall,nrestr,nrep)
+      allocate(coordstat(nsteps))
+    else
+      allocate(coordall(3,nrestr,nsteps),coordstat(nsteps))
+      call getcoordfromnetcdf(iname,nsteps,natoms,spatial,coordx,coordy,coordz,coordall,nrestr,mask)
+    end if
+    call getravfav(coordall,nsteps,natoms,nrestr,mask,kref,rav,fav,nrep,nrep,rref,wgrad,skip,wtemp,dt,mass,tempfilesize,temp)
 
     if (dostat) then
-    write(9999,*) "---------------------------------------------------"
-    write(9999,*) "Statistic stuff"
-    write(9999,*) "---------------------------------------------------"
-    H0T=.True.
-    do j=1,nrestr
-      atj=mask(j)
-      write(9999,*) "Atom:",j
-      write(9999,*) "MK test H0"
-      coordstat(1:nsteps)=coordall(1,j,1:nsteps)
-      call getsstatistics(coordstat,nsteps,skip,nevalfluc,dt,Z,H0,minsegmentlenght,goodrav)
-      ! write(*,*) "ASD2"
-      write(9999,*) "coord x:",H0
-      ! write(*,*) rav(1,j,nrep),goodrav
-      rav(1,j,nrep)=goodrav
-      fav(1,j,nrep)=kref*(rav(1,j,nrep)-rref(1,atj))
-      H0T=(H0T.and.H0)
+      write(9999,*) "---------------------------------------------------"
+      write(9999,*) "Statistic stuff"
+      write(9999,*) "---------------------------------------------------"
+      H0T=.True.
+      do j=1,nrestr
+        atj=mask(j)
+        write(9999,*) "Atom:",j
+        write(9999,*) "MK test H0"
 
-      coordstat(1:nsteps)=coordall(2,j,1:nsteps)
+        coordstat(1:nsteps)=coordall(1,j,1:nsteps)
+        call getsstatistics(coordstat,nsteps,skip,nevalfluc,dt,Z,H0,minsegmentlenght,goodrav)
+        write(9999,*) "coord x:",H0
+        rav(1,j,nrep)=goodrav
+        fav(1,j,nrep)=kref*(rav(1,j,nrep)-rref(1,atj))
+        H0T=(H0T.and.H0)
 
-      call getsstatistics(coordstat,nsteps,skip,nevalfluc,dt,Z,H0,minsegmentlenght,goodrav)
-      ! write(*,*) "ASD2"
-      write(9999,*) "coord y:",H0
-      ! write(*,*) rav(2,j,nrep),goodrav
-      rav(2,j,nrep)=goodrav
-      fav(2,j,nrep)=kref*(rav(2,j,nrep)-rref(2,atj))
-      H0T=(H0T.and.H0)
+        coordstat(1:nsteps)=coordall(2,j,1:nsteps)
+        call getsstatistics(coordstat,nsteps,skip,nevalfluc,dt,Z,H0,minsegmentlenght,goodrav)
+        write(9999,*) "coord y:",H0
+        rav(2,j,nrep)=goodrav
+        fav(2,j,nrep)=kref*(rav(2,j,nrep)-rref(2,atj))
+        H0T=(H0T.and.H0)
 
-      coordstat(1:nsteps)=coordall(3,j,1:nsteps)
-      call getsstatistics(coordstat,nsteps,skip,nevalfluc,dt,Z,H0,minsegmentlenght,goodrav)
-      ! write(*,*) "ASD2"
-      write(9999,*) "coord z:",H0
-      ! write(*,*) rav(3,j,nrep),goodrav
-      rav(3,j,nrep)=goodrav
-      fav(3,j,nrep)=kref*(rav(3,j,nrep)-rref(3,atj))
-      H0T=(H0T.and.H0)
-    end do
-    write(*,*) "Trend free:", H0T
-    write(9999,*) "---------------------------------------------------"
+        coordstat(1:nsteps)=coordall(3,j,1:nsteps)
+        call getsstatistics(coordstat,nsteps,skip,nevalfluc,dt,Z,H0,minsegmentlenght,goodrav)
+        write(9999,*) "coord z:",H0
+        rav(3,j,nrep)=goodrav
+        fav(3,j,nrep)=kref*(rav(3,j,nrep)-rref(3,atj))
+        H0T=(H0T.and.H0)
+      end do
+      write(*,*) "Trend free:", H0T
+      write(9999,*) "---------------------------------------------------"
+    end if ! dostat
 
-    end if
     if (wtemp) then
       open(unit=2203280, file="temperature.dat")
       do j=wtempstart, wtempend
@@ -135,7 +135,7 @@ logical ::  dostat, H0, H0T
   elseif (nrep .gt. 1) then !NEB on FE surface
 
     write(9999,*) "---------------------------------------------------"
-    write(9999,*) "       Performing NEB on the FE surface"
+    write(9999,*) "Performing NEB on the FE surface"
     write(9999,*) "---------------------------------------------------"
 
 !------------ Set forces to zero
@@ -160,13 +160,61 @@ logical ::  dostat, H0, H0T
       if (allocated(coordx)) deallocate(coordx)
       if (allocated(coordy)) deallocate(coordy)
       if (allocated(coordz)) deallocate(coordz)
+      if (allocated(coordall)) deallocate(coordall)
+      if (allocated(coordstat)) deallocate(coordstat)
       if (allocated(rref)) deallocate(rref)
       allocate(coordx(nsteps),coordy(nsteps),coordz(nsteps),rref(3,natoms))
 
       call getrefcoord(rname,nrestr,mask,natoms,rref,boxinfo,per,velin)
-      call getavcoordanforces(iname,nsteps,natoms,spatial,coordx,coordy, coordz,&
-                    coordall,nrestr,mask,kref,rav,fav,nrep,i,rref,wgrad,dontg,&
-                    skip,wtemp,dt,mass,tempfilesize,temp)
+      ! call getavcoordanforces(iname,nsteps,natoms,spatial,coordx,coordy, coordz,&
+      !               coordall,nrestr,mask,kref,rav,fav,nrep,i,rref,wgrad,dontg,&
+      !               skip,wtemp,dt,mass,tempfilesize,temp)
+      if (rfromtraj) then
+        if (allocated(coordall)) deallocate(coordall,coordstat)
+        call getcoordfromfenebtraj(nsteps,coordall,nrestr,i)
+        allocate(coordstat(nsteps))
+      else
+        allocate(coordall(3,nrestr,nsteps),coordstat(nsteps))
+        call getcoordfromnetcdf(iname,nsteps,natoms,spatial,coordx,coordy,coordz,coordall,nrestr,mask)
+      end if
+
+      call getravfav(coordall,nsteps,natoms,nrestr,mask,kref,rav,fav,nrep,i,rref,wgrad,skip,wtemp,dt,mass,tempfilesize,temp)
+
+      if (dostat) then
+        write(9999,*) "---------------------------------------------------"
+        write(9999,*) "Statistic stuff"
+        write(9999,*) "Replica:", i
+        write(9999,*) "---------------------------------------------------"
+        H0T=.True.
+        do j=1,nrestr
+          atj=mask(j)
+          write(9999,*) "Atom:",j
+          write(9999,*) "MK test H0"
+
+          coordstat(1:nsteps)=coordall(1,j,1:nsteps)
+          call getsstatistics(coordstat,nsteps,skip,nevalfluc,dt,Z,H0,minsegmentlenght,goodrav)
+          write(9999,*) "coord x:",H0
+          rav(1,j,nrep)=goodrav
+          fav(1,j,nrep)=kref*(rav(1,j,nrep)-rref(1,atj))
+          H0T=(H0T.and.H0)
+
+          coordstat(1:nsteps)=coordall(2,j,1:nsteps)
+          call getsstatistics(coordstat,nsteps,skip,nevalfluc,dt,Z,H0,minsegmentlenght,goodrav)
+          write(9999,*) "coord y:",H0
+          rav(2,j,nrep)=goodrav
+          fav(2,j,nrep)=kref*(rav(2,j,nrep)-rref(2,atj))
+          H0T=(H0T.and.H0)
+
+          coordstat(1:nsteps)=coordall(3,j,1:nsteps)
+          call getsstatistics(coordstat,nsteps,skip,nevalfluc,dt,Z,H0,minsegmentlenght,goodrav)
+          write(9999,*) "coord z:",H0
+          rav(3,j,nrep)=goodrav
+          fav(3,j,nrep)=kref*(rav(3,j,nrep)-rref(3,atj))
+          H0T=(H0T.and.H0)
+        end do
+        write(*,*) "Trend free:", H0T
+        write(9999,*) "---------------------------------------------------"
+      end if ! dostat
     end do
 
     if (wtemp) then
@@ -179,7 +227,6 @@ logical ::  dostat, H0, H0T
       end do
       close(2203280)
     end if
-
 
 
     if (rextrema) call getposforcesextrema(rav,fav,nrestr,nrep)
@@ -214,10 +261,6 @@ logical ::  dostat, H0, H0T
                     ftrue,ftang,fperp,fspring,.true.,dontg)
   ! fav ---> fneb
 
-
-
-
-
     call getbarrier(profile, nrep, barrier, minpoint, maxpoint)
 
     allocate(selfdist(2,nrestr,nrep-1))
@@ -236,11 +279,8 @@ logical ::  dostat, H0, H0T
     close(1644)
     close(1645)
 
-
 !----------- moves the band
     if (.not. converged) then
-       ! if (rpoint .eq. 1) rav=rrefall !TEST USAR RESTR POS
-       ! if (rpoint .eq. 2) rav=rcorr
        do i=2,nrep-1
           if (.not. relaxd) call steep(rav,fperp,nrep,i,steep_size,maxforceband,nrestr,lastmforce,stepl,deltaA,dontg)
         end do
@@ -267,11 +307,10 @@ logical ::  dostat, H0, H0T
           write(9999,*) "-----------------------------------------------------"
           write(9999,*) "Performing extra optimization steps using fspring    "
           write(9999,*) "to get a better distribution of replicas.            "
-          write(9999,'(1x,a,I4)') "Extra optmization movements: ", nscycle
+          write(9999,'(1x,a,I8)') "Extra optmization movements: ", nscycle
           write(9999,*) "-----------------------------------------------------"
         end if
 
-        ! maxpreached=.False.
         equispaced=.False.
         k=1
         do while ((k .le. nscycle) .and. (.not. equispaced))
@@ -332,7 +371,6 @@ logical ::  dostat, H0, H0T
         call writenewcoord(oname,rref,boxinfo,natoms,nrestr,mask,per,velout,rav,nrep,nrep,test)
     end if
         do i=2,nrep-1
-          ! call getfilenames(i,chi,infile,reffile,outfile,iname,rname,oname)
          call getfilenames(i,chi,infile,infile,outfile,iname,rname,oname) !toma ultima foto p/ siguiente paso
          call getrefcoord(rname,nrestr,mask,natoms,rref,boxinfo,per,.True.)
          call writenewcoord(oname,rref,boxinfo,natoms,nrestr,mask,per,velout,rav,nrep,i,test)

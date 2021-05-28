@@ -4,12 +4,12 @@ contains
 subroutine readinput(nrep,infile,reffile,outfile,topfile,mask,nrestr,lastmforce, &
            rav,fav,ftrue,ftang,fperp,fspring,tang,kref,kspring,steep_size,steep_spring,ftol,per, &
            velin,velout,wgrad,wtemp,dt,wtempstart,wtempend,wtempfrec,mass,rrefall,nscycle,dontg,ravprevsetp, &
-           rextrema, skip, dostat, minsegmentlenght, nevalfluc)
+           rextrema, skip, dostat, minsegmentlenght, nevalfluc,rfromtraj)
 implicit none
 character(len=50) :: infile, reffile, outfile, line, exp, keyword, topfile
 integer :: nrestr, nrep, i, ierr, nscycle,skip, wtempfrec, wtempstart, wtempend
 integer :: minsegmentlenght, nevalfluc
-logical ::  per, velin, velout, wgrad, rextrema, wtemp, dostat
+logical ::  per, velin, velout, wgrad, rextrema, wtemp, dostat, rfromtraj
 double precision :: kref, kspring, steep_size, steep_spring, ftol, lastmforce, dt
 integer, allocatable, dimension (:), intent(inout) :: mask
 double precision, allocatable, dimension(:,:,:), intent(inout) :: rav, fav, tang, ftang, ftrue,fperp, rrefall,ravprevsetp
@@ -26,6 +26,7 @@ double precision, allocatable, dimension(:), intent(inout) :: mass
  !VELTEST
  wtemp=.False.
  dostat=.False.
+ rfromtraj=.False.
  wtempfrec=1
  dt=0.001
  minsegmentlenght=100
@@ -57,6 +58,7 @@ do
    if (keyword == 'dt') read(line,*) exp, dt
    if (keyword == 'wtemp') read(line,*) exp, wtemp, wtempstart, wtempend, wtempfrec
    if (keyword == 'dostat') read(line,*) exp, dostat, nevalfluc, minsegmentlenght
+   if (keyword == 'rfromtraj') read(line,*) exp, rfromtraj
 end do
 close (unit=1000)
 if (nrep .gt. 1) allocate(tang(3,nrestr,nrep),ftang(3,nrestr,nrep),ftrue(3,nrestr,nrep),&
@@ -174,6 +176,41 @@ close (unit=1000)
 
 end subroutine readinputbuilder
 
+subroutine readinputextrator(nrestr,mask,infile,i)
+
+implicit none
+character(len=50) :: infile, exp, keyword, line
+integer  :: nrestr, i, ierr
+integer, allocatable, dimension (:) :: mask
+
+open (unit=1000, file="extractor.in", status='old', action='read') !read align.in
+do
+   read (1000,"(a)",iostat=ierr) line ! read line into character variable
+   if (ierr /= 0) exit
+   read (line,*) keyword ! read first keyword of line
+   if (keyword == 'infile') read(line,*) exp,infile
+   if (keyword == 'nrestr') read(line,*) exp, nrestr
+   if (keyword == 'rep') read(line,*) exp, i
+end do
+close (unit=1000)
+allocate(mask(nrestr))
+open (unit=1000, file="extractor.in", status='old', action='read') !read align.in
+do
+   read (1000,"(a)",iostat=ierr) line ! read line into character variable
+   if (ierr /= 0) exit
+   read (line,*) keyword ! read first keyword of line
+   if (keyword == 'mask') read(line,*) exp, mask(1:nrestr)
+   if (keyword == 'all') then
+     do i=1,nrestr
+       mask(i)=i
+     end do
+   end if
+end do
+close (unit=1000)
+
+end subroutine readinputextrator
+
+
 subroutine getfilenames(rep,chrep,infile,reffile,outfile,iname,rname,oname)
 
 implicit none
@@ -181,21 +218,19 @@ integer, intent(in) :: rep
 character(len=50), intent(in) :: infile, reffile, outfile
 character(len=50), intent(out) :: chrep, iname, rname, oname
 
-! write(*,*) "asdsad2"
+if (rep .le. 9) write(chrep,'(I1)') rep
+if (rep .gt. 9 .and. rep .le. 99) write(chrep,'(I2)') rep
+if (rep .gt. 99 .and. rep .le. 999) write(chrep,'(I3)') rep
 
-  if (rep .le. 9) write(chrep,'(I1)') rep
-  if (rep .gt. 9 .and. rep .le. 99) write(chrep,'(I2)') rep
-  if (rep .gt. 99 .and. rep .le. 999) write(chrep,'(I3)') rep
-
-  iname = trim(infile) // "_"
-  iname = trim(iname) // trim(chrep)
-  iname = trim(iname) // ".nc"
-  rname = trim(reffile) // "_"
-  rname = trim(rname) // trim(chrep)
-  rname = trim(rname) // ".rst7"
-  oname = trim(outfile) // "_"
-  oname = trim(oname) // trim(chrep)
-  oname = trim(oname) // ".rst7"
+iname = trim(infile) // "_"
+iname = trim(iname) // trim(chrep)
+iname = trim(iname) // ".nc"
+rname = trim(reffile) // "_"
+rname = trim(rname) // trim(chrep)
+rname = trim(rname) // ".rst7"
+oname = trim(outfile) // "_"
+oname = trim(oname) // trim(chrep)
+oname = trim(oname) // ".rst7"
 
 end subroutine getfilenames
 
@@ -213,43 +248,21 @@ call check(nf90_inquire_dimension(ncid,3,zname,natoms))
 call check(nf90_close(ncid))
 end subroutine getdims
 
-subroutine getavcoordanforces(iname,nsteps,natoms,spatial, &
-                            coordx,coordy,coordz,coordall,nrestr,mask, &
-                            kref,rav,fav,nrep,rep,rref,wgrad,dontg, &
-                            skip,wtemp,dt,mass,tempfilesize,temp)
+subroutine getcoordfromnetcdf(iname,nsteps,natoms,spatial,coordx,coordy,coordz,coordall,nrestr,mask)
 use netcdf
 implicit none
-real (kind=4), DIMENSION(nsteps) :: coordx, coordy, coordz, ref, av
+real (kind=4), DIMENSION(nsteps) :: coordx, coordy, coordz
 integer(kind=4), intent(in) :: natoms, nsteps, spatial, nrestr
-integer(kind=4) :: ncid, xtype, ndims, varid
+integer(kind=4) :: ncid
 character(len=50), intent(in) :: iname
-character(len=50) :: xname, vname, chi, chrep
-double precision :: kref, n1, dt, vat, ekin
-double precision, dimension(3,nrestr,nrep) :: rav,fav,dontg
-double precision, dimension(3,nrestr,nsteps) :: coordall
-double precision, dimension(3,natoms), intent(inout) :: rref
-double precision, dimension(tempfilesize,rep), intent(inout) :: temp
-double precision, dimension(nrestr), intent(in) :: mass
 integer, dimension(3) :: point,endp
 integer, dimension(nrestr) :: mask
-integer :: i,j,k,ati,atf,nrep,rep,auxunit,auxunit2, skip, tempfilesize
-logical :: wgrad, wtemp
+double precision, dimension(3,nrestr,nsteps) :: coordall
+integer :: i,k,ati
 
 call check(nf90_open(iname, nf90_nowrite, ncid))
-ekin=0.d0
-temp(1:tempfilesize,rep)=0.d0
-do i = 1,nrestr !natoms
-  if (i .le. 9) write(chi,'(I1)') i
-  if (i .gt. 9 .and. i .le. 99) write(chi,'(I2)') i
-  if (rep .le. 9) write(chrep,'(I1)') rep
-  if (rep .gt. 9 .and. rep .le. 99) write(chrep,'(I2)') rep
-  chi = "at."//chi
-  chi = trim(chi)//".rep."
-  chi = trim(chi)//trim(chrep)
-  auxunit = 1000*i+rep
-  if (wgrad) open(auxunit, file = chi, status = 'unknown')
+do i = 1,nrestr
   ati=mask(i)
-  av=0.d0
   point = (/ 1,ati,1 /)
   endp = (/ 1,1,nsteps /)
   call check(nf90_get_var(ncid,3,coordx,start = point,count = endp))
@@ -259,57 +272,91 @@ do i = 1,nrestr !natoms
   point = (/ 3,ati,1 /)
   endp = (/ 1,1,nsteps /)
   call check(nf90_get_var(ncid,3,coordz,start = point,count = endp))
-
-  do k=skip+1,nsteps
-    ! av(1)=(av(1)*(dble(k-1-skip))+coordx(k-skip))/dble(k-skip)
-    ! av(2)=(av(2)*(dble(k-1-skip))+coordy(k-skip))/dble(k-skip)
-    ! av(3)=(av(3)*(dble(k-1-skip))+coordz(k-skip))/dble(k-skip)
-    av(1)=(av(1)*(dble(k-1-skip))+coordx(k))/dble(k-skip)
-    av(2)=(av(2)*(dble(k-1-skip))+coordy(k))/dble(k-skip)
-    av(3)=(av(3)*(dble(k-1-skip))+coordz(k))/dble(k-skip)
-    if (wgrad) write(auxunit,*) k-skip, av(1:3)
-    ! if (wgrad) write(auxunit,*) k-skip, coordx(k)-rref(1,ati), &
-    !                                     coordy(k)-rref(2,ati), &
-    !                                     coordz(k)-rref(3,ati)
-    ! coordall(1,i,k-skip)=av(1)
-    ! coordall(2,i,k-skip)=av(2)
-    ! coordall(3,i,k-skip)=av(3)
-    ! write(*,*) i,k, coordall(1:3,i,k)
+  do k=1,nsteps
+    coordall(1,i,k)=coordx(k)
+    coordall(2,i,k)=coordy(k)
+    coordall(3,i,k)=coordz(k)
   end do
-  rav(1:3,i,rep)=av(1:3)
+enddo
+call check(nf90_close(ncid))
+end subroutine getcoordfromnetcdf
 
+subroutine getcoordfromfenebtraj(nsteps,coordall,nrestr,i)
+implicit none
+character(len=50) :: chi
+integer :: i, j, k, nsteps, nrestr
+double precision, allocatable, dimension(:,:,:), intent(inout) :: coordall
+
+if (i .le. 9) write(chi,'(I1)') i
+if (i .gt. 9 .and. i .le. 99) write(chi,'(I2)') i
+chi = "feneb.traj."//chi
+open (unit=22000, file=chi, action='read')
+read(22000,*) nsteps
+allocate(coordall(3,nrestr,nsteps))
+do j=1,nrestr
+  do k=1,nsteps
+    read(22000,*) coordall(1,j,k),coordall(2,j,k),coordall(3,j,k)
+  end do
+end do
+close(unit=22000)
+end subroutine getcoordfromfenebtraj
+
+
+subroutine getravfav(coordall,nsteps,natoms,nrestr,mask,kref,rav,fav,nrep,rep,rref,wgrad, &
+                            skip,wtemp,dt,mass,tempfilesize,temp)
+implicit none
+integer, intent(in) :: nrestr,nrep,rep,nsteps,natoms
+integer, dimension(nrestr), intent(in) :: mask
+double precision :: kref, dt, vat, ekin
+double precision, dimension(3) :: av
+double precision, dimension(3,nrestr,nrep) :: rav,fav
+double precision, dimension(3,nrestr,nsteps) :: coordall
+double precision, dimension(3,natoms), intent(in) :: rref
+double precision, dimension(tempfilesize,rep), intent(inout) :: temp
+double precision, dimension(nrestr), intent(in) :: mass
+character(len=50) :: chi, chrep
+integer :: i,j,k,ati,auxunit,skip,tempfilesize
+logical :: wgrad,wtemp
+
+
+ekin=0.d0
+temp(1:tempfilesize,rep)=0.d0
+do i=1,nrestr
+  if (i .le. 9) write(chi,'(I1)') i
+  if (i .gt. 9 .and. i .le. 99) write(chi,'(I2)') i
+  if (rep .le. 9) write(chrep,'(I1)') rep
+  if (rep .gt. 9 .and. rep .le. 99) write(chrep,'(I2)') rep
+  chi = "at."//chi
+  chi = trim(chi)//".rep."
+  chi = trim(chi)//trim(chrep)
+  ati=mask(i)
+  av=0
+  auxunit = 1000*i+rep
+  if (wgrad) open(auxunit, file = chi, status = 'unknown')
+  do k=skip+1,nsteps
+    do j=1,3
+      av(j)=(av(j)*(dble(k-1-skip))+coordall(j,i,k))/dble(k-skip)
+    end do
+    if (wgrad) write(auxunit,*) k-skip, av(1:3)
+  end do
+
+  rav(1:3,i,rep)=av(1:3)
   fav(1:3,i,rep)=kref*(av(1:3)-rref(1:3,ati))
-  if (nrep .gt. 1) dontg(1:3,i,rep)=rref(1:3,ati)-av(1:3)
   if (wgrad) close(auxunit)
 
 !For comparision with .rst7 file, remember that
 !AMBER VEL UNITS are Angstroms per 1/20.455 ps
   if (wtemp) then
     do k=1,nsteps-1
-       ! if (mod(k,wtempfrec) .eq. 0) then
-       vat=((coordx(k+1)-coordx(k))/dt)**2 + &
-           ((coordy(k+1)-coordy(k))/dt)**2 + &
-           ((coordz(k+1)-coordz(k))/dt)**2
+       vat=((coordall(1,i,k+1)-coordall(1,i,k))/dt)**2 + &
+           ((coordall(2,i,k+1)-coordall(2,i,k))/dt)**2 + &
+           ((coordall(3,i,k+1)-coordall(3,i,k))/dt)**2
        temp(k,rep)=temp(k,rep)+ &
        (mass(i)*vat*10d0/(8.314472d0*3.d0*nrestr))
-       ! end if
     end do
   end if
-  do k=1,nsteps
-    av(1)=(av(1)*(dble(k-1))+coordx(k))/dble(k)
-    av(2)=(av(2)*(dble(k-1))+coordy(k))/dble(k)
-    av(3)=(av(3)*(dble(k-1))+coordz(k))/dble(k)
-    coordall(1,i,k)=av(1)
-    coordall(2,i,k)=av(2)
-    coordall(3,i,k)=av(3)
-  end do
-enddo
-
-! write(*,*) temp(1:tempfilesize,rep)
-
-call check(nf90_close(ncid))
-end subroutine getavcoordanforces
-
+end do
+end subroutine getravfav
 
 subroutine getrefcoord(rname,nrestr,mask,natoms,rref,boxinfo,per,velin)
 
