@@ -10,11 +10,11 @@ real(4) :: coordinate
 real(4), allocatable, dimension (:) :: coordx,coordy,coordz, coordstat
 integer, dimension (3) :: point
 double precision :: kref, steep_size, ftol, maxforce, kspring, maxforceband, lastmforce, maxforcebandprevsetp, steep_spring
-double precision :: stepl, deltaA, rmsfneb, minpoint, maxpoint, barrier, dt, Z, goodrav
+double precision :: stepl, deltaA, rmsfneb, minpoint, maxpoint, barrier, dt, Z, goodrav, gooddevav
 double precision, dimension(6) :: boxinfo
 double precision, allocatable, dimension(:) :: rmsd, mass
 double precision, allocatable, dimension(:,:) :: rref, profile, temp
-double precision, allocatable, dimension(:,:,:) :: rav, fav, tang, ftang, ftrue, fperp, rrefall, ravprevsetp
+double precision, allocatable, dimension(:,:,:) :: rav, fav, tang, ftang, ftrue, fperp, rrefall, ravprevsetp, devav
 double precision, allocatable, dimension(:,:,:) :: fspring, dontg, selfdist,coordall
 logical ::  per, velin, velout, relaxd, converged, wgrad, wtemp, moved, maxpreached, equispaced, rextrema, test
 logical ::  dostat, H0, H0T, rfromtraj
@@ -65,6 +65,7 @@ logical ::  dostat, H0, H0T, rfromtraj
     call getravfav(coordall,nsteps,natoms,nrestr,mask,kref,rav,fav,nrep,nrep,rref,wgrad,skip,wtemp,dt,mass,tempfilesize,temp)
 
     if (dostat) then
+      allocate(devav(3,nrestr,nrep))
       write(9999,*) "---------------------------------------------------"
       write(9999,*) "Statistic stuff"
       write(9999,*) "---------------------------------------------------"
@@ -75,24 +76,27 @@ logical ::  dostat, H0, H0T, rfromtraj
         write(9999,*) "MK test H0"
 
         coordstat(1:nsteps)=coordall(1,j,1:nsteps)
-        call getsstatistics(coordstat,nsteps,skip,nevalfluc,dt,Z,H0,minsegmentlenght,goodrav)
+        call getsstatistics(coordstat,nsteps,skip,nevalfluc,dt,Z,H0,minsegmentlenght,goodrav,gooddevav)
         write(9999,*) "coord x:",H0
         rav(1,j,nrep)=goodrav
         fav(1,j,nrep)=kref*(rav(1,j,nrep)-rref(1,atj))
+        devav(1,j,nrep)=kref*(gooddevav-rref(1,atj))
         H0T=(H0T.and.H0)
 
         coordstat(1:nsteps)=coordall(2,j,1:nsteps)
-        call getsstatistics(coordstat,nsteps,skip,nevalfluc,dt,Z,H0,minsegmentlenght,goodrav)
+        call getsstatistics(coordstat,nsteps,skip,nevalfluc,dt,Z,H0,minsegmentlenght,goodrav,gooddevav)
         write(9999,*) "coord y:",H0
         rav(2,j,nrep)=goodrav
         fav(2,j,nrep)=kref*(rav(2,j,nrep)-rref(2,atj))
+        devav(2,j,nrep)=kref*(gooddevav-rref(2,atj))
         H0T=(H0T.and.H0)
 
         coordstat(1:nsteps)=coordall(3,j,1:nsteps)
-        call getsstatistics(coordstat,nsteps,skip,nevalfluc,dt,Z,H0,minsegmentlenght,goodrav)
+        call getsstatistics(coordstat,nsteps,skip,nevalfluc,dt,Z,H0,minsegmentlenght,goodrav,gooddevav)
         write(9999,*) "coord z:",H0
         rav(3,j,nrep)=goodrav
         fav(3,j,nrep)=kref*(rav(3,j,nrep)-rref(3,atj))
+        devav(3,j,nrep)=kref*(gooddevav-rref(3,atj))
         H0T=(H0T.and.H0)
       end do
       write(*,*) "Trend free:", H0T
@@ -181,6 +185,7 @@ logical ::  dostat, H0, H0T, rfromtraj
       call getravfav(coordall,nsteps,natoms,nrestr,mask,kref,rav,fav,nrep,i,rref,wgrad,skip,wtemp,dt,mass,tempfilesize,temp)
 
       if (dostat) then
+        if (i.eq.start) allocate(devav(3,nrestr,nrep))
         write(9999,*) "---------------------------------------------------"
         write(9999,*) "Statistic stuff"
         write(9999,*) "Replica:", i
@@ -192,24 +197,27 @@ logical ::  dostat, H0, H0T, rfromtraj
           write(9999,*) "MK test H0"
 
           coordstat(1:nsteps)=coordall(1,j,1:nsteps)
-          call getsstatistics(coordstat,nsteps,skip,nevalfluc,dt,Z,H0,minsegmentlenght,goodrav)
+          call getsstatistics(coordstat,nsteps,skip,nevalfluc,dt,Z,H0,minsegmentlenght,goodrav,gooddevav)
           write(9999,*) "coord x:",H0
-          rav(1,j,nrep)=goodrav
-          fav(1,j,nrep)=kref*(rav(1,j,nrep)-rref(1,atj))
+          rav(1,j,i)=goodrav
+          fav(1,j,i)=kref*(rav(1,j,i)-rref(1,atj))
+          devav(1,j,nrep)=kref*(gooddevav-rref(1,atj))
           H0T=(H0T.and.H0)
 
           coordstat(1:nsteps)=coordall(2,j,1:nsteps)
-          call getsstatistics(coordstat,nsteps,skip,nevalfluc,dt,Z,H0,minsegmentlenght,goodrav)
+          call getsstatistics(coordstat,nsteps,skip,nevalfluc,dt,Z,H0,minsegmentlenght,goodrav,gooddevav)
           write(9999,*) "coord y:",H0
-          rav(2,j,nrep)=goodrav
-          fav(2,j,nrep)=kref*(rav(2,j,nrep)-rref(2,atj))
+          rav(2,j,i)=goodrav
+          fav(2,j,i)=kref*(rav(2,j,i)-rref(2,atj))
+          devav(2,j,i)=kref*(gooddevav-rref(2,atj))
           H0T=(H0T.and.H0)
 
           coordstat(1:nsteps)=coordall(3,j,1:nsteps)
-          call getsstatistics(coordstat,nsteps,skip,nevalfluc,dt,Z,H0,minsegmentlenght,goodrav)
+          call getsstatistics(coordstat,nsteps,skip,nevalfluc,dt,Z,H0,minsegmentlenght,goodrav,gooddevav)
           write(9999,*) "coord z:",H0
-          rav(3,j,nrep)=goodrav
-          fav(3,j,nrep)=kref*(rav(3,j,nrep)-rref(3,atj))
+          rav(3,j,i)=goodrav
+          fav(3,j,i)=kref*(rav(3,j,i)-rref(3,atj))
+          devav(3,j,i)=kref*(gooddevav-rref(3,atj))
           H0T=(H0T.and.H0)
         end do
         write(*,*) "Trend free:", H0T

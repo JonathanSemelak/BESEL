@@ -1,10 +1,10 @@
-subroutine getsstatistics(coord,nsteps,skip,nevalfluc,dt,Z,H0,minsegmentlenght,goodrav)
+subroutine getsstatistics(coord,nsteps,skip,nevalfluc,dt,Z,H0,minsegmentlenght,goodrav,gooddevav)
 implicit none
 real (kind=4), DIMENSION(nsteps) :: coord
 integer :: skip, nsteps, nskip, nmax, nevalfluc, nsegment, segmentlenght, minsegmentlenght
 double precision, allocatable, dimension(:) :: segmentedcoord, segmenteddev, coordav
 double precision, dimension(38) :: test
-double precision ::  dt, S, m, Z, xi, xj, U, V, devav, goodrav
+double precision ::  dt, S, m, Z, xi, xj, U, V, gooddevav, goodrav
 integer :: i,j,k,start,end,count,N
 logical :: toosmall, nsegmentok
 logical, intent(inout) :: H0
@@ -134,12 +134,12 @@ do i=1,N
 end do
 goodrav=goodrav/dble(nsegment)
 
-devav=0.d0
+gooddevav=0.d0
 do j=1,N
-   devav=devav+(coord(j)-goodrav)**2
+   gooddevav=gooddevav+(segmentedcoord(j)-goodrav)**2
 end do
-devav=dsqrt(devav/(nsteps-nskip-1))
-write(7777,*) devav
+gooddevav=dsqrt(gooddevav/(N-1))
+write(7777,*) gooddevav
 
 
 end subroutine getsstatistics
