@@ -186,6 +186,7 @@ logical ::  dostat, H0, H0T, rfromtraj
 
       if (dostat) then
         if (i.eq.start) allocate(devav(3,nrestr,nrep))
+        if (i.eq.start) devav=0.d0
         write(9999,*) "---------------------------------------------------"
         write(9999,*) "Statistic stuff"
         write(9999,*) "Replica:", i
@@ -199,25 +200,28 @@ logical ::  dostat, H0, H0T, rfromtraj
           coordstat(1:nsteps)=coordall(1,j,1:nsteps)
           call getsstatistics(coordstat,nsteps,skip,nevalfluc,dt,Z,H0,minsegmentlenght,goodrav,gooddevav)
           write(9999,*) "coord x:",H0
+          write(111111,*) rav(1,j,i),goodrav
           rav(1,j,i)=goodrav
           fav(1,j,i)=kref*(rav(1,j,i)-rref(1,atj))
-          devav(1,j,nrep)=kref*(gooddevav-rref(1,atj))
+          devav(1,j,nrep)=kref*gooddevav
           H0T=(H0T.and.H0)
 
           coordstat(1:nsteps)=coordall(2,j,1:nsteps)
           call getsstatistics(coordstat,nsteps,skip,nevalfluc,dt,Z,H0,minsegmentlenght,goodrav,gooddevav)
           write(9999,*) "coord y:",H0
+          write(111111,*) rav(2,j,i),goodrav
           rav(2,j,i)=goodrav
           fav(2,j,i)=kref*(rav(2,j,i)-rref(2,atj))
-          devav(2,j,i)=kref*(gooddevav-rref(2,atj))
+          devav(2,j,i)=kref*gooddevav
           H0T=(H0T.and.H0)
 
           coordstat(1:nsteps)=coordall(3,j,1:nsteps)
           call getsstatistics(coordstat,nsteps,skip,nevalfluc,dt,Z,H0,minsegmentlenght,goodrav,gooddevav)
           write(9999,*) "coord z:",H0
+          write(111111,*) rav(3,j,i),goodrav
           rav(3,j,i)=goodrav
           fav(3,j,i)=kref*(rav(3,j,i)-rref(3,atj))
-          devav(3,j,i)=kref*(gooddevav-rref(3,atj))
+          devav(3,j,i)=kref*gooddevav
           H0T=(H0T.and.H0)
         end do
         write(*,*) "Trend free:", H0T
@@ -263,6 +267,10 @@ logical ::  dostat, H0, H0T, rfromtraj
 
 !----------- Compute the free energy profile by umbrella integration
     allocate(profile(2,nrep-1))
+    ! write(*,*) "ASDSAD", dostat
+    ! write(*,*) "ASDSAD", devav
+
+    if (dostat) call geterror(rav,devav,nrep,nrestr,profile)
     call getprofile(rav,fav,nrep,nrestr,profile)
     call gettang(rav,tang,nrestr,nrep)
     call getnebforce(rav,fav,tang,nrestr,nrep,kspring,maxforceband,ftol,relaxd,&

@@ -17,20 +17,6 @@ do i=1,nrestr
   end do
 end do
 
-proftest=0.d0
-do i=1,nrestr
-  do j=2,nrep-1
-    proftest(1,i,j)=profileall(1,i,j)
-    proftest(2,i,j)=proftest(2,i,j-1)+profileall(2,i,j)
-  end do
-end do
-
-! do i=1,nrestr
-!   do j=1,nrep-1
-!     write(4000+i,*) proftest(1,i,j),  proftest(2,i,j)
-!   end do
-! end do
-
 do j=1,nrep-1
   do i=1,nrestr
     profile(1,j)=profileall(1,i,j)
@@ -49,6 +35,7 @@ do j=1,nrep-1
   write(1659,'(2x, f5.1, 2x, f20.10)') profile(1,j), profile(2,j)
 end do
 close(1659)
+
 end subroutine
 
 subroutine getbarrier(profile, nrep, barrier, minpoint, maxpoint)
@@ -146,3 +133,43 @@ do i=2,nrep-1
 end do
 
 end subroutine getdistrightminusleft
+
+subroutine geterror(rav,fav,nrep,nrestr,profile)
+implicit none
+double precision, dimension(3,nrestr,nrep), intent(in) :: fav, rav
+double precision, dimension(2,nrestr,nrep-1) :: profileall, proftest
+double precision, dimension(2,nrep-1), intent(out) :: profile
+integer, intent(in) :: nrestr, nrep
+integer :: i,j
+write(*,*) "entré"
+profile=0.d0
+profileall=0.d0
+do i=1,nrestr
+  do j=1,nrep-1
+    profileall(1,i,j)=(dble(j)+dble(j+1))/2.d0
+    profileall(2,i,j)=- (profileall(2,i,j) + ((fav(1,i,j)+fav(1,i,j+1))*(rav(1,i,j+1)-rav(1,i,j))/2.d0)  &
+                                           + ((fav(2,i,j)+fav(2,i,j+1))*(rav(2,i,j+1)-rav(2,i,j))/2.d0)  &
+                                           + ((fav(3,i,j)+fav(3,i,j+1))*(rav(3,i,j+1)-rav(3,i,j))/2.d0))
+  end do
+end do
+
+do j=1,nrep-1
+  do i=1,nrestr
+    profile(1,j)=profileall(1,i,j)
+    profile(2,j)=profile(2,j)+profileall(2,i,j)
+  end do
+end do
+
+do j=2,nrep-1
+  profile(2,j)=profile(2,j-1)+profile(2,j)
+end do
+
+profile(2,1:nrep-1)=profile(2,1:nrep-1)-profile(2,1)
+
+open(unit=1660, file="error.dat", position='append')
+do j=1,nrep-1
+  write(1660,'(2x, f5.1, 2x, f20.10)') profile(1,j), profile(2,j)
+end do
+close(1660)
+
+end subroutine geterror

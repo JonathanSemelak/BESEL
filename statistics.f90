@@ -132,7 +132,7 @@ goodrav=0.d0
 do i=1,N
   goodrav=goodrav+segmentedcoord(i)
 end do
-goodrav=goodrav/dble(nsegment)
+goodrav=goodrav/dble(N)
 
 gooddevav=0.d0
 do j=1,N
