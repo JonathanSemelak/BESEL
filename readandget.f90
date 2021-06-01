@@ -2,7 +2,7 @@ module readandget
 implicit none
 contains
 subroutine readinput(nrep,infile,reffile,outfile,topfile,mask,nrestr,lastmforce, &
-           rav,fav,ftrue,ftang,fperp,fspring,tang,kref,kspring,steep_size,steep_spring,ftol,per, &
+           rav,devav,fav,ftrue,ftang,fperp,fspring,tang,kref,kspring,steep_size,steep_spring,ftol,per, &
            velin,velout,wgrad,wtemp,dt,wtempstart,wtempend,wtempfrec,mass,rrefall,nscycle,dontg,ravprevsetp, &
            rextrema, skip, dostat, minsegmentlenght, nevalfluc,rfromtraj)
 implicit none
@@ -12,8 +12,8 @@ integer :: minsegmentlenght, nevalfluc
 logical ::  per, velin, velout, wgrad, rextrema, wtemp, dostat, rfromtraj
 double precision :: kref, kspring, steep_size, steep_spring, ftol, lastmforce, dt
 integer, allocatable, dimension (:), intent(inout) :: mask
-double precision, allocatable, dimension(:,:,:), intent(inout) :: rav, fav, tang, ftang, ftrue,fperp, rrefall,ravprevsetp
-double precision, allocatable, dimension(:,:,:), intent(inout) :: fspring, dontg
+double precision, allocatable, dimension(:,:,:), intent(inout) :: rav, fav, tang, ftang, ftrue,fperp, rrefall, ravprevsetp
+double precision, allocatable, dimension(:,:,:), intent(inout) :: fspring, dontg, devav
 double precision, allocatable, dimension(:), intent(inout) :: mass
 ! double precision, allocatable, dimension(:,:), intent(inout) :: temp
 
@@ -64,7 +64,7 @@ close (unit=1000)
 if (nrep .gt. 1) allocate(tang(3,nrestr,nrep),ftang(3,nrestr,nrep),ftrue(3,nrestr,nrep),&
                           fperp(3,nrestr,nrep),fspring(3,nrestr,nrep),dontg(3,nrestr,nrep))
 allocate(mass(nrestr),mask(nrestr),rav(3,nrestr,nrep),fav(3,nrestr,nrep),rrefall(3,nrestr,nrep),&
-        ravprevsetp(3,nrestr,nrep))
+        ravprevsetp(3,nrestr,nrep),devav(3,nrestr,nrep))
 
 open (unit=1000, file="feneb.in", status='old', action='read') !read feneb.in now that mask is allocated
 do
@@ -302,20 +302,20 @@ close(unit=22000)
 end subroutine getcoordfromfenebtraj
 
 
-subroutine getravfav(coordall,nsteps,natoms,nrestr,mask,kref,rav,fav,nrep,rep,rref,wgrad, &
+subroutine getravfav(coordall,nsteps,natoms,nrestr,mask,kref,rav,devav,fav,nrep,rep,rref,wgrad, &
                             skip,wtemp,dt,mass,tempfilesize,temp)
 implicit none
 integer, intent(in) :: nrestr,nrep,rep,nsteps,natoms
 integer, dimension(nrestr), intent(in) :: mask
 double precision :: kref, dt, vat, ekin
 double precision, dimension(3) :: av
-double precision, dimension(3,nrestr,nrep) :: rav,fav
+double precision, dimension(3,nrestr,nrep) :: rav,fav,devav
 double precision, dimension(3,nrestr,nsteps) :: coordall
 double precision, dimension(3,natoms), intent(in) :: rref
 double precision, dimension(tempfilesize,rep), intent(inout) :: temp
 double precision, dimension(nrestr), intent(in) :: mass
 character(len=50) :: chi, chrep
-integer :: i,j,k,ati,auxunit,skip,tempfilesize
+integer :: i,j,k,ati,auxunit,skip,tempfilesize,nsteps2
 logical :: wgrad,wtemp
 
 
@@ -340,9 +340,25 @@ do i=1,nrestr
     if (wgrad) write(auxunit,*) k-skip, av(1:3)
   end do
 
+  ! devav(1:3,i,rep)=0.d0
   rav(1:3,i,rep)=av(1:3)
   fav(1:3,i,rep)=kref*(av(1:3)-rref(1:3,ati))
   if (wgrad) close(auxunit)
+
+
+  ! devav(1:3,i,rep)=kref*devav(1:3,i,rep)
+
+  av=0
+  do k=skip+1,nsteps
+    do j=1,3
+     av(j)=(av(j)*(dble(k-1-skip))+coordall(j,i,k))/dble(k-skip)
+     devav(j,i,rep)=devav(j,i,rep)+(av(j)-rav(j,i,rep))**2
+    end do
+  end do
+  do j=1,3
+    devav(j,i,rep)=kref*dsqrt(devav(j,i,rep)/(nsteps-skip-1))
+  end do
+
 
 !For comparision with .rst7 file, remember that
 !AMBER VEL UNITS are Angstroms per 1/20.455 ps

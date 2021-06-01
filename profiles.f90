@@ -141,7 +141,7 @@ double precision, dimension(2,nrestr,nrep-1) :: profileall, proftest
 double precision, dimension(2,nrep-1), intent(out) :: profile
 integer, intent(in) :: nrestr, nrep
 integer :: i,j
-write(*,*) "entré"
+
 profile=0.d0
 profileall=0.d0
 do i=1,nrestr

@@ -10,7 +10,7 @@ subroutine getmaxforce(nrestr,nrep,rep,fav,maxforce,ftol,relaxd,maxforceat,rmsfn
 
   relaxd=.FALSE.
   maxforce=0.d0
-  maxforceat=0
+  maxforceat=1
   do i=1,nrestr
     fmax2=0.d0
     do j=1,3
@@ -53,7 +53,7 @@ step=stepl/maxforce
   if (stepl .lt. 1d-10) then
     moved=.true.
     stepl=0.d0
-    write(*,*) "ZERO PERRA"
+    write(*,*) "buena suerte Joni del futuro resolviendo esto"
   end if
 
 end subroutine steep

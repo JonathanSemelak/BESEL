@@ -21,7 +21,7 @@ logical ::  dostat, H0, H0T, rfromtraj
 
 !------------ Read input
     call readinput(nrep,infile,reffile,outfile,topfile,mask,nrestr,lastmforce, &
-                 rav,fav,ftrue,ftang,fperp,fspring,tang,kref,kspring,steep_size,steep_spring, &
+                 rav,devav,fav,ftrue,ftang,fperp,fspring,tang,kref,kspring,steep_size,steep_spring, &
                  ftol,per,velin,velout,wgrad,wtemp,dt,wtempstart,wtempend,wtempfrec,mass,rrefall, &
                  nscycle,dontg,ravprevsetp, &
                  rextrema, skip,dostat, minsegmentlenght,nevalfluc,rfromtraj)
@@ -42,6 +42,7 @@ logical ::  dostat, H0, H0T, rfromtraj
     tempfilesize=(nsteps-1)
     allocate(temp(tempfilesize,nrep))
     if(wtemp) call readtop(topfile,natoms,mask,mass,nrestr)
+write(8888,*)
     if (allocated(coordx)) deallocate(coordx)
     if (allocated(coordy)) deallocate(coordy)
     if (allocated(coordz)) deallocate(coordz)
@@ -62,10 +63,10 @@ logical ::  dostat, H0, H0T, rfromtraj
       allocate(coordall(3,nrestr,nsteps),coordstat(nsteps))
       call getcoordfromnetcdf(iname,nsteps,natoms,spatial,coordx,coordy,coordz,coordall,nrestr,mask)
     end if
-    call getravfav(coordall,nsteps,natoms,nrestr,mask,kref,rav,fav,nrep,nrep,rref,wgrad,skip,wtemp,dt,mass,tempfilesize,temp)
+    call getravfav(coordall,nsteps,natoms,nrestr,mask,kref,rav,devav,fav,nrep,nrep,rref,wgrad,skip,wtemp,dt,mass,tempfilesize,temp)
 
     if (dostat) then
-      allocate(devav(3,nrestr,nrep))
+      ! allocate(devav(3,nrestr,nrep))
       write(9999,*) "---------------------------------------------------"
       write(9999,*) "Statistic stuff"
       write(9999,*) "---------------------------------------------------"
@@ -80,7 +81,7 @@ logical ::  dostat, H0, H0T, rfromtraj
         write(9999,*) "coord x:",H0
         rav(1,j,nrep)=goodrav
         fav(1,j,nrep)=kref*(rav(1,j,nrep)-rref(1,atj))
-        devav(1,j,nrep)=kref*(gooddevav-rref(1,atj))
+        devav(1,j,nrep)=kref*gooddevav
         H0T=(H0T.and.H0)
 
         coordstat(1:nsteps)=coordall(2,j,1:nsteps)
@@ -88,7 +89,7 @@ logical ::  dostat, H0, H0T, rfromtraj
         write(9999,*) "coord y:",H0
         rav(2,j,nrep)=goodrav
         fav(2,j,nrep)=kref*(rav(2,j,nrep)-rref(2,atj))
-        devav(2,j,nrep)=kref*(gooddevav-rref(2,atj))
+        devav(2,j,nrep)=kref*gooddevav
         H0T=(H0T.and.H0)
 
         coordstat(1:nsteps)=coordall(3,j,1:nsteps)
@@ -96,7 +97,7 @@ logical ::  dostat, H0, H0T, rfromtraj
         write(9999,*) "coord z:",H0
         rav(3,j,nrep)=goodrav
         fav(3,j,nrep)=kref*(rav(3,j,nrep)-rref(3,atj))
-        devav(3,j,nrep)=kref*(gooddevav-rref(3,atj))
+        devav(3,j,nrep)=kref*gooddevav
         H0T=(H0T.and.H0)
       end do
       write(*,*) "Trend free:", H0T
@@ -111,7 +112,8 @@ logical ::  dostat, H0, H0T, rfromtraj
       close(2203280)
     end if
 
-    call writeposforces(rav,fav,nrestr,nrep,nrep)
+    ! call writeposforces(rav,fav,nrestr,nrep,nrep)
+    call writeposforces(rav,devav,nrestr,nrep,nrep)
 
     call getmaxforce(nrestr,nrep,nrep,fav,maxforce,ftol,relaxd,maxforceat,rmsfneb)
 
@@ -145,6 +147,7 @@ logical ::  dostat, H0, H0T, rfromtraj
 !------------ Set forces to zero
 
     fav=0.d0
+    devav=0.d0
 
 !------------ Band loop
     if (rextrema) then
@@ -182,11 +185,11 @@ logical ::  dostat, H0, H0T, rfromtraj
         call getcoordfromnetcdf(iname,nsteps,natoms,spatial,coordx,coordy,coordz,coordall,nrestr,mask)
       end if
 
-      call getravfav(coordall,nsteps,natoms,nrestr,mask,kref,rav,fav,nrep,i,rref,wgrad,skip,wtemp,dt,mass,tempfilesize,temp)
+      call getravfav(coordall,nsteps,natoms,nrestr,mask,kref,rav,devav,fav,nrep,i,rref,wgrad,skip,wtemp,dt,mass,tempfilesize,temp)
 
       if (dostat) then
-        if (i.eq.start) allocate(devav(3,nrestr,nrep))
-        if (i.eq.start) devav=0.d0
+        ! if (i.eq.start) allocate(devav(3,nrestr,nrep))
+        ! if (i.eq.start) devav=0.d0
         write(9999,*) "---------------------------------------------------"
         write(9999,*) "Statistic stuff"
         write(9999,*) "Replica:", i
@@ -203,7 +206,7 @@ logical ::  dostat, H0, H0T, rfromtraj
           write(111111,*) rav(1,j,i),goodrav
           rav(1,j,i)=goodrav
           fav(1,j,i)=kref*(rav(1,j,i)-rref(1,atj))
-          devav(1,j,nrep)=kref*gooddevav
+          devav(1,j,i)=kref*gooddevav
           H0T=(H0T.and.H0)
 
           coordstat(1:nsteps)=coordall(2,j,1:nsteps)
@@ -245,7 +248,8 @@ logical ::  dostat, H0, H0T, rfromtraj
 
     !----------- Write mean pos and forces
         do i=1,nrep
-          call writeposforces(rav,fav,nrestr,i,nrep)
+          call writeposforces(rav,devav,nrestr,i,nrep)
+          ! call writeposforces(rav,fav,nrestr,i,nrep)
         end do
 
     !----------- Write RMSD
@@ -273,7 +277,7 @@ logical ::  dostat, H0, H0T, rfromtraj
     if (dostat) call geterror(rav,devav,nrep,nrestr,profile)
     call getprofile(rav,fav,nrep,nrestr,profile)
     call gettang(rav,tang,nrestr,nrep)
-    call getnebforce(rav,fav,tang,nrestr,nrep,kspring,maxforceband,ftol,relaxd,&
+    call getnebforce(rav,devav,fav,tang,nrestr,nrep,kspring,maxforceband,ftol,relaxd,&
                     ftrue,ftang,fperp,fspring,.true.,dontg)
   ! fav ---> fneb
 
@@ -334,7 +338,7 @@ logical ::  dostat, H0, H0T, rfromtraj
           !Computes spring force and others
           call gettang(rav,tang,nrestr,nrep) !to test whether to recalculate tg or not
 
-          call getnebforce(rav,fav,tang,nrestr,nrep,kspring,maxforceband,ftol,converged,&
+          call getnebforce(rav,devav,fav,tang,nrestr,nrep,kspring,maxforceband,ftol,converged,&
                           ftrue,ftang,fperp,fspring,.false.,dontg)
 
           !como wrmforce es false, acá usa fspring para determinar maxforceband

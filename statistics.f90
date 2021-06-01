@@ -80,9 +80,10 @@ do while((.not.H0) .and. (.not.toosmall))
 
 !do Mann-Kendall test for trend
 
-  nsegmentok=.False.
-  N=24
-  do while ((.not. nsegmentok) .and. (N.le.nsegment))
+  ! nsegmentok=.False.
+  ! N=24
+  ! do while ((.not. nsegmentok) .and. (N.le.nsegment))
+    N=nsegment
     S=0.d0
     do i=1,N-1
       do j=i+1,N
@@ -105,14 +106,14 @@ do while((.not.H0) .and. (.not.toosmall))
     H0=.False.
     if (abs(Z).lt.U) then
       H0=.True.
-      nsegmentok=.True.
-      ! write(*,*) N,nsegmentok
-      ! write(*,*) "Gotta use:",N*segmentlenght, " steps (",N, "segments) Drop ", nskip, " steps"
+    ! nsegmentok=.True.
+    ! write(*,*) N,nsegmentok
+    ! write(*,*) "Gotta use:",N*segmentlenght, " steps (",N, "segments) Drop ", nskip, " steps"
     ! else
     !   nskip=nskip+1000
     endif
-    N=N+1
-  end do
+    ! N=N+1
+  ! end do
   if (H0) then
     write(*,*) "Steps used for analysis:",N*segmentlenght
     write(*,*) "Segments:", N

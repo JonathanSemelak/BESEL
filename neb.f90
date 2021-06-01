@@ -27,18 +27,18 @@ end do
 end subroutine gettang
 
 
-subroutine getnebforce(rav,fav,tang,nrestr,nrep,kspring,maxforceband,ftol,&
+subroutine getnebforce(rav,devav,fav,tang,nrestr,nrep,kspring,maxforceband,ftol,&
                        relaxd,ftrue,ftang,fperp,fspring,wrmforce,dontg)
 implicit none
 double precision, dimension(3,nrestr,nrep), intent(inout) :: fav
-double precision, dimension(3,nrestr,nrep), intent(in) :: rav, tang
+double precision, dimension(3,nrestr,nrep), intent(in) :: rav, devav, tang
 double precision, intent(out) :: maxforceband
 integer :: maxforcerep,maxforceat
 integer, intent(in) :: nrestr, nrep
 double precision, intent(in) :: kspring, ftol
 double precision, dimension(3,nrestr,nrep) :: fspring, ftang, fperp, ftrue, dontg
 double precision, dimension(nrestr,nrep) :: fproj
-double precision :: distright, distleft, maxforce, rms, maxforceband2,n1,n2,n3,n4,n5
+double precision :: distright, distleft, maxforce, rms, maxforceband2,n1,n2,n3,n4,n5, stdmaxforce
 integer :: i,j,auxunit
 logical :: relaxdrep,relaxd,wrmforce
 
@@ -83,8 +83,14 @@ logical :: relaxdrep,relaxd,wrmforce
     end if
   end do
   if (wrmforce) then
+    stdmaxforce=devav(1,maxforceat,maxforcerep)**2+&
+                devav(2,maxforceat,maxforcerep)**2+&
+                devav(3,maxforceat,maxforcerep)**2
+    stdmaxforce=dsqrt(stdmaxforce)
     write(9999,*) "-----------------------------------------------------------------"
     write(9999,*) "Band max force: ", maxforceband, "on replica: ", maxforcerep
+    write(9999,*) "-----------------------------------------------------------------"
+    write(9999,*) "STD max force: ", stdmaxforce
     write(9999,*) "-----------------------------------------------------------------"
     if(maxforceband .le. ftol) relaxd=.TRUE.
     if (relaxd) write(9999,*) "System converged: T"
