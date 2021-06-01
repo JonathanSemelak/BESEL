@@ -83,10 +83,11 @@ logical :: relaxdrep,relaxd,wrmforce
     end if
   end do
   if (wrmforce) then
-    stdmaxforce=devav(1,maxforceat,maxforcerep)**2+&
-                devav(2,maxforceat,maxforcerep)**2+&
-                devav(3,maxforceat,maxforcerep)**2
+    stdmaxforce=(fperp(1,maxforceat,maxforcerep)*devav(1,maxforceat,maxforcerep))**2+&
+                (fperp(2,maxforceat,maxforcerep)*devav(2,maxforceat,maxforcerep))**2+&
+                (fperp(3,maxforceat,maxforcerep)*devav(3,maxforceat,maxforcerep))**2
     stdmaxforce=dsqrt(stdmaxforce)
+    stdmaxforce=stdmaxforce/maxforceband
     write(9999,*) "-----------------------------------------------------------------"
     write(9999,*) "Band max force: ", maxforceband, "on replica: ", maxforcerep
     write(9999,*) "-----------------------------------------------------------------"
