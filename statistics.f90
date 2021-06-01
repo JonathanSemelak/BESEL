@@ -124,23 +124,32 @@ do while((.not.H0) .and. (.not.toosmall))
   endif
 end do
 N=N-1
-do i=1,N
-    write(8888,*) i, segmentedcoord(i)
-end do
-write(8888,*)
-
-goodrav=0.d0
-do i=1,N
-  goodrav=goodrav+segmentedcoord(i)
-end do
-goodrav=goodrav/dble(N)
+! do i=1,N
+!     write(8888,*) i, segmentedcoord(i)
+! end do
+! write(8888,*)
+if(toosmall) then
+  write(*,*) "Computing straight average"
+  if (allocated(coordav)) deallocate(coordav)
+  allocate(coordav(nsteps-skip))
+  do k=skip+1,nsteps
+    coordav(k-skip)=(coordav(k-skip-1)*(dble(k-1-skip))+coord(k))/dble(k-skip)
+  end do
+  goodrav=coordav(nsteps-skip)
+else
+  goodrav=0.d0
+  do i=1,N
+    goodrav=goodrav+segmentedcoord(i)
+  end do
+  goodrav=goodrav/dble(N)
+endif
 
 gooddevav=0.d0
 do j=1,N
    gooddevav=gooddevav+(segmentedcoord(j)-goodrav)**2
 end do
 gooddevav=dsqrt(gooddevav/(N-1))
-write(7777,*) gooddevav
+
 
 
 end subroutine getsstatistics

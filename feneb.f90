@@ -42,7 +42,6 @@ logical ::  dostat, H0, H0T, rfromtraj
     tempfilesize=(nsteps-1)
     allocate(temp(tempfilesize,nrep))
     if(wtemp) call readtop(topfile,natoms,mask,mass,nrestr)
-write(8888,*)
     if (allocated(coordx)) deallocate(coordx)
     if (allocated(coordy)) deallocate(coordy)
     if (allocated(coordz)) deallocate(coordz)
@@ -112,8 +111,8 @@ write(8888,*)
       close(2203280)
     end if
 
-    ! call writeposforces(rav,fav,nrestr,nrep,nrep)
-    call writeposforces(rav,devav,nrestr,nrep,nrep)
+    call writeposforces(rav,fav,nrestr,nrep,nrep)
+    call writeposdev(rav,devav,nrestr,nrep,nrep)
 
     call getmaxforce(nrestr,nrep,nrep,fav,maxforce,ftol,relaxd,maxforceat,rmsfneb)
 
@@ -203,6 +202,7 @@ write(8888,*)
           coordstat(1:nsteps)=coordall(1,j,1:nsteps)
           call getsstatistics(coordstat,nsteps,skip,nevalfluc,dt,Z,H0,minsegmentlenght,goodrav,gooddevav)
           write(9999,*) "coord x:",H0
+          write(111111,*) rav(1,j,i),goodrav
           rav(1,j,i)=goodrav
           fav(1,j,i)=kref*(rav(1,j,i)-rref(1,atj))
           devav(1,j,i)=kref*gooddevav
@@ -211,6 +211,7 @@ write(8888,*)
           coordstat(1:nsteps)=coordall(2,j,1:nsteps)
           call getsstatistics(coordstat,nsteps,skip,nevalfluc,dt,Z,H0,minsegmentlenght,goodrav,gooddevav)
           write(9999,*) "coord y:",H0
+          write(111111,*) rav(2,j,i),goodrav
           rav(2,j,i)=goodrav
           fav(2,j,i)=kref*(rav(2,j,i)-rref(2,atj))
           devav(2,j,i)=kref*gooddevav
@@ -219,6 +220,7 @@ write(8888,*)
           coordstat(1:nsteps)=coordall(3,j,1:nsteps)
           call getsstatistics(coordstat,nsteps,skip,nevalfluc,dt,Z,H0,minsegmentlenght,goodrav,gooddevav)
           write(9999,*) "coord z:",H0
+          write(111111,*) rav(3,j,i),goodrav
           rav(3,j,i)=goodrav
           fav(3,j,i)=kref*(rav(3,j,i)-rref(3,atj))
           devav(3,j,i)=kref*gooddevav
@@ -245,8 +247,11 @@ write(8888,*)
 
     !----------- Write mean pos and forces
         do i=1,nrep
-          call writeposforces(rav,devav,nrestr,i,nrep)
-          ! call writeposforces(rav,fav,nrestr,i,nrep)
+          call writeposforces(rav,fav,nrestr,i,nrep)
+        end do
+
+        do i=1,nrep
+          call writeposdev(rav,devav,nrestr,i,nrep)
         end do
 
     !----------- Write RMSD
@@ -272,6 +277,7 @@ write(8888,*)
     ! write(*,*) "ASDSAD", devav
 
     if (dostat) call geterror(rav,devav,nrep,nrestr,profile)
+    call geterror(rav,devav,nrep,nrestr,profile)
     call getprofile(rav,fav,nrep,nrestr,profile)
     call gettang(rav,tang,nrestr,nrep)
     call getnebforce(rav,devav,fav,tang,nrestr,nrep,kspring,maxforceband,ftol,relaxd,&

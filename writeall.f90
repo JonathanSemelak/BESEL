@@ -14,6 +14,22 @@ close(1001)
 
 end subroutine writeposforces
 
+subroutine writeposdev(rav,devav,nrestr,rep,nrep)
+
+implicit none
+integer, intent(in) :: nrestr, rep, nrep
+double precision, dimension(3,nrestr,nrep), intent(in) :: rav, devav
+integer :: i
+
+open(unit=1002, file="Pos_dev.dat", position='append')
+do i=1,nrestr
+write(1002,'(2x, I6,2x, 6(f20.10,2x))') i, rav(1:3,i,rep), devav(1:3,i,rep)
+end do
+write(1002,'(2x, I6,2x, 6(f20.10,2x))')
+close(1002)
+
+end subroutine writeposdev
+
 subroutine writenewcoord(oname,rref,boxinfo,natoms,nrestr,mask,per,velout,rav,nrep,rep,test)
 
 implicit none
