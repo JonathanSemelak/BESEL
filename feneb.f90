@@ -203,7 +203,6 @@ write(8888,*)
           coordstat(1:nsteps)=coordall(1,j,1:nsteps)
           call getsstatistics(coordstat,nsteps,skip,nevalfluc,dt,Z,H0,minsegmentlenght,goodrav,gooddevav)
           write(9999,*) "coord x:",H0
-          write(111111,*) rav(1,j,i),goodrav
           rav(1,j,i)=goodrav
           fav(1,j,i)=kref*(rav(1,j,i)-rref(1,atj))
           devav(1,j,i)=kref*gooddevav
@@ -212,7 +211,6 @@ write(8888,*)
           coordstat(1:nsteps)=coordall(2,j,1:nsteps)
           call getsstatistics(coordstat,nsteps,skip,nevalfluc,dt,Z,H0,minsegmentlenght,goodrav,gooddevav)
           write(9999,*) "coord y:",H0
-          write(111111,*) rav(2,j,i),goodrav
           rav(2,j,i)=goodrav
           fav(2,j,i)=kref*(rav(2,j,i)-rref(2,atj))
           devav(2,j,i)=kref*gooddevav
@@ -221,7 +219,6 @@ write(8888,*)
           coordstat(1:nsteps)=coordall(3,j,1:nsteps)
           call getsstatistics(coordstat,nsteps,skip,nevalfluc,dt,Z,H0,minsegmentlenght,goodrav,gooddevav)
           write(9999,*) "coord z:",H0
-          write(111111,*) rav(3,j,i),goodrav
           rav(3,j,i)=goodrav
           fav(3,j,i)=kref*(rav(3,j,i)-rref(3,atj))
           devav(3,j,i)=kref*gooddevav
