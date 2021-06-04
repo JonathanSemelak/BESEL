@@ -4,12 +4,12 @@ contains
 subroutine readinput(nrep,infile,reffile,outfile,topfile,mask,nrestr,lastmforce, &
            rav,devav,fav,ftrue,ftang,fperp,fspring,tang,kref,kspring,steep_size,steep_spring,ftol,per, &
            velin,velout,wgrad,wtemp,dt,wtempstart,wtempend,wtempfrec,mass,rrefall,nscycle,dontg,ravprevsetp, &
-           rextrema, skip, dostat, minsegmentlenght, nevalfluc,rfromtraj)
+           rextrema, skip, dostat, minsegmentlenght, nevalfluc,rfromtraj,usensteps,nstepsexternal)
 implicit none
 character(len=50) :: infile, reffile, outfile, line, exp, keyword, topfile
 integer :: nrestr, nrep, i, ierr, nscycle,skip, wtempfrec, wtempstart, wtempend
-integer :: minsegmentlenght, nevalfluc
-logical ::  per, velin, velout, wgrad, rextrema, wtemp, dostat, rfromtraj
+integer :: minsegmentlenght, nevalfluc, nstepsexternal
+logical ::  per, velin, velout, wgrad, rextrema, wtemp, dostat, rfromtraj, usensteps
 double precision :: kref, kspring, steep_size, steep_spring, ftol, lastmforce, dt
 integer, allocatable, dimension (:), intent(inout) :: mask
 double precision, allocatable, dimension(:,:,:), intent(inout) :: rav, fav, tang, ftang, ftrue,fperp, rrefall, ravprevsetp
@@ -27,6 +27,8 @@ double precision, allocatable, dimension(:), intent(inout) :: mass
  wtemp=.False.
  dostat=.False.
  rfromtraj=.False.
+ usensteps=.False.
+ nstepsexternal=5000
  wtempfrec=1
  dt=0.001
  minsegmentlenght=100
@@ -59,6 +61,7 @@ do
    if (keyword == 'wtemp') read(line,*) exp, wtemp, wtempstart, wtempend, wtempfrec
    if (keyword == 'dostat') read(line,*) exp, dostat, nevalfluc, minsegmentlenght
    if (keyword == 'rfromtraj') read(line,*) exp, rfromtraj
+   if (keyword == 'usensteps') read(line,*) exp, usensteps, nstepsexternal
 end do
 close (unit=1000)
 if (nrep .gt. 1) allocate(tang(3,nrestr,nrep),ftang(3,nrestr,nrep),ftrue(3,nrestr,nrep),&

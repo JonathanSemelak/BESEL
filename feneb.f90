@@ -3,28 +3,28 @@ use netcdf
 use readandget
 implicit none
 character(len=50) :: infile, reffile, outfile,topfile, chi, iname, rname, oname, tempname
-integer :: nsteps, spatial, natoms, nrestr, nrep, nscycle,maxforceat, atj
-integer :: i, j, k, n, start, end, skip, wtempstart, wtempend, wtempfrec, tempfilesize, minsegmentlenght, nevalfluc
+integer :: nsteps, spatial, natoms, nrestr, nrep, nscycle,maxforceat, atj, maxstdat
+integer :: i, j, k, n, start, end, skip, wtempstart, wtempend, wtempfrec, tempfilesize, minsegmentlenght, nevalfluc, nstepsexternal
 integer, allocatable, dimension (:) :: mask
 real(4) :: coordinate
 real(4), allocatable, dimension (:) :: coordx,coordy,coordz, coordstat
 integer, dimension (3) :: point
 double precision :: kref, steep_size, ftol, maxforce, kspring, maxforceband, lastmforce, maxforcebandprevsetp, steep_spring
-double precision :: stepl, deltaA, rmsfneb, minpoint, maxpoint, barrier, dt, Z, goodrav, gooddevav
+double precision :: stepl, deltaA, rmsfneb, minpoint, maxpoint, barrier, dt, Z, goodrav, gooddevav, maxstd
 double precision, dimension(6) :: boxinfo
 double precision, allocatable, dimension(:) :: rmsd, mass
 double precision, allocatable, dimension(:,:) :: rref, profile, temp
 double precision, allocatable, dimension(:,:,:) :: rav, fav, tang, ftang, ftrue, fperp, rrefall, ravprevsetp, devav
 double precision, allocatable, dimension(:,:,:) :: fspring, dontg, selfdist,coordall
 logical ::  per, velin, velout, relaxd, converged, wgrad, wtemp, moved, maxpreached, equispaced, rextrema, test
-logical ::  dostat, H0, H0T, rfromtraj
+logical ::  dostat, H0, H0T, rfromtraj, usensteps
 
 !------------ Read input
     call readinput(nrep,infile,reffile,outfile,topfile,mask,nrestr,lastmforce, &
                  rav,devav,fav,ftrue,ftang,fperp,fspring,tang,kref,kspring,steep_size,steep_spring, &
                  ftol,per,velin,velout,wgrad,wtemp,dt,wtempstart,wtempend,wtempfrec,mass,rrefall, &
                  nscycle,dontg,ravprevsetp, &
-                 rextrema, skip,dostat, minsegmentlenght,nevalfluc,rfromtraj)
+                 rextrema, skip,dostat, minsegmentlenght,nevalfluc,rfromtraj,usensteps,nstepsexternal)
 
 !------------
 
@@ -39,6 +39,8 @@ logical ::  dostat, H0, H0T, rfromtraj
 
     call getfilenames(nrep,chi,infile,reffile,outfile,iname,rname,oname)
     call getdims(iname,nsteps,spatial,natoms)
+    if (usensteps) write(9999,*) "Using ", nstepsexternal, "out of ", nsteps
+    if (usensteps) nsteps=nstepsexternal
     tempfilesize=(nsteps-1)
     allocate(temp(tempfilesize,nrep))
     if(wtemp) call readtop(topfile,natoms,mask,mass,nrestr)
@@ -115,9 +117,11 @@ logical ::  dostat, H0, H0T, rfromtraj
     call writeposdev(rav,devav,nrestr,nrep,nrep)
 
     call getmaxforce(nrestr,nrep,nrep,fav,maxforce,ftol,relaxd,maxforceat,rmsfneb)
+    call getmaxstd(nrestr,nrep,nrep,fav,devav,maxstd,maxstdat)
 
 
     write(9999,*) "Max force: ", maxforce
+    write(9999,*) "Max STD: ", maxstd
 
     if (.not. relaxd) then
        call steep(rav,fav,nrep,nrep,steep_size,maxforce,nrestr,lastmforce,stepl,deltaA,dontg)
@@ -160,6 +164,8 @@ logical ::  dostat, H0, H0T, rfromtraj
     do i=start,end
       call getfilenames(i,chi,infile,reffile,outfile,iname,rname,oname)
       call getdims(iname,nsteps,spatial,natoms)
+      if (usensteps) write(9999,*) "Using ", nstepsexternal, "out of ", nsteps
+      if (usensteps) nsteps=nstepsexternal
       tempfilesize=(nsteps-1)
       if(i .eq. start) allocate(temp(tempfilesize,nrep))
       if(i .eq. start .and. wtemp) call readtop(topfile,natoms,mask,mass,nrestr)

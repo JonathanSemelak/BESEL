@@ -150,6 +150,32 @@ do j=1,N
 end do
 gooddevav=dsqrt(gooddevav/(N-1))
 
-
-
 end subroutine getsstatistics
+
+subroutine getmaxstd(nrestr,nrep,rep,fav,devav,maxstd,maxstdat)
+implicit none
+double precision, dimension(3,nrestr,nrep), intent(in) :: fav, devav
+integer, intent(in) :: nrestr, nrep, rep
+double precision, intent(out) :: maxstd
+double precision :: fmod,std
+integer :: i,maxstdat
+
+maxstd=0.d0
+maxstdat=1
+do i=1,nrestr
+  std=(fav(1,i,rep)*devav(1,i,rep))**2+&
+      (fav(2,i,rep)*devav(2,i,rep))**2+&
+      (fav(3,i,rep)*devav(3,i,rep))**2
+  fmod=fav(1,i,rep)**2+&
+       fav(2,i,rep)**2+&
+       fav(3,i,rep)**2
+  fmod=dsqrt(fmod)
+  std=dsqrt(std)
+  std=std/fmod
+  if (std.gt.maxstd) then
+    maxstd=std
+    maxstdat=i
+  end if
+end do
+
+end subroutine getmaxstd

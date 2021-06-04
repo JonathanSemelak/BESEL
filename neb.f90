@@ -33,12 +33,13 @@ implicit none
 double precision, dimension(3,nrestr,nrep), intent(inout) :: fav
 double precision, dimension(3,nrestr,nrep), intent(in) :: rav, devav, tang
 double precision, intent(out) :: maxforceband
-integer :: maxforcerep,maxforceat
+integer :: maxforcerep,maxforceat,maxstdrep,maxstdat
 integer, intent(in) :: nrestr, nrep
 double precision, intent(in) :: kspring, ftol
 double precision, dimension(3,nrestr,nrep) :: fspring, ftang, fperp, ftrue, dontg
 double precision, dimension(nrestr,nrep) :: fproj
-double precision :: distright, distleft, maxforce, rms, maxforceband2,n1,n2,n3,n4,n5, stdmaxforce
+double precision :: distright, distleft, maxforce, rms, maxforceband2,n1,n2,n3,n4,n5
+double precision :: maxstdband,maxstd
 integer :: i,j,auxunit
 logical :: relaxdrep,relaxd,wrmforce
 
@@ -47,6 +48,7 @@ logical :: relaxdrep,relaxd,wrmforce
   ftang=0.d0
   ftrue=0.d0
   maxforceband=0.d0
+  maxstdband=0.d0
   relaxd=.FALSE.
   do i=2,nrep-1
 	  do j=1, nrestr
@@ -66,16 +68,16 @@ logical :: relaxdrep,relaxd,wrmforce
         fperp(1:3,j,i)=fav(1:3,j,i)-ftang(1:3,j,i)
         fav(1:3,j,i)=fperp(1:3,j,i)+fspring(1:3,j,i)
 
-        ! fproj(j,i)=dontg(1,j,i)*tang(1,j,i)+dontg(2,j,i)*tang(2,j,i)+dontg(3,j,i)*tang(3,j,i)
-        ! fproj(j,i)=dsqrt(fproj(j,i)**2)
-        ! dontg(1:3,j,i)=fproj(j,i)*tang(1:3,j,i)
-
 	  end do
     if (wrmforce) then
       call getmaxforce(nrestr,nrep,i,fperp,maxforce,ftol,relaxdrep,maxforceat,rms)
       if (maxforce .gt. maxforceband) maxforcerep=i
       if (maxforce .gt. maxforceband) maxforceband=maxforce
       write(9999,*) "Replica: ", i, "Max force: ", maxforce, "Converged: ", relaxdrep
+      call getmaxstd(nrestr,nrep,i,fperp,devav,maxstd,maxstdat)
+      write(414141,*) i, maxstd
+      if (maxstd .gt. maxstdband) maxstdrep=i
+      if (maxstd .gt. maxstdband) maxstdband=maxstd
     else
       call getmaxforce(nrestr,nrep,i,fspring,maxforce,ftol,relaxdrep,maxforceat,rms)
       if (maxforce .gt. maxforceband) maxforcerep=i
@@ -83,15 +85,10 @@ logical :: relaxdrep,relaxd,wrmforce
     end if
   end do
   if (wrmforce) then
-    stdmaxforce=(fperp(1,maxforceat,maxforcerep)*devav(1,maxforceat,maxforcerep))**2+&
-                (fperp(2,maxforceat,maxforcerep)*devav(2,maxforceat,maxforcerep))**2+&
-                (fperp(3,maxforceat,maxforcerep)*devav(3,maxforceat,maxforcerep))**2
-    stdmaxforce=dsqrt(stdmaxforce)
-    stdmaxforce=stdmaxforce/maxforceband
     write(9999,*) "-----------------------------------------------------------------"
     write(9999,*) "Band max force: ", maxforceband, "on replica: ", maxforcerep
     write(9999,*) "-----------------------------------------------------------------"
-    write(9999,*) "STD max force: ", stdmaxforce
+    write(9999,*) "Band max STD: ", maxstdband, "on replica: ", maxstdrep
     write(9999,*) "-----------------------------------------------------------------"
     if(maxforceband .le. ftol) relaxd=.TRUE.
     if (relaxd) write(9999,*) "System converged: T"
