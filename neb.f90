@@ -75,7 +75,6 @@ logical :: relaxdrep,relaxd,wrmforce
       if (maxforce .gt. maxforceband) maxforceband=maxforce
       write(9999,*) "Replica: ", i, "Max force: ", maxforce, "Converged: ", relaxdrep
       call getmaxstd(nrestr,nrep,i,fperp,devav,maxstd,maxstdat)
-      write(414141,*) i, maxstd
       if (maxstd .gt. maxstdband) maxstdrep=i
       if (maxstd .gt. maxstdband) maxstdband=maxstd
     else

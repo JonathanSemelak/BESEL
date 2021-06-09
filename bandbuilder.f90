@@ -17,7 +17,7 @@ integer, allocatable, dimension (:) :: mask
 double precision, allocatable, dimension (:) :: energy
 double precision, allocatable, dimension(:,:) :: rclas, selfdist, rref, profile
 double precision, allocatable, dimension(:,:,:) :: rav, distmatrix, intdistmatrix, ravprev
-double precision, allocatable, dimension(:,:,:) :: fav, tang, ftang, ftrue, fperp, fspring
+double precision, allocatable, dimension(:,:,:) :: fav, tang, ftang, ftrue, fperp, fspring, devav
 double precision :: kspring, ftol, dontg, maxforceband, maxforceband2, stepl, steep_spring, steep_size
 double precision :: energyreplica, maxenergy
 
@@ -104,15 +104,16 @@ if (iddp) then
 
   allocate(distmatrix(nrestr,nrestr,nrep),intdistmatrix(nrestr,nrestr,nrep),energy(nrep))
 	allocate(fav(3,nrestr,nrep),fspring(3,nrestr,nrep),ftrue(3,nrestr,nrep),fperp(3,nrestr,nrep),ftang(3,nrestr,nrep))
-	allocate(tang(3,nrestr,nrep))
+	allocate(tang(3,nrestr,nrep),devav(3,nrestr,nrep))
 	allocate(profile(2,nrep-1))
 
 	kspring=5000.d0
   ftol=0.d0
 	dontg=0.d0
 	relaxd=.false.
-  nscycle=500.
+  nscycle=500
   steep_size=1000d0
+	devav=0.d0
 ! TEST---------------------
 
 call getdistmatrix(nrestr,nrep,distmatrix,rav)
@@ -128,17 +129,16 @@ do i=1,nrestr
   end do
 end do
 close(88881)
-
 	do j=1,2500
-		write(9999,*) "PASO", j
 	  call getdistmatrix(nrestr,nrep,distmatrix,rav)
     if(j.eq.1) call getintdistmatrix(nrestr,nrep,distmatrix,intdistmatrix)
     call getenergyandforce(rav,nrestr,nrep,distmatrix,intdistmatrix,energy,maxenergy,fav)
 	  call gettang(rav,tang,nrestr,nrep)
-	  call getnebforce(rav,fav,tang,nrestr,nrep,kspring,maxforceband,ftol,relaxd,&
+	  call getnebforce(rav,devav,fav,tang,nrestr,nrep,kspring,maxforceband,ftol,relaxd,&
 											ftrue,ftang,fperp,fspring,.true.,dontg)
 		write(11111,*) j, maxenergy, maxforceband, steep_size
 		write(*,*) j, maxenergy,maxforceband, steep_size
+
 	  do i=2,nrep-1
       moved=.False.
 		  do while (.not. moved)
@@ -162,7 +162,7 @@ close(88881)
 	k=1
 	do while ((k .le. nscycle) .and. (.not. equispaced))
 		call gettang(rav,tang,nrestr,nrep)
-		call getnebforce(rav,fav,tang,nrestr,nrep,kspring,maxforceband2,0.d0,relaxd,&
+		call getnebforce(rav,devav,fav,tang,nrestr,nrep,kspring,maxforceband2,0.d0,relaxd,&
 										ftrue,ftang,fperp,fspring,.false.,dontg)
 			do i=2,nrep-1
 				call steep(rav,fspring,nrep,i,0.001d0,maxforceband2,nrestr,0.d0,stepl,0.d0,dontg)
