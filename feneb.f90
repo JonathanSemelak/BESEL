@@ -126,7 +126,7 @@ logical ::  dostat, H0, H0T, rfromtraj, usensteps
 
     write(9999,*) "Max force: ", maxforce
     write(9999,*) "Max STD: ", maxstd
-    write(9999,*) "Max displacement: ", maxdisp
+    write(9999,*) "Max displacement due MD: ", maxdisp
 
     if (.not. relaxd) then
        call steep(rav,fav,nrep,nrep,steep_size,maxforce,nrestr,lastmforce,stepl,deltaA)
@@ -146,6 +146,8 @@ logical ::  dostat, H0, H0T, rfromtraj, usensteps
        write(9999,*) "Convergence criteria of ", ftol, " (kcal/mol A) achieved"
     endif
 
+  call getmaxdisplacement(nrestr,nrep,rav,rrefall,maxdisp)
+  write(9999,*) "Max displacement due MD+steep: ", maxdisp
   elseif (nrep .gt. 1) then !NEB on FE surface
 
     write(9999,*) "---------------------------------------------------"
@@ -312,6 +314,9 @@ logical ::  dostat, H0, H0T, rfromtraj, usensteps
     close(1644)
     close(1645)
 
+    call getmaxdisplacement(nrestr,nrep,rav,rrefall,maxdisp)
+    write(9999,*) "Max displacement due MD: ", maxdisp
+
 !----------- moves the band
     if (.not. converged) then
        do i=2,nrep-1
@@ -392,7 +397,7 @@ logical ::  dostat, H0, H0T, rfromtraj, usensteps
 
         call getmaxdisplacement(nrestr,nrep,rav,rrefall,maxdisp)
 
-        write(9999,*) "Max displacement: ", maxdisp
+        write(9999,*) "Max displacement due MD+steep: ", maxdisp
 
     !------------ Get coordinates for previously optimized extrema
     if (.not. rextrema) then
