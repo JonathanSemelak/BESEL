@@ -4,7 +4,7 @@ use readandget
 implicit none
 character(len=50) :: infile, reffile, outfile,topfile, chi, iname, rname, oname, tempname
 integer :: nsteps, spatial, natoms, nrestr, nrep, nscycle,maxforceat, atj, maxstdat
-integer :: i, j, k, n, start, end, skip, wtempstart, wtempend, wtempfrec, tempfilesize, minsegmentlenght, nevalfluc, nstepsexternal
+integer :: i, j, k, n, start, nend, skip, wtempstart, wtempend, wtempfrec, tempfilesize, minsegmentlenght, nevalfluc, nstepsexternal
 integer, allocatable, dimension (:) :: mask
 real(4) :: coordinate
 real(4), allocatable, dimension (:) :: coordx,coordy,coordz, coordstat
@@ -160,7 +160,7 @@ logical ::  dostat, H0, H0T, rfromtraj, usensteps
 !------------ Band loop
     if (rextrema) then
       start=2
-      end=nrep-1
+      nend=nrep-1
     else
       start=1
       nend=nrep
