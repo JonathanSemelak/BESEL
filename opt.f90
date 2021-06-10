@@ -57,7 +57,7 @@ step=stepl/maxforce
 
 end subroutine steep
 
-subroutine getmaxdisplacement(nrestr,nrep,rav,rrefall,maxdisp,start,nend)
+subroutine getmaxdisplacement(nrestr,nrep,rav,rrefall,maxdisp)
 implicit none
 double precision, dimension(3,nrestr,nrep), intent(in) :: rav, rrefall
 double precision, intent(out) :: maxdisp
@@ -66,14 +66,22 @@ integer, intent(in) ::  nrestr, nrep, start,nend
 integer :: i, j ,k
 
 maxdisp=0.d0
-write(*,*) "ASDSADSADSAD", start,nend
-do k=start,nend
+if (nrep .eq. 1) then
+  k=1
   do i=1,nrestr
     do j=1,3
       disp=abs(rav(j,i,k)-rrefall(j,i,k))
       if (disp.gt.maxdisp) maxdisp = disp
     end do
   end do
-end do
-
+else
+  do k=2,nrep-1
+    do i=1,nrestr
+      do j=1,3
+        disp=abs(rav(j,i,k)-rrefall(j,i,k))
+        if (disp.gt.maxdisp) maxdisp = disp
+      end do
+    end do
+  end do
+end if
 end subroutine getmaxdisplacement

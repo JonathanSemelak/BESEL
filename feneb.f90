@@ -122,7 +122,7 @@ logical ::  dostat, H0, H0T, rfromtraj, usensteps
 
     call getmaxforce(nrestr,nrep,nrep,fav,maxforce,ftol,relaxd,maxforceat,rmsfneb)
     call getmaxstd(nrestr,nrep,nrep,fav,devav,maxstd,maxstdat,.False.)
-    call getmaxdisplacement(nrestr,nrep,rav,rrefall,maxdisp,nrep,nrep)
+    call getmaxdisplacement(nrestr,nrep,rav,rrefall,maxdisp)
 
     write(9999,*) "Max force: ", maxforce
     write(9999,*) "Max STD: ", maxstd
@@ -390,7 +390,7 @@ logical ::  dostat, H0, H0T, rfromtraj, usensteps
           write(1646,*)
         end do
 
-        call getmaxdisplacement(nrestr,nrep,rav,rrefall,maxdisp,start,nend)
+        call getmaxdisplacement(nrestr,nrep,rav,rrefall,maxdisp)
 
         write(9999,*) "Max displacement: ", maxdisp
 
