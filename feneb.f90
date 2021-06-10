@@ -140,14 +140,17 @@ logical ::  dostat, H0, H0T, rfromtraj, usensteps
        call getfilenames(nrep,chi,infile,infile,outfile,iname,rname,oname) !toma ultima foto p/ siguiente paso
        call getrefcoord(rname,nrestr,mask,natoms,rref,boxinfo,per,.True.)
        call writenewcoord(oname,rref,boxinfo,natoms,nrestr,mask,per,velout,rav,nrep,nrep,test)
+
+       call getmaxdisplacement(nrestr,nrep,rav,rrefall,maxdisp)
+       write(9999,*) "Max displacement due MD+steep: ", maxdisp
+
        write(9999,*) "System converged: F"
     else
        write(9999,*) "System converged: T"
        write(9999,*) "Convergence criteria of ", ftol, " (kcal/mol A) achieved"
     endif
 
-  call getmaxdisplacement(nrestr,nrep,rav,rrefall,maxdisp)
-  write(9999,*) "Max displacement due MD+steep: ", maxdisp
+
   elseif (nrep .gt. 1) then !NEB on FE surface
 
     write(9999,*) "---------------------------------------------------"
