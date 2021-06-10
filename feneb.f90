@@ -163,10 +163,10 @@ logical ::  dostat, H0, H0T, rfromtraj, usensteps
       end=nrep-1
     else
       start=1
-      end=nrep
+      nend=nrep
     endif
 
-    do i=start,end
+    do i=start,nend
       call getfilenames(i,chi,infile,reffile,outfile,iname,rname,oname)
       call getdims(iname,nsteps,spatial,natoms)
       if (usensteps) write(9999,*) "Using ", nstepsexternal, "out of ", nsteps
@@ -247,7 +247,7 @@ logical ::  dostat, H0, H0T, rfromtraj, usensteps
 
     if (wtemp) then
       open(unit=2203280, file="temperature.dat")
-      do i=start,end
+      do i=start,nend
         do j=wtempstart, wtempend
           if (mod(j,wtempfrec) .eq. 0) write(2203280,*) j, temp(j,i)
         end do
@@ -275,7 +275,7 @@ logical ::  dostat, H0, H0T, rfromtraj, usensteps
           write(40000,*) rmsd(1:nrep)
         close(40000)
 !----------- Puts reference values in a single array (rrefall).
-    do i=start,end
+    do i=start,nend
       call getfilenames(i,chi,infile,reffile,outfile,iname,rname,oname) !rname = NAME_r_i.rst7 ; i=replica
       call getrefcoord(rname,nrestr,mask,natoms,rref,boxinfo,per,velin)
       call getcoordextrema(rref,natoms,rrefall,nrestr,nrep,i,mask)
@@ -390,7 +390,7 @@ logical ::  dostat, H0, H0T, rfromtraj, usensteps
           write(1646,*)
         end do
 
-        call getmaxdisplacement(nrestr,nrep,rav,rrefall,maxdisp,start,end)
+        call getmaxdisplacement(nrestr,nrep,rav,rrefall,maxdisp,start,nend)
 
         write(9999,*) "Max displacement: ", maxdisp
 
