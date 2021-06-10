@@ -8,7 +8,7 @@ use readandget
 use netcdf
 implicit none
 character(len=50) :: rcfile, pcfile, tsfile, prefix, chi, oname
-integer :: nrestr, nrep, i, j, k, middlepoint, natoms, nscycle
+integer :: nrestr, nrep, i, j, k, middlepoint, natoms, nscycle, nmax
 logical ::  usets, per, velin, velout, onlytest, iddp, relaxd, equispaced, moved
 double precision, dimension(3) :: BAND_slope
 double precision, dimension(3) :: BAND_const
@@ -16,13 +16,13 @@ double precision, dimension(6):: boxinfo
 integer, allocatable, dimension (:) :: mask
 double precision, allocatable, dimension (:) :: energy
 double precision, allocatable, dimension(:,:) :: rclas, selfdist, rref, profile
-double precision, allocatable, dimension(:,:,:) :: rav, distmatrix, intdistmatrix, ravprev
+double precision, allocatable, dimension(:,:,:) :: rav, distmatrix, intdistmatrix, ravprev, rrefall
 double precision, allocatable, dimension(:,:,:) :: fav, tang, ftang, ftrue, fperp, fspring, devav
 double precision :: kspring, ftol, dontg, maxforceband, maxforceband2, stepl, steep_spring, steep_size
 double precision :: energyreplica, maxenergy
 
 !reads imputfile
-call readinputbuilder(rcfile, pcfile, tsfile, prefix, nrestr, nrep, usets, per, velin, velout, rav, mask, iddp, onlytest)
+call readinputbuilder(rcfile, pcfile, tsfile, prefix, nrestr, nrep, usets, per, velin, velout, rav, mask, iddp, nmax, onlytest)
 
 if (onlytest) then
 	allocate(rref(3,natoms))
@@ -104,7 +104,7 @@ if (iddp) then
 
   allocate(distmatrix(nrestr,nrestr,nrep),intdistmatrix(nrestr,nrestr,nrep),energy(nrep))
 	allocate(fav(3,nrestr,nrep),fspring(3,nrestr,nrep),ftrue(3,nrestr,nrep),fperp(3,nrestr,nrep),ftang(3,nrestr,nrep))
-	allocate(tang(3,nrestr,nrep),devav(3,nrestr,nrep))
+	allocate(tang(3,nrestr,nrep),devav(3,nrestr,nrep),rrefall(3,nrestr,nrep))
 	allocate(profile(2,nrep-1))
 
 	kspring=5000.d0
@@ -114,6 +114,7 @@ if (iddp) then
   nscycle=500
   steep_size=1000d0
 	devav=0.d0
+	rrefall=0.d0
 ! TEST---------------------
 
 call getdistmatrix(nrestr,nrep,distmatrix,rav)
@@ -129,7 +130,7 @@ do i=1,nrestr
   end do
 end do
 close(88881)
-	do j=1,2500
+	do j=1,nmax
 	  call getdistmatrix(nrestr,nrep,distmatrix,rav)
     if(j.eq.1) call getintdistmatrix(nrestr,nrep,distmatrix,intdistmatrix)
     call getenergyandforce(rav,nrestr,nrep,distmatrix,intdistmatrix,energy,maxenergy,fav)

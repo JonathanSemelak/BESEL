@@ -10,7 +10,7 @@ real(4) :: coordinate
 real(4), allocatable, dimension (:) :: coordx,coordy,coordz, coordstat
 integer, dimension (3) :: point
 double precision :: kref, steep_size, ftol, maxforce, kspring, maxforceband, lastmforce, maxforcebandprevsetp, steep_spring
-double precision :: stepl, deltaA, rmsfneb, minpoint, maxpoint, barrier, dt, Z, goodrav, gooddevav, maxstd
+double precision :: stepl, deltaA, rmsfneb, minpoint, maxpoint, barrier, dt, Z, goodrav, gooddevav, maxstd, maxdisp
 double precision, dimension(6) :: boxinfo
 double precision, allocatable, dimension(:) :: rmsd, mass
 double precision, allocatable, dimension(:,:) :: rref, profile, temp
@@ -51,6 +51,7 @@ logical ::  dostat, H0, H0T, rfromtraj, usensteps
 
     allocate(coordx(nsteps),coordy(nsteps),coordz(nsteps),rref(3,natoms))
     call getrefcoord(rname,nrestr,mask,natoms,rref,boxinfo,per,velin)
+    call getcoordextrema(rref,natoms,rrefall,nrestr,nrep,nrep,mask)
 
     ! call getavcoordanforces(iname,nsteps,natoms,spatial,coordx,coordy,coordz,&
     !                     coordall,nrestr,mask,kref,rav,fav,nrep,nrep,rref,wgrad,dontg,&
@@ -82,7 +83,8 @@ logical ::  dostat, H0, H0T, rfromtraj, usensteps
         write(9999,*) "coord x:",H0
         rav(1,j,nrep)=goodrav
         fav(1,j,nrep)=kref*(rav(1,j,nrep)-rref(1,atj))
-        devav(1,j,nrep)=kref*gooddevav
+        ! devav(1,j,nrep)=kref*gooddevav
+        devav(1,j,nrep)=gooddevav
         H0T=(H0T.and.H0)
 
         coordstat(1:nsteps)=coordall(2,j,1:nsteps)
@@ -90,7 +92,8 @@ logical ::  dostat, H0, H0T, rfromtraj, usensteps
         write(9999,*) "coord y:",H0
         rav(2,j,nrep)=goodrav
         fav(2,j,nrep)=kref*(rav(2,j,nrep)-rref(2,atj))
-        devav(2,j,nrep)=kref*gooddevav
+        ! devav(2,j,nrep)=kref*gooddevav
+        devav(2,j,nrep)=gooddevav
         H0T=(H0T.and.H0)
 
         coordstat(1:nsteps)=coordall(3,j,1:nsteps)
@@ -98,7 +101,8 @@ logical ::  dostat, H0, H0T, rfromtraj, usensteps
         write(9999,*) "coord z:",H0
         rav(3,j,nrep)=goodrav
         fav(3,j,nrep)=kref*(rav(3,j,nrep)-rref(3,atj))
-        devav(3,j,nrep)=kref*gooddevav
+        ! devav(3,j,nrep)=kref*gooddevav
+        devav(3,j,nrep)=gooddevav
         H0T=(H0T.and.H0)
       end do
       write(*,*) "Trend free:", H0T
@@ -117,14 +121,15 @@ logical ::  dostat, H0, H0T, rfromtraj, usensteps
     call writeposdev(rav,devav,nrestr,nrep,nrep)
 
     call getmaxforce(nrestr,nrep,nrep,fav,maxforce,ftol,relaxd,maxforceat,rmsfneb)
-    call getmaxstd(nrestr,nrep,nrep,fav,devav,maxstd,maxstdat)
-
+    call getmaxstd(nrestr,nrep,nrep,fav,devav,maxstd,maxstdat,.False.)
+    call getmaxdisplacement(nrestr,nrep,rav,rrefall,maxdisp)
 
     write(9999,*) "Max force: ", maxforce
     write(9999,*) "Max STD: ", maxstd
+    write(9999,*) "Max displacement: ", maxdisp
 
     if (.not. relaxd) then
-       call steep(rav,fav,nrep,nrep,steep_size,maxforce,nrestr,lastmforce,stepl,deltaA,dontg)
+       call steep(rav,fav,nrep,nrep,steep_size,maxforce,nrestr,lastmforce,stepl,deltaA)
        if (stepl .lt. 1d-10) then
          write(9999,*) "-----------------------------------------------------"
          write(9999,*) "Warning: max precision reached on atomic displacement"
@@ -211,7 +216,8 @@ logical ::  dostat, H0, H0T, rfromtraj, usensteps
           write(111111,*) rav(1,j,i),goodrav
           rav(1,j,i)=goodrav
           fav(1,j,i)=kref*(rav(1,j,i)-rref(1,atj))
-          devav(1,j,i)=kref*gooddevav
+          ! devav(1,j,i)=kref*gooddevav
+          devav(1,j,i)=gooddevav
           H0T=(H0T.and.H0)
 
           coordstat(1:nsteps)=coordall(2,j,1:nsteps)
@@ -220,7 +226,8 @@ logical ::  dostat, H0, H0T, rfromtraj, usensteps
           write(111111,*) rav(2,j,i),goodrav
           rav(2,j,i)=goodrav
           fav(2,j,i)=kref*(rav(2,j,i)-rref(2,atj))
-          devav(2,j,i)=kref*gooddevav
+          ! devav(2,j,i)=kref*gooddevav
+          devav(2,j,i)=gooddevav
           H0T=(H0T.and.H0)
 
           coordstat(1:nsteps)=coordall(3,j,1:nsteps)
@@ -229,7 +236,8 @@ logical ::  dostat, H0, H0T, rfromtraj, usensteps
           write(111111,*) rav(3,j,i),goodrav
           rav(3,j,i)=goodrav
           fav(3,j,i)=kref*(rav(3,j,i)-rref(3,atj))
-          devav(3,j,i)=kref*gooddevav
+          ! devav(3,j,i)=kref*gooddevav
+          devav(3,j,i)=gooddevav
           H0T=(H0T.and.H0)
         end do
         write(*,*) "Trend free:", H0T
@@ -266,16 +274,12 @@ logical ::  dostat, H0, H0T, rfromtraj, usensteps
         open(unit=40000, file="rmsd.dat")
           write(40000,*) rmsd(1:nrep)
         close(40000)
-!----------- Puts reference values in a single array (rrefall). Currently not used.!TESTTTTTTTT
-    test=.True.
+!----------- Puts reference values in a single array (rrefall).
     do i=start,end
-
       call getfilenames(i,chi,infile,reffile,outfile,iname,rname,oname) !rname = NAME_r_i.rst7 ; i=replica
       call getrefcoord(rname,nrestr,mask,natoms,rref,boxinfo,per,velin)
       call getcoordextrema(rref,natoms,rrefall,nrestr,nrep,i,mask)
-
     end do
-    test=.False.
 
 !----------- Compute the free energy profile by umbrella integration
     allocate(profile(2,nrep-1))
@@ -311,7 +315,7 @@ logical ::  dostat, H0, H0T, rfromtraj, usensteps
 !----------- moves the band
     if (.not. converged) then
        do i=2,nrep-1
-          if (.not. relaxd) call steep(rav,fperp,nrep,i,steep_size,maxforceband,nrestr,lastmforce,stepl,deltaA,dontg)
+          if (.not. relaxd) call steep(rav,fperp,nrep,i,steep_size,maxforceband,nrestr,lastmforce,stepl,deltaA)
         end do
 
         write(9999,'(1x,a,f8.6)') "Step length: ", stepl
@@ -362,7 +366,7 @@ logical ::  dostat, H0, H0T, rfromtraj, usensteps
           maxforcebandprevsetp=maxforceband
 
             do i=2,nrep-1
-              call steep(rav,fspring,nrep,i,steep_spring,maxforcebandprevsetp,nrestr,lastmforce,stepl,deltaA,dontg)
+              call steep(rav,fspring,nrep,i,steep_spring,maxforcebandprevsetp,nrestr,lastmforce,stepl,deltaA)
             end do
 
           call getdistrightminusleft(rav, nrep, nrestr, equispaced)
@@ -385,6 +389,10 @@ logical ::  dostat, H0, H0T, rfromtraj, usensteps
           end do
           write(1646,*)
         end do
+
+        call getmaxdisplacement(nrestr,nrep,rav,rrefall,maxdisp)
+
+        write(9999,*) "Max displacement: ", maxdisp
 
     !------------ Get coordinates for previously optimized extrema
     if (.not. rextrema) then
