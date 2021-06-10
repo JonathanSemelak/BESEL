@@ -62,7 +62,7 @@ implicit none
 double precision, dimension(3,nrestr,nrep), intent(in) :: rav, rrefall
 double precision, intent(out) :: maxdisp
 double precision :: disp
-integer, intent(in) ::  nrestr, nrep, start,nend
+integer, intent(in) ::  nrestr, nrep
 integer :: i, j ,k
 
 maxdisp=0.d0
