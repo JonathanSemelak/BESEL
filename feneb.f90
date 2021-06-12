@@ -322,9 +322,11 @@ logical ::  dostat, H0, H0T, rfromtraj, usensteps
 
 !----------- moves the band
     if (.not. converged) then
-       do i=2,nrep-1
+        do i=2,nrep-1
           if (.not. relaxd) call steep(rav,fperp,nrep,i,steep_size,maxforceband,nrestr,lastmforce,stepl,deltaA)
         end do
+        call getmaxdisplacement(nrestr,nrep,rav,rrefall,maxdisp)
+        write(9999,*) "Max displacement due MD+steepfperp: ", maxdisp
 
         write(9999,'(1x,a,f8.6)') "Step length: ", stepl
         if (stepl .lt. 1d-5) then
@@ -333,7 +335,6 @@ logical ::  dostat, H0, H0T, rfromtraj, usensteps
           write(9999,*) "step length has been set to zero"
           write(9999,*) "-----------------------------------------------------"
         end if
-
         rmsfneb=0.d0
         do i=1,nrep
           call getmaxforce(nrestr,nrep,i,fav,maxforce,ftol,relaxd,maxforceat,rmsfneb)
@@ -400,7 +401,7 @@ logical ::  dostat, H0, H0T, rfromtraj, usensteps
 
         call getmaxdisplacement(nrestr,nrep,rav,rrefall,maxdisp)
 
-        write(9999,*) "Max displacement due MD+steep: ", maxdisp
+        write(9999,*) "Max displacement due MD+steepfspring: ", maxdisp
 
     !------------ Get coordinates for previously optimized extrema
     if (.not. rextrema) then

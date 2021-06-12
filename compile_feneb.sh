@@ -17,4 +17,4 @@ gfortran readandget.o opt.o statistics.o neb.o writeall.o profiles.o bandbuilder
 
 gfortran readandget.o extractcoordtofile.f90 -o extractor `$NETCDFALL`
 
-gfortran getdihe.f90 -o getdihe
+gfortran readandget.o getdihe.f90 -o getdihe `$NETCDFALL`
