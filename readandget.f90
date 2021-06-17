@@ -4,12 +4,12 @@ contains
 subroutine readinput(nrep,infile,reffile,outfile,topfile,mask,nrestr,lastmforce, &
            rav,devav,fav,ftrue,ftang,fperp,fspring,tang,kref,kspring,steep_size,steep_spring,ftol,per, &
            velin,velout,wgrad,wtemp,dt,wtempstart,wtempend,wtempfrec,mass,rrefall,nscycle,dontg,ravprevsetp, &
-           rextrema, skip, dostat, minsegmentlenght, nevalfluc,rfromtraj,usensteps,nstepsexternal)
+           rextrema, skip, dostat, minsegmentlenght, nevalfluc,rfromtraj,usensteps,nstepsexternal,smartstep)
 implicit none
 character(len=50) :: infile, reffile, outfile, line, exp, keyword, topfile
 integer :: nrestr, nrep, i, ierr, nscycle,skip, wtempfrec, wtempstart, wtempend
 integer :: minsegmentlenght, nevalfluc, nstepsexternal
-logical ::  per, velin, velout, wgrad, rextrema, wtemp, dostat, rfromtraj, usensteps
+logical ::  per, velin, velout, wgrad, rextrema, wtemp, dostat, rfromtraj, usensteps, smartstep
 double precision :: kref, kspring, steep_size, steep_spring, ftol, lastmforce, dt
 integer, allocatable, dimension (:), intent(inout) :: mask
 double precision, allocatable, dimension(:,:,:), intent(inout) :: rav, fav, tang, ftang, ftrue,fperp, rrefall, ravprevsetp
@@ -22,6 +22,7 @@ double precision, allocatable, dimension(:), intent(inout) :: mass
  rextrema=.False.
  steep_spring=0.01d0
  steep_size=0.01d0
+ smartstep=.False.
  skip=0
  !VELTEST
  wtemp=.False.
@@ -62,6 +63,7 @@ do
    if (keyword == 'dostat') read(line,*) exp, dostat, nevalfluc, minsegmentlenght
    if (keyword == 'rfromtraj') read(line,*) exp, rfromtraj
    if (keyword == 'usensteps') read(line,*) exp, usensteps, nstepsexternal
+   if (keyword == 'smartstep') read(line,*) exp, smartstep
 end do
 close (unit=1000)
 if (nrep .gt. 1) allocate(tang(3,nrestr,nrep),ftang(3,nrestr,nrep),ftrue(3,nrestr,nrep),&

@@ -25,20 +25,28 @@ subroutine getmaxforce(nrestr,nrep,rep,fav,maxforce,ftol,relaxd,maxforceat,rmsfn
 
 end subroutine getmaxforce
 
-subroutine steep(rav,fav,nrep,rep,steep_size,maxforce,nrestr,lastmforce,stepl,deltaA)
+subroutine steep(rav,fav,nrep,rep,steep_size,maxforce,nrestr,lastmforce,stepl,smartstep)
 implicit none
 double precision, dimension(3,nrestr,nrep), intent(inout) :: rav
 double precision, dimension(3,nrestr,nrep) :: rnew
 double precision, dimension(3,nrestr,nrep), intent(in) :: fav
 double precision, intent(out) :: stepl
-double precision :: lastmforce, steep_size, step, deltaA, n1, n2, n3
+double precision :: lastmforce, steep_size, step, n1, n2, n3
 integer, intent(in) :: nrep, rep, nrestr
 double precision, intent(inout) :: maxforce
 integer :: i,j,auxunit
-logical :: moved
+logical :: moved, smartstep
 
-
-stepl=steep_size
+if (smartstep) then
+  if(maxforce .ge. 11.5d0) stepl=0.005d0
+  if(maxforce .lt. 11.5d0) stepl=0.002d0
+  if(maxforce .lt. 2.3d0) stepl=0.001d0
+  if(maxforce .lt. 0.23d0) stepl=0.0001d0
+  write(9999,*) "Using smartstep option"
+  write(9999,*) "Base step: ", stepl
+else
+  stepl=steep_size
+end if
 
 if (maxforce .lt. 1d-30) stepl=0.d0
 step=stepl/maxforce
@@ -52,7 +60,7 @@ step=stepl/maxforce
   if (stepl .lt. 1d-10) then
     moved=.true.
     stepl=0.d0
-    write(*,*) "buena suerte Joni del futuro resolviendo esto"
+    write(*,*) "Step set to 0"
   end if
 
 end subroutine steep

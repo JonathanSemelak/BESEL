@@ -112,7 +112,7 @@ if (iddp) then
 	dontg=0.d0
 	relaxd=.false.
   nscycle=500
-  steep_size=1000d0
+  steep_size=0.01d0
 	devav=0.d0
 	rrefall=0.d0
 ! TEST---------------------
@@ -142,9 +142,10 @@ close(88881)
 
 	  do i=2,nrep-1
       moved=.False.
+			! moved=.True.
 		  do while (.not. moved)
-		    ravprev=rav
-		    call steep(rav,fperp,nrep,i,steep_size,maxforceband,nrestr,0.d0,stepl,0.d0,dontg)
+				ravprev=rav
+		    call steep(rav,fperp,nrep,i,steep_size,maxforceband,nrestr,0.d0,stepl,.False.)
 		 	  moved=(energyreplica(rav,intdistmatrix,nrestr,nrep,i) .lt. maxenergy)
 				! write(*,*) energyreplica(rav,intdistmatrix,nrestr,nrep,i)
 		    if (.not. moved) then
@@ -160,13 +161,14 @@ close(88881)
 		! write(*,*) j,steep_size
 
 	equispaced=.False.
+	! equispaced=.True.
 	k=1
 	do while ((k .le. nscycle) .and. (.not. equispaced))
 		call gettang(rav,tang,nrestr,nrep)
 		call getnebforce(rav,devav,fav,tang,nrestr,nrep,kspring,maxforceband2,0.d0,relaxd,&
 										ftrue,ftang,fperp,fspring,.false.,dontg)
 			do i=2,nrep-1
-				call steep(rav,fspring,nrep,i,0.001d0,maxforceband2,nrestr,0.d0,stepl,0.d0,dontg)
+				call steep(rav,fspring,nrep,i,0.001d0,maxforceband2,nrestr,0.d0,stepl,.False.)
 			end do
 
 		! write(9999,*) "Band max fspring: ",k, maxforceband2

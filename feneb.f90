@@ -10,21 +10,21 @@ real(4) :: coordinate
 real(4), allocatable, dimension (:) :: coordx,coordy,coordz, coordstat
 integer, dimension (3) :: point
 double precision :: kref, steep_size, ftol, maxforce, kspring, maxforceband, lastmforce, maxforcebandprevsetp, steep_spring
-double precision :: stepl, deltaA, rmsfneb, minpoint, maxpoint, barrier, dt, Z, goodrav, gooddevav, maxstd, maxdisp
+double precision :: stepl, rmsfneb, minpoint, maxpoint, barrier, dt, Z, goodrav, gooddevav, maxstd, maxdisp
 double precision, dimension(6) :: boxinfo
 double precision, allocatable, dimension(:) :: rmsd, mass
 double precision, allocatable, dimension(:,:) :: rref, profile, temp
 double precision, allocatable, dimension(:,:,:) :: rav, fav, tang, ftang, ftrue, fperp, rrefall, ravprevsetp, devav
 double precision, allocatable, dimension(:,:,:) :: fspring, dontg, selfdist,coordall
 logical ::  per, velin, velout, relaxd, converged, wgrad, wtemp, moved, maxpreached, equispaced, rextrema, test
-logical ::  dostat, H0, H0T, rfromtraj, usensteps
+logical ::  dostat, H0, H0T, rfromtraj, usensteps, smartstep
 
 !------------ Read input
     call readinput(nrep,infile,reffile,outfile,topfile,mask,nrestr,lastmforce, &
                  rav,devav,fav,ftrue,ftang,fperp,fspring,tang,kref,kspring,steep_size,steep_spring, &
                  ftol,per,velin,velout,wgrad,wtemp,dt,wtempstart,wtempend,wtempfrec,mass,rrefall, &
-                 nscycle,dontg,ravprevsetp, &
-                 rextrema, skip,dostat, minsegmentlenght,nevalfluc,rfromtraj,usensteps,nstepsexternal)
+                 nscycle,dontg,ravprevsetp,rextrema, skip,dostat, minsegmentlenght,nevalfluc,rfromtraj, &
+                 usensteps,nstepsexternal,smartstep)
 
 !------------
 
@@ -129,7 +129,7 @@ logical ::  dostat, H0, H0T, rfromtraj, usensteps
     write(9999,*) "Max displacement due MD: ", maxdisp
 
     if (.not. relaxd) then
-       call steep(rav,fav,nrep,nrep,steep_size,maxforce,nrestr,lastmforce,stepl,deltaA)
+       call steep(rav,fav,nrep,nrep,steep_size,maxforce,nrestr,lastmforce,stepl,smartstep)
        if (stepl .lt. 1d-10) then
          write(9999,*) "-----------------------------------------------------"
          write(9999,*) "Warning: max precision reached on atomic displacement"
@@ -323,7 +323,7 @@ logical ::  dostat, H0, H0T, rfromtraj, usensteps
 !----------- moves the band
     if (.not. converged) then
         do i=2,nrep-1
-          if (.not. relaxd) call steep(rav,fperp,nrep,i,steep_size,maxforceband,nrestr,lastmforce,stepl,deltaA)
+          if (.not. relaxd) call steep(rav,fperp,nrep,i,steep_size,maxforceband,nrestr,lastmforce,stepl,smartstep)
         end do
         call getmaxdisplacement(nrestr,nrep,rav,rrefall,maxdisp)
         write(9999,*) "Max displacement due MD+steepfperp: ", maxdisp
@@ -375,7 +375,7 @@ logical ::  dostat, H0, H0T, rfromtraj, usensteps
           maxforcebandprevsetp=maxforceband
 
             do i=2,nrep-1
-              call steep(rav,fspring,nrep,i,steep_spring,maxforcebandprevsetp,nrestr,lastmforce,stepl,deltaA)
+              call steep(rav,fspring,nrep,i,steep_spring,maxforcebandprevsetp,nrestr,lastmforce,stepl,smartstep)
             end do
 
           call getdistrightminusleft(rav, nrep, nrestr, equispaced)

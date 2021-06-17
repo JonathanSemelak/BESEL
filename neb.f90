@@ -17,6 +17,7 @@ do i=2,nrep-1
     norm(j,i) = tang(1,j,i)**2 + tang(2,j,i)**2 + tang(3,j,i)**2
     norm(j,i) = dsqrt(norm(j,i))
     if (norm(j,i) .lt. 1d-5) then
+      write(*,*) "OJOTA"
       tang(1:3,j,i) = 0.d0
     else
       tang(1:3,j,i) = tang(1:3,j,i)/norm(j,i)
