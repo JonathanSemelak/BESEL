@@ -53,10 +53,6 @@ logical ::  dostat, H0, H0T, rfromtraj, usensteps, smartstep
     call getrefcoord(rname,nrestr,mask,natoms,rref,boxinfo,per,velin)
     call getcoordextrema(rref,natoms,rrefall,nrestr,nrep,nrep,mask)
 
-    ! call getavcoordanforces(iname,nsteps,natoms,spatial,coordx,coordy,coordz,&
-    !                     coordall,nrestr,mask,kref,rav,fav,nrep,nrep,rref,wgrad,dontg,&
-    !                     skip,wtemp,dt,mass,tempfilesize,temp)
-
     if (rfromtraj) then
       if (allocated(coordall)) deallocate(coordall,coordstat)
       call getcoordfromfenebtraj(nsteps,coordall,nrestr,nrep)
@@ -68,7 +64,6 @@ logical ::  dostat, H0, H0T, rfromtraj, usensteps, smartstep
     call getravfav(coordall,nsteps,natoms,nrestr,mask,kref,rav,devav,fav,nrep,nrep,rref,wgrad,skip,wtemp,dt,mass,tempfilesize,temp)
 
     if (dostat) then
-      ! allocate(devav(3,nrestr,nrep))
       write(9999,*) "---------------------------------------------------"
       write(9999,*) "Statistic stuff"
       write(9999,*) "---------------------------------------------------"
@@ -83,7 +78,6 @@ logical ::  dostat, H0, H0T, rfromtraj, usensteps, smartstep
         write(9999,*) "coord x:",H0
         rav(1,j,nrep)=goodrav
         fav(1,j,nrep)=kref*(rav(1,j,nrep)-rref(1,atj))
-        ! devav(1,j,nrep)=kref*gooddevav
         devav(1,j,nrep)=gooddevav
         H0T=(H0T.and.H0)
 
@@ -92,7 +86,6 @@ logical ::  dostat, H0, H0T, rfromtraj, usensteps, smartstep
         write(9999,*) "coord y:",H0
         rav(2,j,nrep)=goodrav
         fav(2,j,nrep)=kref*(rav(2,j,nrep)-rref(2,atj))
-        ! devav(2,j,nrep)=kref*gooddevav
         devav(2,j,nrep)=gooddevav
         H0T=(H0T.and.H0)
 
