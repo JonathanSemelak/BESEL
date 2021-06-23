@@ -368,7 +368,7 @@ logical ::  dostat, H0, H0T, rfromtraj, usensteps, smartstep
           maxforcebandprevsetp=maxforceband
 
             do i=2,nrep-1
-              call steep(rav,fspring,nrep,i,steep_spring,maxforcebandprevsetp,nrestr,lastmforce,stepl,smartstep)
+              call steep(rav,fspring,nrep,i,steep_spring,maxforcebandprevsetp,nrestr,lastmforce,stepl,.False.)
             end do
 
           call getdistrightminusleft(rav, nrep, nrestr, equispaced)
