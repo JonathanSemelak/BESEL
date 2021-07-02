@@ -9,14 +9,14 @@ integer :: i,j
 profile=0.d0
 profileall=0.d0
 do i=1,nrestr
-  do j=1,nrep-1
+  do j=1,nrep
     profileall(1,i,j)=j
     if (j.eq.1) then
       profileall(2,i,j)=0.d0
     else
-      profileall(2,i,j)=- (((fav(1,i,j)+fav(1,i,j+1))*(rav(1,i,j+1)-rav(1,i,j))/2.d0)  &
-                          + ((fav(2,i,j)+fav(2,i,j+1))*(rav(2,i,j+1)-rav(2,i,j))/2.d0)  &
-                          + ((fav(3,i,j)+fav(3,i,j+1))*(rav(3,i,j+1)-rav(3,i,j))/2.d0))
+      profileall(2,i,j)=- (((fav(1,i,j)+fav(1,i,j-1))*(rav(1,i,j)-rav(1,i,j-1))/2.d0)  &
+                          + ((fav(2,i,j)+fav(2,i,j-1))*(rav(2,i,j)-rav(2,i,j-1))/2.d0)  &
+                          + ((fav(3,i,j)+fav(3,i,j-1))*(rav(3,i,j)-rav(3,i,j-1))/2.d0))
     end if
   end do
 end do
@@ -149,14 +149,14 @@ integer :: i,j
 profile=0.d0
 profileall=0.d0
 do i=1,nrestr
-  do j=1,nrep-1
+  do j=1,nrep
     profileall(1,i,j)=j
     if (j.eq.1) then
       profileall(2,i,j)=0.d0
     else
-      profileall(2,i,j)=- (((fav(1,i,j)+fav(1,i,j+1))*(rav(1,i,j+1)-rav(1,i,j))/2.d0)  &
-                          + ((fav(2,i,j)+fav(2,i,j+1))*(rav(2,i,j+1)-rav(2,i,j))/2.d0)  &
-                          + ((fav(3,i,j)+fav(3,i,j+1))*(rav(3,i,j+1)-rav(3,i,j))/2.d0))
+      profileall(2,i,j)=- (((fav(1,i,j)+fav(1,i,j-1))*(rav(1,i,j)-rav(1,i,j-1))/2.d0)  &
+                          + ((fav(2,i,j)+fav(2,i,j-1))*(rav(2,i,j)-rav(2,i,j-1))/2.d0)  &
+                          + ((fav(3,i,j)+fav(3,i,j-1))*(rav(3,i,j)-rav(3,i,j-1))/2.d0))
     end if
   end do
 end do

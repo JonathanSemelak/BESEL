@@ -24,7 +24,7 @@ end do
 nrep=nlines/nrestr
 close(25)
 
-allocate (rav(3,nrestr,nrep),profile(2,nrep))
+allocate (rav(3,nrestr,nrep),fav(3,nrestr,nrep),profile(2,nrep))
 
 open(unit=25, file="Pos_forces.dat")
 do i=1,nrep
