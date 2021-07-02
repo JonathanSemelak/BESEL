@@ -280,7 +280,7 @@ logical ::  dostat, H0, H0T, rfromtraj, usensteps, smartstep
     end do
 
 !----------- Compute the free energy profile by umbrella integration
-    allocate(profile(2,nrep-1))
+    allocate(profile(2,nrep))
     ! write(*,*) "ASDSAD", dostat
     ! write(*,*) "ASDSAD", devav
 

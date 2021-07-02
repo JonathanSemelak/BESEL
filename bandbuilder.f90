@@ -8,7 +8,7 @@ use readandget
 use netcdf
 implicit none
 character(len=50) :: rcfile, pcfile, tsfile, prefix, chi, oname
-integer :: nrestr, nrep, i, j, k, middlepoint, natoms, nscycle, nmax
+integer :: nrestr, nrep, i, j, k, middlepoint, natoms, nscycle, nmax,n1,n2,n3
 logical ::  usets, per, velin, velout, onlytest, iddp, relaxd, equispaced, moved
 double precision, dimension(3) :: BAND_slope
 double precision, dimension(3) :: BAND_const
@@ -107,11 +107,11 @@ if (iddp) then
 	allocate(tang(3,nrestr,nrep),devav(3,nrestr,nrep),rrefall(3,nrestr,nrep))
 	allocate(profile(2,nrep-1))
 
-	kspring=5000.d0
+	kspring=500.d0
   ftol=0.d0
 	dontg=0.d0
 	relaxd=.false.
-  nscycle=500
+  nscycle=5000
   steep_size=0.01d0
 	devav=0.d0
 	rrefall=0.d0
@@ -132,7 +132,21 @@ end do
 close(88881)
 	do j=1,nmax
 	  call getdistmatrix(nrestr,nrep,distmatrix,rav)
-    if(j.eq.1) call getintdistmatrix(nrestr,nrep,distmatrix,intdistmatrix)
+    if(j.eq.1) call getintdistmatrix(nrestr,nrep,distmatrix,intdistmatrix,middlepoint)
+		if(j.eq.1) then
+			open(unit=888811, file="INTERPOLATEDdistmatrix.dat")
+			do n1=1,nrestr
+			  do n2=1,nrestr
+			    if (n1.ne.n2) then
+					  do n3=1,nrep
+			        write(888811,'(2x, I6,2x, f20.10)') n3, intdistmatrix(n1,n2,n3)
+						end do
+						write(888811,'(2x, I6,2x, f20.10)')
+				  endif
+			  end do
+			end do
+			close(888811)
+		end if
     call getenergyandforce(rav,nrestr,nrep,distmatrix,intdistmatrix,energy,maxenergy,fav)
 	  call gettang(rav,tang,nrestr,nrep)
 	  call getnebforce(rav,devav,fav,tang,nrestr,nrep,kspring,maxforceband,ftol,relaxd,&
@@ -140,7 +154,7 @@ close(88881)
 		write(11111,*) j, maxenergy, maxforceband, steep_size
 		write(*,*) j, maxenergy,maxforceband, steep_size
 
-	  do i=2,nrep-1
+	  do i=2,middlepoint-1
       moved=.False.
 			! moved=.True.
 		  do while (.not. moved)
@@ -154,6 +168,23 @@ close(88881)
   		  end if
 	  	end do
     end do
+
+		if(usets) then
+		  do i=middlepoint+1,nrep-1
+			  moved=.False.
+			  ! moved=.True.
+			  do while (.not. moved)
+				  ravprev=rav
+				  call steep(rav,fperp,nrep,i,steep_size,maxforceband,nrestr,0.d0,stepl,.False.)
+				  moved=(energyreplica(rav,intdistmatrix,nrestr,nrep,i) .lt. maxenergy)
+				  ! write(*,*) energyreplica(rav,intdistmatrix,nrestr,nrep,i)
+				  if (.not. moved) then
+					  rav=ravprev
+					  steep_size=steep_size*0.9d0
+				  end if
+			  end do
+		  end do
+		end if
 		do i=1,nrep
 			write(22222,*) energy(i)
     end do
@@ -162,13 +193,16 @@ close(88881)
 
 	equispaced=.False.
 	! equispaced=.True.
+	call getdistrightminusleft(rav, nrep, nrestr, equispaced)
+	! write(*,*) "Eq: ", equispaced
+
 	k=1
 	do while ((k .le. nscycle) .and. (.not. equispaced))
 		call gettang(rav,tang,nrestr,nrep)
 		call getnebforce(rav,devav,fav,tang,nrestr,nrep,kspring,maxforceband2,0.d0,relaxd,&
 										ftrue,ftang,fperp,fspring,.false.,dontg)
 			do i=2,nrep-1
-				call steep(rav,fspring,nrep,i,0.001d0,maxforceband2,nrestr,0.d0,stepl,.False.)
+				if (i.ne.middlepoint) call steep(rav,fspring,nrep,i,0.001d0,maxforceband2,nrestr,0.d0,stepl,.False.)
 			end do
 
 		! write(9999,*) "Band max fspring: ",k, maxforceband2
@@ -250,23 +284,48 @@ do k=1, nrep
 end do
 end subroutine getdistmatrix
 
-subroutine getintdistmatrix(nrestr,nrep,distmatrix,intdistmatrix)
+subroutine getintdistmatrix(nrestr,nrep,distmatrix,intdistmatrix,middlepoint)
 implicit none
-integer :: i,j,k,nrestr,nrep
+integer :: i,j,k,nrestr,nrep, middlepoint
 double precision, dimension (nrestr,nrestr,nrep) :: distmatrix, intdistmatrix
 
 intdistmatrix=0.d0
-do k=1, nrep
-	do i=1,nrestr
-		do j=1,nrestr
-			if (i.ne.j) then
-				intdistmatrix(i,j,k)=distmatrix(i,j,1)+ &
-														 dble(k-1)*(distmatrix(i,j,nrep)-distmatrix(i,j,1))/dble(nrep-1)
+if (middlepoint.eq.nrep) then
+  do k=1, nrep
+	  do i=1,nrestr
+		  do j=1,nrestr
+			  if (i.ne.j) then
+				  intdistmatrix(i,j,k)=distmatrix(i,j,1)+ &
+					  									 dble(k-1)*(distmatrix(i,j,nrep)-distmatrix(i,j,1))/dble(nrep-1)
 
-			endif
-		end do
-	end do
-end do
+			  endif
+		  end do
+	  end do
+  end do
+else
+	do k=1, middlepoint
+	  do i=1,nrestr
+		  do j=1,nrestr
+			  if (i.ne.j) then
+				  intdistmatrix(i,j,k)=distmatrix(i,j,1)+ &
+					  									 dble(k-1)*(distmatrix(i,j,middlepoint)-distmatrix(i,j,1))/dble(middlepoint-1)
+
+			  endif
+		  end do
+	  end do
+  end do
+	do k=middlepoint, nrep
+	  do i=1,nrestr
+		  do j=1,nrestr
+			  if (i.ne.j) then
+				  intdistmatrix(i,j,k)=distmatrix(i,j,middlepoint)+ &
+					  									 dble(k-middlepoint)*(distmatrix(i,j,nrep)-distmatrix(i,j,middlepoint))/dble(nrep-middlepoint)
+
+			  endif
+		  end do
+	  end do
+  end do
+end if
 ! intdistmatrix=0.d0
 
 
@@ -296,7 +355,7 @@ do k=1,nrep
 		  dd=(intdistmatrix(i,j,k)-distmatrix(i,j,k))
 			dij=distmatrix(i,j,k)
 			fij=(2.d0*dd/(dij**5))*(1.d0 + (2.d0*dd/dij))
-
+      if(k.eq.13) write(7777,*) fij
 			dx=(rav(1,i,k)-rav(1,j,k))
 			dy=(rav(2,i,k)-rav(2,j,k))
 			dz=(rav(3,i,k)-rav(3,j,k))

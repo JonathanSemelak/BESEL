@@ -18,3 +18,6 @@ gfortran readandget.o opt.o statistics.o neb.o writeall.o profiles.o bandbuilder
 gfortran readandget.o extractcoordtofile.f90 -o extractor `$NETCDFALL`
 
 gfortran readandget.o getdihe.f90 -o getdihe `$NETCDFALL`
+
+gfortran readandget.o profiles.o integrator.f90 -o integrator `$NETCDFALL`
+
