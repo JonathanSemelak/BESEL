@@ -38,29 +38,30 @@ logical ::  dostat, H0, H0T, rfromtraj, usensteps, smartstep
     write(9999,*) "---------------------------------------------------"
 
     call getfilenames(nrep,chi,infile,reffile,outfile,iname,rname,oname)
-    call getdims(iname,nsteps,spatial,natoms)
-    if (usensteps) write(9999,*) "Using ", nstepsexternal, "out of ", nsteps
-    if (usensteps) nsteps=nstepsexternal
-    tempfilesize=(nsteps-1)
-    allocate(temp(tempfilesize,nrep))
-    if(wtemp) call readtop(topfile,natoms,mask,mass,nrestr)
-    if (allocated(coordx)) deallocate(coordx)
-    if (allocated(coordy)) deallocate(coordy)
-    if (allocated(coordz)) deallocate(coordz)
-    if (allocated(rref)) deallocate(rref)
-
-    allocate(coordx(nsteps),coordy(nsteps),coordz(nsteps))
-    call getrefcoord(rname,nrestr,mask,natoms,rref,boxinfo,per,velin)
-    call getcoordextrema(rref,natoms,rrefall,nrestr,nrep,nrep,mask)
-
+    call getrefcoord(rname,nrestr,mask,natoms,rref,boxinfo,per,velin) !saves all coordinates from rname (rst7 file) in rref
+    call getcoordextrema(rref,natoms,rrefall,nrestr,nrep,nrep,mask) !puts mask coordinates from rref in rav selected replica
     if (rfromtraj) then
+      if (usensteps) write(9999,*) " The option usensteps is not available if rfromtraj is True "
+      if (usensteps) write(9999,*) " Reading nsteps from feneb.traj file "
       if (allocated(coordall)) deallocate(coordall,coordstat)
       call getcoordfromfenebtraj(nsteps,coordall,nrestr,nrep)
       allocate(coordstat(nsteps))
     else
+      call getdims(iname,nsteps,spatial,natoms)
+      if (usensteps) write(9999,*) "Using ", nstepsexternal, "out of ", nsteps
+      if (usensteps) nsteps=nstepsexternal
+      if (allocated(coordx)) deallocate(coordx)
+      if (allocated(coordy)) deallocate(coordy)
+      if (allocated(coordz)) deallocate(coordz)
+      allocate(coordx(nsteps),coordy(nsteps),coordz(nsteps))
       allocate(coordall(3,nrestr,nsteps),coordstat(nsteps))
       call getcoordfromnetcdf(iname,nsteps,natoms,spatial,coordx,coordy,coordz,coordall,nrestr,mask)
     end if
+
+    tempfilesize=(nsteps-1)
+    allocate(temp(tempfilesize,nrep))
+    call readtop(topfile,natoms,mask,mass,nrestr)
+
     call getravfav(coordall,nsteps,natoms,nrestr,mask,kref,rav,devav,fav,nrep,nrep,rref,wgrad,skip,wtemp,dt,mass,tempfilesize,temp)
 
     if (dostat) then

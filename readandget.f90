@@ -326,9 +326,9 @@ character(len=50) :: chi, chrep
 integer :: i,j,k,ati,auxunit,skip,tempfilesize,nsteps2
 logical :: wgrad,wtemp
 
-
 ekin=0.d0
 temp(1:tempfilesize,rep)=0.d0
+
 do i=1,nrestr
   if (i .le. 9) write(chi,'(I1)') i
   if (i .gt. 9 .and. i .le. 99) write(chi,'(I2)') i
@@ -348,14 +348,10 @@ do i=1,nrestr
     if (wgrad) write(auxunit,*) k-skip, av(1:3)
   end do
 
-  ! devav(1:3,i,rep)=0.d0
   rav(1:3,i,rep)=av(1:3)
   fav(1:3,i,rep)=kref*(av(1:3)-rref(1:3,ati))
+
   if (wgrad) close(auxunit)
-
-
-  ! devav(1:3,i,rep)=kref*devav(1:3,i,rep)
-
   av=0
   do k=skip+1,nsteps
     do j=1,3
@@ -364,7 +360,6 @@ do i=1,nrestr
     end do
   end do
   do j=1,3
-    ! devav(j,i,rep)=kref*dsqrt(devav(j,i,rep)/(nsteps-skip-1))
     devav(j,i,rep)=dsqrt(devav(j,i,rep)/(nsteps-skip-1))
   end do
 
@@ -380,6 +375,7 @@ do i=1,nrestr
        (mass(i)*vat*10d0/(8.314472d0*3.d0*nrestr))
     end do
   end if
+
 end do
 end subroutine getravfav
 
