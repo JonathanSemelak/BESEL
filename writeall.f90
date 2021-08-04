@@ -14,6 +14,22 @@ close(1001)
 
 end subroutine writeposforces
 
+subroutine writeposxyz(rav,nrestr,rep,nrep)
+
+implicit none
+integer, intent(in) :: nrestr, rep, nrep
+double precision, dimension(3,nrestr,nrep), intent(in) :: rav
+integer :: i
+
+open(unit=10011, file="Pos_average.xyz", position='append')
+do i=1,nrestr
+write(10011,'(2x, I6,2x, 6(f20.10,2x))') i, rav(1:3,i,rep)
+end do
+write(10011,'(2x, I6,2x, 6(f20.10,2x))')
+close(10011)
+
+end subroutine writeposxyz
+
 subroutine writeposdev(rav,devav,nrestr,rep,nrep)
 
 implicit none

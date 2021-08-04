@@ -33,7 +33,6 @@ if (onlytest) then
 		oname = trim(prefix) // "_"
 		oname = trim(oname) // trim(chi)
 		oname = trim(oname) // ".rst7"
-    ! call getfilenames(i,chi,infile,reffile,outfile,iname,rname,oname) !rname = NAME_r_i.rst7 ; i=replica
 	  call getrefcoord(oname,nrestr,mask,natoms,rref,boxinfo,per,velin)
 	  call getcoordextrema(rref,natoms,rav,nrestr,nrep,i,mask)
   end do

@@ -2,7 +2,7 @@ module readandget
 implicit none
 contains
 subroutine readinput(nrep,infile,reffile,outfile,topfile,mask,nrestr,lastmforce, &
-           rav,devav,fav,ftrue,ftang,fperp,fspring,tang,kref,kspring,steep_size,steep_spring,ftol,per, &
+           rav,ravout,devav,fav,ftrue,ftang,fperp,fspring,tang,kref,kspring,steep_size,steep_spring,ftol,per, &
            velin,velout,wgrad,wtemp,dt,wtempstart,wtempend,wtempfrec,mass,rrefall,nscycle,dontg,ravprevsetp, &
            rextrema, skip, dostat, minsegmentlenght, nevalfluc,rfromtraj,usensteps,nstepsexternal,smartstep)
 implicit none
@@ -13,7 +13,7 @@ logical ::  per, velin, velout, wgrad, rextrema, wtemp, dostat, rfromtraj, usens
 double precision :: kref, kspring, steep_size, steep_spring, ftol, lastmforce, dt
 integer, allocatable, dimension (:), intent(inout) :: mask
 double precision, allocatable, dimension(:,:,:), intent(inout) :: rav, fav, tang, ftang, ftrue,fperp, rrefall, ravprevsetp
-double precision, allocatable, dimension(:,:,:), intent(inout) :: fspring, dontg, devav
+double precision, allocatable, dimension(:,:,:), intent(inout) :: fspring, dontg, devav, ravout
 double precision, allocatable, dimension(:), intent(inout) :: mass
 ! double precision, allocatable, dimension(:,:), intent(inout) :: temp
 
@@ -69,7 +69,7 @@ close (unit=1000)
 if (nrep .gt. 1) allocate(tang(3,nrestr,nrep),ftang(3,nrestr,nrep),ftrue(3,nrestr,nrep),&
                           fperp(3,nrestr,nrep),fspring(3,nrestr,nrep),dontg(3,nrestr,nrep))
 allocate(mass(nrestr),mask(nrestr),rav(3,nrestr,nrep),fav(3,nrestr,nrep),rrefall(3,nrestr,nrep),&
-        ravprevsetp(3,nrestr,nrep),devav(3,nrestr,nrep))
+        ravprevsetp(3,nrestr,nrep),devav(3,nrestr,nrep),ravout(3,nrestr,nrep))
 
 open (unit=1000, file="feneb.in", status='old', action='read') !read feneb.in now that mask is allocated
 do
@@ -219,12 +219,12 @@ close (unit=1000)
 end subroutine readinputextrator
 
 
-subroutine getfilenames(rep,chrep,infile,reffile,outfile,iname,rname,oname)
+subroutine getfilenames(rep,chrep,infile,reffile,outfile,iname,rname,oname,avname)
 
 implicit none
 integer, intent(in) :: rep
 character(len=50), intent(in) :: infile, reffile, outfile
-character(len=50), intent(out) :: chrep, iname, rname, oname
+character(len=50), intent(out) :: chrep, iname, rname, oname, avname
 
 if (rep .le. 9) write(chrep,'(I1)') rep
 if (rep .gt. 9 .and. rep .le. 99) write(chrep,'(I2)') rep
@@ -239,7 +239,9 @@ rname = trim(rname) // ".rst7"
 oname = trim(outfile) // "_"
 oname = trim(oname) // trim(chrep)
 oname = trim(oname) // ".rst7"
-
+avname = trim(outfile) // "_av_"
+avname = trim(avname) // trim(chrep)
+avname = trim(avname) // ".rst7"
 end subroutine getfilenames
 
 subroutine getdims(iname,nsteps,spatial,natoms)

@@ -2,7 +2,7 @@ program feneb
 use netcdf
 use readandget
 implicit none
-character(len=50) :: infile, reffile, outfile,topfile, chi, iname, rname, oname, tempname
+character(len=50) :: infile, reffile, outfile,topfile, chi, iname, rname, oname, avname, tempname
 integer :: nsteps, spatial, natoms, nrestr, nrep, nscycle,maxforceat, atj, maxstdat
 integer :: i, j, k, n, start, nend, skip, wtempstart, wtempend, wtempfrec, tempfilesize, minsegmentlenght, nevalfluc, nstepsexternal
 integer, allocatable, dimension (:) :: mask
@@ -14,14 +14,14 @@ double precision :: stepl, rmsfneb, minpoint, maxpoint, barrier, dt, Z, goodrav,
 double precision, dimension(6) :: boxinfo
 double precision, allocatable, dimension(:) :: rmsd, mass
 double precision, allocatable, dimension(:,:) :: rref, profile, temp
-double precision, allocatable, dimension(:,:,:) :: rav, fav, tang, ftang, ftrue, fperp, rrefall, ravprevsetp, devav
+double precision, allocatable, dimension(:,:,:) :: rav, fav, tang, ftang, ftrue, fperp, rrefall, ravprevsetp, devav, ravout
 double precision, allocatable, dimension(:,:,:) :: fspring, dontg, selfdist,coordall
 logical ::  per, velin, velout, relaxd, converged, wgrad, wtemp, moved, maxpreached, equispaced, rextrema, test
 logical ::  dostat, H0, H0T, rfromtraj, usensteps, smartstep
 
 !------------ Read input
     call readinput(nrep,infile,reffile,outfile,topfile,mask,nrestr,lastmforce, &
-                 rav,devav,fav,ftrue,ftang,fperp,fspring,tang,kref,kspring,steep_size,steep_spring, &
+                 rav,ravout,devav,fav,ftrue,ftang,fperp,fspring,tang,kref,kspring,steep_size,steep_spring, &
                  ftol,per,velin,velout,wgrad,wtemp,dt,wtempstart,wtempend,wtempfrec,mass,rrefall, &
                  nscycle,dontg,ravprevsetp,rextrema, skip,dostat, minsegmentlenght,nevalfluc,rfromtraj, &
                  usensteps,nstepsexternal,smartstep)
@@ -37,7 +37,7 @@ logical ::  dostat, H0, H0T, rfromtraj, usensteps, smartstep
     write(9999,*) "Performing FE full optmization for a single replica"
     write(9999,*) "---------------------------------------------------"
 
-    call getfilenames(nrep,chi,infile,reffile,outfile,iname,rname,oname)
+    call getfilenames(nrep,chi,infile,reffile,outfile,iname,rname,oname,avname)
     call getrefcoord(rname,nrestr,mask,natoms,rref,boxinfo,per,velin) !saves all coordinates from rname (rst7 file) in rref
     call getcoordextrema(rref,natoms,rrefall,nrestr,nrep,nrep,mask) !puts mask coordinates from rref in rrefall selected replica
     if (rfromtraj) then
@@ -109,7 +109,6 @@ logical ::  dostat, H0, H0T, rfromtraj, usensteps, smartstep
       end do
       close(2203280)
     end if
-
     call writeposforces(rav,fav,nrestr,nrep,nrep)
     call writeposdev(rav,devav,nrestr,nrep,nrep)
 
@@ -121,6 +120,7 @@ logical ::  dostat, H0, H0T, rfromtraj, usensteps, smartstep
     write(9999,*) "Max STD: ", maxstd
     write(9999,*) "Max displacement due MD: ", maxdisp
 
+    ravout=rav
     if (.not. relaxd) then
        call steep(rav,fav,nrep,nrep,steep_size,maxforce,nrestr,lastmforce,stepl,smartstep)
        if (stepl .lt. 1d-10) then
@@ -130,9 +130,10 @@ logical ::  dostat, H0, H0T, rfromtraj, usensteps, smartstep
          write(9999,*) "-----------------------------------------------------"
        end if
 
-       call getfilenames(nrep,chi,infile,infile,outfile,iname,rname,oname) !toma ultima foto p/ siguiente paso
+       call getfilenames(nrep,chi,infile,infile,outfile,iname,rname,oname,avname) !toma ultima foto p/ siguiente paso
        call getrefcoord(rname,nrestr,mask,natoms,rref,boxinfo,per,.True.)
        call writenewcoord(oname,rref,boxinfo,natoms,nrestr,mask,per,velout,rav,nrep,nrep,test)
+       call writenewcoord(avname,rref,boxinfo,natoms,nrestr,mask,per,velout,ravout,nrep,nrep,test)
 
        call getmaxdisplacement(nrestr,nrep,rav,rrefall,maxdisp)
        write(9999,*) "Max displacement due MD+steep: ", maxdisp
@@ -165,7 +166,7 @@ logical ::  dostat, H0, H0T, rfromtraj, usensteps, smartstep
     endif
 
     do i=start,nend
-      call getfilenames(i,chi,infile,reffile,outfile,iname,rname,oname)
+      call getfilenames(i,chi,infile,reffile,outfile,iname,rname,oname,avname)
       call getrefcoord(rname,nrestr,mask,natoms,rref,boxinfo,per,velin) !saves all coordinates from rname (rst7 file) in rref
       if (rfromtraj) then
         if (usensteps) write(9999,*) " The option usensteps is not available if rfromtraj is True "
@@ -265,10 +266,13 @@ logical ::  dostat, H0, H0T, rfromtraj, usensteps, smartstep
         close(40000)
 !----------- Puts reference values in a single array (rrefall).
     do i=start,nend
-      call getfilenames(i,chi,infile,reffile,outfile,iname,rname,oname) !rname = NAME_r_i.rst7 ; i=replica
+      call getfilenames(i,chi,infile,reffile,outfile,iname,rname,oname,avname) !rname = NAME_r_i.rst7 ; i=replica
       call getrefcoord(rname,nrestr,mask,natoms,rref,boxinfo,per,velin)
       call getcoordextrema(rref,natoms,rrefall,nrestr,nrep,i,mask)
     end do
+
+!----------- Saves rav in ravout array
+    ravout=rav
 
 !----------- Compute the free energy profile by umbrella integration
     allocate(profile(2,nrep))
@@ -387,21 +391,28 @@ logical ::  dostat, H0, H0T, rfromtraj, usensteps, smartstep
     !------------ Get coordinates for previously optimized extrema
     if (.not. rextrema) then
         !Reactants
-        call getfilenames(1,chi,infile,reffile,outfile,iname,rname,oname)
+        call getfilenames(1,chi,infile,reffile,outfile,iname,rname,oname,avname)
         call getrefcoord(rname,nrestr,mask,natoms,rref,boxinfo,per,velin)
         call getcoordextrema(rref,natoms,rav,nrestr,nrep,1,mask)
         call writenewcoord(oname,rref,boxinfo,natoms,nrestr,mask,per,velout,rav,nrep,1,test)
+        call writenewcoord(avname,rref,boxinfo,natoms,nrestr,mask,per,velout,ravout,nrep,1,test)
         !Products
-        call getfilenames(nrep,chi,infile,reffile,outfile,iname,rname,oname)
+        call getfilenames(nrep,chi,infile,reffile,outfile,iname,rname,oname,avname)
         call getrefcoord(rname,nrestr,mask,natoms,rref,boxinfo,per,velin)
         call getcoordextrema(rref,natoms,rav,nrestr,nrep,nrep,mask)
         call writenewcoord(oname,rref,boxinfo,natoms,nrestr,mask,per,velout,rav,nrep,nrep,test)
+        call writenewcoord(avname,rref,boxinfo,natoms,nrestr,mask,per,velout,ravout,nrep,nrep,test)
     end if
-        do i=2,nrep-1
-         call getfilenames(i,chi,infile,infile,outfile,iname,rname,oname) !toma ultima foto p/ siguiente paso
-         call getrefcoord(rname,nrestr,mask,natoms,rref,boxinfo,per,.True.)
-         call writenewcoord(oname,rref,boxinfo,natoms,nrestr,mask,per,velout,rav,nrep,i,test)
-       end do
+    do i=2,nrep-1
+      call getfilenames(i,chi,infile,infile,outfile,iname,rname,oname,avname) !toma ultima foto p/ siguiente paso
+      call getrefcoord(rname,nrestr,mask,natoms,rref,boxinfo,per,.True.)
+      call writenewcoord(oname,rref,boxinfo,natoms,nrestr,mask,per,velout,rav,nrep,i,test)
+      call writenewcoord(avname,rref,boxinfo,natoms,nrestr,mask,per,velout,ravout,nrep,i,test)
+    end do
+      call getfilenames(1,chi,infile,infile,outfile,iname,rname,oname,avname)
+      call writenewcoord(avname,rref,boxinfo,natoms,nrestr,mask,per,velout,ravout,nrep,1,test)
+      call getfilenames(nrep,chi,infile,infile,outfile,iname,rname,oname,avname)
+      call writenewcoord(avname,rref,boxinfo,natoms,nrestr,mask,per,velout,ravout,nrep,nrep,test)
 
     end if !converged
   write(9999,*) "-----------------------------------------------------"
