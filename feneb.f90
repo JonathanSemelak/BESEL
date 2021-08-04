@@ -49,7 +49,7 @@ logical ::  dostat, H0, H0T, rfromtraj, usensteps, smartstep
     if (allocated(coordz)) deallocate(coordz)
     if (allocated(rref)) deallocate(rref)
 
-    allocate(coordx(nsteps),coordy(nsteps),coordz(nsteps),rref(3,natoms))
+    allocate(coordx(nsteps),coordy(nsteps),coordz(nsteps))
     call getrefcoord(rname,nrestr,mask,natoms,rref,boxinfo,per,velin)
     call getcoordextrema(rref,natoms,rrefall,nrestr,nrep,nrep,mask)
 
@@ -166,7 +166,9 @@ logical ::  dostat, H0, H0T, rfromtraj, usensteps, smartstep
 
     do i=start,nend
       call getfilenames(i,chi,infile,reffile,outfile,iname,rname,oname)
+
       call getdims(iname,nsteps,spatial,natoms)
+
       if (usensteps) write(9999,*) "Using ", nstepsexternal, "out of ", nsteps
       if (usensteps) nsteps=nstepsexternal
       tempfilesize=(nsteps-1)
@@ -178,12 +180,9 @@ logical ::  dostat, H0, H0T, rfromtraj, usensteps, smartstep
       if (allocated(coordall)) deallocate(coordall)
       if (allocated(coordstat)) deallocate(coordstat)
       if (allocated(rref)) deallocate(rref)
-      allocate(coordx(nsteps),coordy(nsteps),coordz(nsteps),rref(3,natoms))
+      allocate(coordx(nsteps),coordy(nsteps),coordz(nsteps))
 
       call getrefcoord(rname,nrestr,mask,natoms,rref,boxinfo,per,velin)
-      ! call getavcoordanforces(iname,nsteps,natoms,spatial,coordx,coordy, coordz,&
-      !               coordall,nrestr,mask,kref,rav,fav,nrep,i,rref,wgrad,dontg,&
-      !               skip,wtemp,dt,mass,tempfilesize,temp)
       if (rfromtraj) then
         if (allocated(coordall)) deallocate(coordall,coordstat)
         call getcoordfromfenebtraj(nsteps,coordall,nrestr,i)
@@ -281,9 +280,6 @@ logical ::  dostat, H0, H0T, rfromtraj, usensteps, smartstep
 
 !----------- Compute the free energy profile by umbrella integration
     allocate(profile(2,nrep))
-    ! write(*,*) "ASDSAD", dostat
-    ! write(*,*) "ASDSAD", devav
-
     if (dostat) call geterror(rav,devav,nrep,nrestr,profile)
     call geterror(rav,devav,nrep,nrestr,profile)
     call getprofile(rav,fav,nrep,nrestr,profile)
