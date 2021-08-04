@@ -39,7 +39,7 @@ logical ::  dostat, H0, H0T, rfromtraj, usensteps, smartstep
 
     call getfilenames(nrep,chi,infile,reffile,outfile,iname,rname,oname)
     call getrefcoord(rname,nrestr,mask,natoms,rref,boxinfo,per,velin) !saves all coordinates from rname (rst7 file) in rref
-    call getcoordextrema(rref,natoms,rrefall,nrestr,nrep,nrep,mask) !puts mask coordinates from rref in rav selected replica
+    call getcoordextrema(rref,natoms,rrefall,nrestr,nrep,nrep,mask) !puts mask coordinates from rref in rrefall selected replica
     if (rfromtraj) then
       if (usensteps) write(9999,*) " The option usensteps is not available if rfromtraj is True "
       if (usensteps) write(9999,*) " Reading nsteps from feneb.traj file "
@@ -95,7 +95,6 @@ logical ::  dostat, H0, H0T, rfromtraj, usensteps, smartstep
         write(9999,*) "coord z:",H0
         rav(3,j,nrep)=goodrav
         fav(3,j,nrep)=kref*(rav(3,j,nrep)-rref(3,atj))
-        ! devav(3,j,nrep)=kref*gooddevav
         devav(3,j,nrep)=gooddevav
         H0T=(H0T.and.H0)
       end do
@@ -167,37 +166,32 @@ logical ::  dostat, H0, H0T, rfromtraj, usensteps, smartstep
 
     do i=start,nend
       call getfilenames(i,chi,infile,reffile,outfile,iname,rname,oname)
-
-      call getdims(iname,nsteps,spatial,natoms)
-
-      if (usensteps) write(9999,*) "Using ", nstepsexternal, "out of ", nsteps
-      if (usensteps) nsteps=nstepsexternal
-      tempfilesize=(nsteps-1)
-      if(i .eq. start) allocate(temp(tempfilesize,nrep))
-      if(i .eq. start .and. wtemp) call readtop(topfile,natoms,mask,mass,nrestr)
-      if (allocated(coordx)) deallocate(coordx)
-      if (allocated(coordy)) deallocate(coordy)
-      if (allocated(coordz)) deallocate(coordz)
-      if (allocated(coordall)) deallocate(coordall)
-      if (allocated(coordstat)) deallocate(coordstat)
-      if (allocated(rref)) deallocate(rref)
-      allocate(coordx(nsteps),coordy(nsteps),coordz(nsteps))
-
-      call getrefcoord(rname,nrestr,mask,natoms,rref,boxinfo,per,velin)
+      call getrefcoord(rname,nrestr,mask,natoms,rref,boxinfo,per,velin) !saves all coordinates from rname (rst7 file) in rref
       if (rfromtraj) then
+        if (usensteps) write(9999,*) " The option usensteps is not available if rfromtraj is True "
+        if (usensteps) write(9999,*) " Reading nsteps from feneb.traj file "
         if (allocated(coordall)) deallocate(coordall,coordstat)
         call getcoordfromfenebtraj(nsteps,coordall,nrestr,i)
         allocate(coordstat(nsteps))
       else
+        call getdims(iname,nsteps,spatial,natoms)
+        if (usensteps) write(9999,*) "Using ", nstepsexternal, "out of ", nsteps
+        if (usensteps) nsteps=nstepsexternal
+        if (allocated(coordx)) deallocate(coordx)
+        if (allocated(coordy)) deallocate(coordy)
+        if (allocated(coordz)) deallocate(coordz)
+        if (allocated(coordall)) deallocate(coordall,coordstat)
+        allocate(coordx(nsteps),coordy(nsteps),coordz(nsteps))
         allocate(coordall(3,nrestr,nsteps),coordstat(nsteps))
         call getcoordfromnetcdf(iname,nsteps,natoms,spatial,coordx,coordy,coordz,coordall,nrestr,mask)
       end if
 
+      tempfilesize=(nsteps-1)
+      if(i .eq. start) allocate(temp(tempfilesize,nrep))
+      call readtop(topfile,natoms,mask,mass,nrestr)
       call getravfav(coordall,nsteps,natoms,nrestr,mask,kref,rav,devav,fav,nrep,i,rref,wgrad,skip,wtemp,dt,mass,tempfilesize,temp)
 
       if (dostat) then
-        ! if (i.eq.start) allocate(devav(3,nrestr,nrep))
-        ! if (i.eq.start) devav=0.d0
         write(9999,*) "---------------------------------------------------"
         write(9999,*) "Statistic stuff"
         write(9999,*) "Replica:", i
@@ -214,7 +208,6 @@ logical ::  dostat, H0, H0T, rfromtraj, usensteps, smartstep
           write(111111,*) rav(1,j,i),goodrav
           rav(1,j,i)=goodrav
           fav(1,j,i)=kref*(rav(1,j,i)-rref(1,atj))
-          ! devav(1,j,i)=kref*gooddevav
           devav(1,j,i)=gooddevav
           H0T=(H0T.and.H0)
 
@@ -224,7 +217,6 @@ logical ::  dostat, H0, H0T, rfromtraj, usensteps, smartstep
           write(111111,*) rav(2,j,i),goodrav
           rav(2,j,i)=goodrav
           fav(2,j,i)=kref*(rav(2,j,i)-rref(2,atj))
-          ! devav(2,j,i)=kref*gooddevav
           devav(2,j,i)=gooddevav
           H0T=(H0T.and.H0)
 
@@ -234,7 +226,6 @@ logical ::  dostat, H0, H0T, rfromtraj, usensteps, smartstep
           write(111111,*) rav(3,j,i),goodrav
           rav(3,j,i)=goodrav
           fav(3,j,i)=kref*(rav(3,j,i)-rref(3,atj))
-          ! devav(3,j,i)=kref*gooddevav
           devav(3,j,i)=gooddevav
           H0T=(H0T.and.H0)
         end do
