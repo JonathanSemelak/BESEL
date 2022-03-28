@@ -74,7 +74,8 @@ logical :: relaxdrep,relaxd,wrmforce
       call getmaxforce(nrestr,nrep,i,fperp,maxforce,ftol,relaxdrep,maxforceat,rms)
       if (maxforce .gt. maxforceband) maxforcerep=i
       if (maxforce .gt. maxforceband) maxforceband=maxforce
-      write(9999,*) "Replica: ", i, "Max force: ", maxforce, "Converged: ", relaxdrep
+      !write(9999,*) "Replica: ", i, "Max force: ", maxforce, "Converged: ", relaxdrep
+      write(9999,*) i, maxforce, relaxdrep
       call getmaxstd(nrestr,nrep,i,fperp,devav,maxstd,maxstdat,.False.)
       if (maxstd .gt. maxstdband) maxstdrep=i
       if (maxstd .gt. maxstdband) maxstdband=maxstd
@@ -85,11 +86,11 @@ logical :: relaxdrep,relaxd,wrmforce
     end if
   end do
   if (wrmforce) then
-    write(9999,*) "-----------------------------------------------------------------"
+    write(9999,*)
     write(9999,*) "Band max force: ", maxforceband, "on replica: ", maxforcerep
-    write(9999,*) "-----------------------------------------------------------------"
+    write(9999,*)
     write(9999,*) "Band max STD: ", maxstdband, "on replica: ", maxstdrep
-    write(9999,*) "-----------------------------------------------------------------"
+    write(9999,*)
     if(maxforceband .le. ftol) relaxd=.TRUE.
     if (relaxd) write(9999,*) "System converged: T"
     if (.not. relaxd) write(9999,*) "System converged: F"
@@ -105,9 +106,9 @@ logical :: relaxdrep,relaxd,wrmforce
     end if
   end do
   if (wrmforce) then
-    write(9999,*) "-----------------------------------------------------------------"
+    write(9999,*)
     write(9999,*) "Band max fneb: ", maxforceband2, "on replica: ", maxforcerep
-    write(9999,*) "-----------------------------------------------------------------"
+    write(9999,*)
   endif
 
   maxforceband2=0.d0
@@ -121,7 +122,7 @@ logical :: relaxdrep,relaxd,wrmforce
 
   if (wrmforce) then
     write(9999,*) "Band max fspring0: ", maxforceband2, "on replica: ", maxforcerep
-    write(9999,*) "-----------------------------------------------------------------"
+    write(9999,*)
   endif
 !---------------------
 

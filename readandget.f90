@@ -97,9 +97,6 @@ integer :: natoms,nrestr, i, at, ierr
 character(len=10) :: buffer
 character(len=4)  :: ismass
 
-write(9999,*) "Reading masses from file: ", trim(topfile)
-write(9999,*)
-
 open (unit=80008, file=topfile, status='old', action='read')
 do
   read(80008,*,iostat=ierr) buffer, ismass
@@ -120,13 +117,7 @@ do i=1,nrestr
   mass(i)=massall(at)
 end do
 
-i=1
-do while (i .le. (nrestr/3)*3)
-  write(9999,*) mass(i), mass(i+1), mass(i+2)
-  i = i + 3
-enddo
-write(9999,*) mass(i:nrestr)
-write(9999,*)
+
 
 
 end subroutine readtop
@@ -322,7 +313,7 @@ double precision, dimension(3) :: av
 double precision, dimension(3,nrestr,nrep) :: rav,fav,devav
 double precision, dimension(3,nrestr,nsteps) :: coordall
 double precision, dimension(3,natoms), intent(in) :: rref
-double precision, dimension(tempfilesize,rep), intent(inout) :: temp
+double precision, dimension(tempfilesize,nrep), intent(inout) :: temp
 double precision, dimension(nrestr), intent(in) :: mass
 character(len=50) :: chi, chrep
 integer :: i,j,k,ati,auxunit,skip,tempfilesize,nsteps2

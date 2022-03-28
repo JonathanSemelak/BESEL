@@ -42,8 +42,6 @@ if (smartstep) then
   if(maxforce .lt. 11.5d0) stepl=0.002d0
   if(maxforce .lt. 2.3d0) stepl=0.001d0
   if(maxforce .lt. 0.23d0) stepl=0.0001d0
-  write(9999,*) "Using smartstep option"
-  write(9999,*) "Base step: ", stepl
 else
   stepl=steep_size
 end if

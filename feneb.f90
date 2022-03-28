@@ -33,9 +33,9 @@ logical ::  dostat, H0, H0T, rfromtraj, usensteps, smartstep
  open(unit=9999, file="feneb.out") !Opten file for feneb output
 !------------ Main loop
   if (nrep .eq. 1) then !FE opt only
-    write(9999,*) "---------------------------------------------------"
+    write(9999,*)
     write(9999,*) "Performing FE full optmization for a single replica"
-    write(9999,*) "---------------------------------------------------"
+    write(9999,*)
 
     call getfilenames(nrep,chi,infile,reffile,outfile,iname,rname,oname,avname)
     call getrefcoord(rname,nrestr,mask,natoms,rref,boxinfo,per,velin) !saves all coordinates from rname (rst7 file) in rref
@@ -61,13 +61,21 @@ logical ::  dostat, H0, H0T, rfromtraj, usensteps, smartstep
     tempfilesize=(nsteps-1)
     allocate(temp(tempfilesize,nrep))
     call readtop(topfile,natoms,mask,mass,nrestr)
+    write(9999,*) "Reading masses from file: ", trim(topfile)
+    j=1
+    do while (j .le. (nrestr/3)*3)
+      write(9999,*) mass(j), mass(j+1), mass(j+2)
+      j = j + 3
+    enddo
+    write(9999,*) mass(j:nrestr)
+    write(9999,*)
 
     call getravfav(coordall,nsteps,natoms,nrestr,mask,kref,rav,devav,fav,nrep,nrep,rref,wgrad,skip,wtemp,dt,mass,tempfilesize,temp)
 
     if (dostat) then
-      write(9999,*) "---------------------------------------------------"
+      write(9999,*)
       write(9999,*) "Statistic stuff"
-      write(9999,*) "---------------------------------------------------"
+      write(9999,*)
       H0T=.True.
       do j=1,nrestr
         atj=mask(j)
@@ -99,7 +107,7 @@ logical ::  dostat, H0, H0T, rfromtraj, usensteps, smartstep
         H0T=(H0T.and.H0)
       end do
       write(*,*) "Trend free:", H0T
-      write(9999,*) "---------------------------------------------------"
+      write(9999,*)
     end if ! dostat
 
     if (wtemp) then
@@ -123,11 +131,15 @@ logical ::  dostat, H0, H0T, rfromtraj, usensteps, smartstep
     ravout=rav
     if (.not. relaxd) then
        call steep(rav,fav,nrep,nrep,steep_size,maxforce,nrestr,lastmforce,stepl,smartstep)
+       if (smartstep) then
+         write(9999,*) "Using smartstep option"
+         write(9999,*) "Base step length: ", stepl
+      endif
        if (stepl .lt. 1d-10) then
-         write(9999,*) "-----------------------------------------------------"
+         write(9999,*)
          write(9999,*) "Warning: max precision reached on atomic displacement"
          write(9999,*) "step length has been set to zero"
-         write(9999,*) "-----------------------------------------------------"
+         write(9999,*)
        end if
 
        call getfilenames(nrep,chi,infile,infile,outfile,iname,rname,oname,avname) !toma ultima foto p/ siguiente paso
@@ -147,9 +159,9 @@ logical ::  dostat, H0, H0T, rfromtraj, usensteps, smartstep
 
   elseif (nrep .gt. 1) then !NEB on FE surface
 
-    write(9999,*) "---------------------------------------------------"
+    write(9999,*)
     write(9999,*) "Performing NEB on the FE surface"
-    write(9999,*) "---------------------------------------------------"
+    write(9999,*)
 
 !------------ Set forces to zero
 
@@ -164,7 +176,6 @@ logical ::  dostat, H0, H0T, rfromtraj, usensteps, smartstep
       start=1
       nend=nrep
     endif
-
     do i=start,nend
       call getfilenames(i,chi,infile,reffile,outfile,iname,rname,oname,avname)
       call getrefcoord(rname,nrestr,mask,natoms,rref,boxinfo,per,velin) !saves all coordinates from rname (rst7 file) in rref
@@ -190,13 +201,25 @@ logical ::  dostat, H0, H0T, rfromtraj, usensteps, smartstep
       tempfilesize=(nsteps-1)
       if(i .eq. start) allocate(temp(tempfilesize,nrep))
       call readtop(topfile,natoms,mask,mass,nrestr)
+
+      if(i .eq. start) then
+        write(9999,*) "Reading masses from file: ", trim(topfile)
+        j=1
+        do while (j .le. (nrestr/3)*3)
+          write(9999,*) mass(j), mass(j+1), mass(j+2)
+          j = j + 3
+        enddo
+        write(9999,*) mass(j:nrestr)
+        write(9999,*)
+      end if
+
       call getravfav(coordall,nsteps,natoms,nrestr,mask,kref,rav,devav,fav,nrep,i,rref,wgrad,skip,wtemp,dt,mass,tempfilesize,temp)
 
       if (dostat) then
-        write(9999,*) "---------------------------------------------------"
+        write(9999,*)
         write(9999,*) "Statistic stuff"
         write(9999,*) "Replica:", i
-        write(9999,*) "---------------------------------------------------"
+        write(9999,*)
         H0T=.True.
         do j=1,nrestr
           atj=mask(j)
@@ -231,7 +254,7 @@ logical ::  dostat, H0, H0T, rfromtraj, usensteps, smartstep
           H0T=(H0T.and.H0)
         end do
         write(*,*) "Trend free:", H0T
-        write(9999,*) "---------------------------------------------------"
+        write(9999,*)
       end if ! dostat
     end do
 
@@ -280,6 +303,7 @@ logical ::  dostat, H0, H0T, rfromtraj, usensteps, smartstep
     call geterror(rav,devav,nrep,nrestr,profile)
     call getprofile(rav,fav,nrep,nrestr,profile)
     call gettang(rav,tang,nrestr,nrep)
+    write(9999,*) "Replica", "|", "Max force", "|", "Converged"
     call getnebforce(rav,devav,fav,tang,nrestr,nrep,kspring,maxforceband,ftol,relaxd,&
                     ftrue,ftang,fperp,fspring,.true.,dontg)
   ! fav ---> fneb
@@ -307,6 +331,10 @@ logical ::  dostat, H0, H0T, rfromtraj, usensteps, smartstep
 
 !----------- moves the band
     if (.not. converged) then
+        if (smartstep) then
+          write(9999,*) "Using smartstep option"
+          write(9999,*) "Base step length: ", stepl
+        endif
         do i=2,nrep-1
           if (.not. relaxd) call steep(rav,fperp,nrep,i,steep_size,maxforceband,nrestr,lastmforce,stepl,smartstep)
         end do
@@ -315,10 +343,10 @@ logical ::  dostat, H0, H0T, rfromtraj, usensteps, smartstep
 
         write(9999,'(1x,a,f8.6)') "Step length: ", stepl
         if (stepl .lt. 1d-5) then
-          write(9999,*) "-----------------------------------------------------"
+          write(9999,*)
           write(9999,*) "Warning: max precision reached on atomic displacement"
           write(9999,*) "step length has been set to zero"
-          write(9999,*) "-----------------------------------------------------"
+          write(9999,*)
         end if
         rmsfneb=0.d0
         do i=1,nrep
@@ -331,11 +359,11 @@ logical ::  dostat, H0, H0T, rfromtraj, usensteps, smartstep
         if (nscycle .eq. 1) write(9999,*) "WARNING: Using only fperp to move the band!"
         if (nscycle .gt. 1) then
 
-          write(9999,*) "-----------------------------------------------------"
+          write(9999,*)
           write(9999,*) "Performing extra optimization steps using fspring    "
           write(9999,*) "to get a better distribution of replicas.            "
           write(9999,'(1x,a,I8)') "Extra optmization movements: ", nscycle
-          write(9999,*) "-----------------------------------------------------"
+          write(9999,*)
         end if
 
         equispaced=.False.
@@ -365,11 +393,11 @@ logical ::  dostat, H0, H0T, rfromtraj, usensteps, smartstep
 
           call getdistrightminusleft(rav, nrep, nrestr, equispaced)
           if ((k .eq. nscycle) .or. equispaced) then
-            write(9999,*) "-----------------------------------------------------"
+            write(9999,*)
             write(9999,*) "Band max fspringLast: ", maxforceband
             write(9999,*) "Total spring steps: ", k
             write(9999,*) "Equispaced: ", equispaced
-            write(9999,*) "-----------------------------------------------------"
+            write(9999,*)
           end if
           k=k+1
         end do
@@ -415,12 +443,12 @@ logical ::  dostat, H0, H0T, rfromtraj, usensteps, smartstep
       call writenewcoord(avname,rref,boxinfo,natoms,nrestr,mask,per,velout,ravout,nrep,nrep,test)
 
     end if !converged
-  write(9999,*) "-----------------------------------------------------"
-  write(9999,*) "                   Extrema info"
+  write(9999,*)
+  write(9999,*) "Extrema info"
   write(9999,*) "Barrier: ", barrier
   write(9999,*) "Minimum point: ", minpoint
   write(9999,*) "Maximum point: ", maxpoint
-  write(9999,*) "-----------------------------------------------------"
+  write(9999,*)
 
   end if !nrep gt 1
 

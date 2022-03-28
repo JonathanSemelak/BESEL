@@ -205,16 +205,16 @@ close(88881)
 			end do
 
 		! write(9999,*) "Band max fspring: ",k, maxforceband2
-	  ! write(9999,*) "-----------------------------------------------------------------"
+	  ! write(9999,*) 
 
 		call getdistrightminusleft(rav, nrep, nrestr, equispaced)
 
 		if ((k .eq. nscycle) .or. equispaced) then
-			write(9999,*) "-----------------------------------------------------"
+			write(9999,*)
 			write(9999,*) "Band max fspringLast: ", maxforceband
 			write(9999,*) "Total spring steps: ", k
 			write(9999,*) "Equispaced: ", equispaced
-			write(9999,*) "-----------------------------------------------------"
+			write(9999,*)
 		end if
 		k=k+1
 	  end do
