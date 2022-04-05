@@ -179,7 +179,7 @@ subroutine readinputextrator(nrestr,mask,infile,i)
 
 implicit none
 character(len=50) :: infile, exp, keyword, line
-integer  :: nrestr, i, ierr
+integer  :: nrestr, i, j, ierr
 integer, allocatable, dimension (:) :: mask
 
 open (unit=1000, file="extractor.in", status='old', action='read') !read align.in
@@ -200,8 +200,8 @@ do
    read (line,*) keyword ! read first keyword of line
    if (keyword == 'mask') read(line,*) exp, mask(1:nrestr)
    if (keyword == 'all') then
-     do i=1,nrestr
-       mask(i)=i
+     do j=1,nrestr
+       mask(j)=j
      end do
    end if
 end do
