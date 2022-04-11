@@ -209,6 +209,52 @@ close (unit=1000)
 
 end subroutine readinputextrator
 
+subroutine readinputsegmentsfreenergy(nrestr,mask,infile,i,netcdf,bins,kref,temp)
+implicit none
+character(len=50) :: infile, reffile, exp, keyword, line
+integer  :: nrestr, i, j, ierr, bins
+logical :: netcdf
+integer, allocatable, dimension (:) :: mask
+double precision :: kref, temp
+
+netcdf=.false.
+temp=300.d0
+kref=500.d0
+bins=50
+open (unit=1000, file="segments.in", status='old', action='read') !read align.in
+do
+   read (1000,"(a)",iostat=ierr) line ! read line into character variable
+   if (ierr /= 0) exit
+   read (line,*) keyword ! read first keyword of line
+   if (keyword == 'infile') read(line,*) exp, infile
+   if (keyword == 'reffile') read(line,*) exp, reffile
+   if (keyword == 'nrestr') read(line,*) exp, nrestr
+   if (keyword == 'rep') read(line,*) exp, i
+   if (keyword == 'netcdf') read(line,*) exp, netcdf
+   if (keyword == 'temp') read(line,*) exp, temp
+   if (keyword == 'kref') read(line,*) exp, kref
+   if (keyword == 'bins') read(line,*) exp, bins
+end do
+close (unit=1000)
+allocate(mask(nrestr))
+open (unit=1000, file="segments.in", status='old', action='read') !read align.in
+do
+   read (1000,"(a)",iostat=ierr) line ! read line into character variable
+   if (ierr /= 0) exit
+   read (line,*) keyword ! read first keyword of line
+   if (keyword == 'mask') read(line,*) exp, mask(1:nrestr)
+   if (keyword == 'all') then
+     do j=1,nrestr
+       mask(j)=j
+     end do
+   end if
+end do
+
+close (unit=1000)
+
+end subroutine readinputsegmentsfreenergy
+
+
 
 subroutine getfilenames(rep,chrep,infile,reffile,outfile,iname,rname,oname,avname)
 
