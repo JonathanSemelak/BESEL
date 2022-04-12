@@ -209,18 +209,20 @@ close (unit=1000)
 
 end subroutine readinputextrator
 
-subroutine readinputsegmentsfreenergy(nrestr,mask,infile,i,netcdf,bins,kref,temp)
+subroutine readinputsegmentsfreenergy(nrestr,mask,infile,reffile,i,netcdf,bins,kref,temp,per,velin,boxinfo,truncar,normalize)
 implicit none
 character(len=50) :: infile, reffile, exp, keyword, line
 integer  :: nrestr, i, j, ierr, bins
-logical :: netcdf
+logical :: netcdf, per, velin, normalize
 integer, allocatable, dimension (:) :: mask
-double precision :: kref, temp
+double precision :: kref, temp, truncar
+double precision, dimension(6) :: boxinfo
 
 netcdf=.false.
 temp=300.d0
 kref=500.d0
 bins=50
+truncar=0
 open (unit=1000, file="segments.in", status='old', action='read') !read align.in
 do
    read (1000,"(a)",iostat=ierr) line ! read line into character variable
@@ -234,6 +236,10 @@ do
    if (keyword == 'temp') read(line,*) exp, temp
    if (keyword == 'kref') read(line,*) exp, kref
    if (keyword == 'bins') read(line,*) exp, bins
+   if (keyword == 'per') read(line,*) exp, per
+   if (keyword == 'velin') read(line,*) exp, velin
+   if (keyword == 'truncar') read(line,*) exp, truncar
+   if (keyword == 'normalize') read(line,*) exp, normalize
 end do
 close (unit=1000)
 allocate(mask(nrestr))
@@ -249,7 +255,6 @@ do
      end do
    end if
 end do
-
 close (unit=1000)
 
 end subroutine readinputsegmentsfreenergy
