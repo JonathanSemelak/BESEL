@@ -28,7 +28,7 @@ end subroutine gettang
 
 
 subroutine getnebforce(rav,devav,fav,tang,nrestr,nrep,kspring,maxforceband,ftol,&
-                       relaxd,ftrue,ftang,fperp,fspring,wrmforce,dontg)
+                       relaxd,ftrue,ftang,fperp,fspring,wrmforce,dontg,typicalneb)
 implicit none
 double precision, dimension(3,nrestr,nrep), intent(inout) :: fav
 double precision, dimension(3,nrestr,nrep), intent(in) :: rav, devav, tang
@@ -41,7 +41,7 @@ double precision, dimension(nrestr,nrep) :: fproj
 double precision :: distright, distleft, maxforce, rms, maxforceband2,n1,n2,n3,n4,n5
 double precision :: maxstdband,maxstd
 integer :: i,j,auxunit
-logical :: relaxdrep,relaxd,wrmforce
+logical :: relaxdrep,relaxd,wrmforce,typicalneb
 
 	fspring=0.d0
   fproj=0.d0
@@ -69,7 +69,7 @@ logical :: relaxdrep,relaxd,wrmforce
         fav(1:3,j,i)=fperp(1:3,j,i)+fspring(1:3,j,i)
 
 	  end do
-    if (wrmforce) then
+    if (wrmforce .and. .not. typicalneb) then
       call getmaxforce(nrestr,nrep,i,fperp,maxforce,ftol,relaxdrep,maxforceat,rms)
       if (maxforce .gt. maxforceband) maxforcerep=i
       if (maxforce .gt. maxforceband) maxforceband=maxforce
@@ -78,8 +78,12 @@ logical :: relaxdrep,relaxd,wrmforce
       call getmaxstd(nrestr,nrep,i,fperp,devav,maxstd,maxstdat,.False.)
       if (maxstd .gt. maxstdband) maxstdrep=i
       if (maxstd .gt. maxstdband) maxstdband=maxstd
-    else
+    elseif (.not. wrmforce .and. .not. typicalneb) then
       call getmaxforce(nrestr,nrep,i,fspring,maxforce,ftol,relaxdrep,maxforceat,rms)
+      if (maxforce .gt. maxforceband) maxforcerep=i
+      if (maxforce .gt. maxforceband) maxforceband=maxforce
+    else
+      call getmaxforce(nrestr,nrep,i,fav,maxforce,ftol,relaxdrep,maxforceat,rms)
       if (maxforce .gt. maxforceband) maxforcerep=i
       if (maxforce .gt. maxforceband) maxforceband=maxforce
     end if
@@ -104,7 +108,7 @@ logical :: relaxdrep,relaxd,wrmforce
       if (maxforce .gt. maxforceband2) maxforceband2=maxforce
     end if
   end do
-  if (wrmforce) then
+  if (wrmforce .and. .not. typicalneb) then
     write(9999,*)
     write(9999,*) "Band max fneb: ", maxforceband2, "on replica: ", maxforcerep
     write(9999,*)
@@ -112,14 +116,14 @@ logical :: relaxdrep,relaxd,wrmforce
 
   maxforceband2=0.d0
   do i=2,nrep-1
-    if (wrmforce) then
+    if (wrmforce .and. .not. typicalneb) then
       call getmaxforce(nrestr,nrep,i,fspring,maxforce,ftol,relaxdrep,maxforceat,rms)
       if (maxforce .gt. maxforceband2) maxforcerep=i
       if (maxforce .gt. maxforceband2) maxforceband2=maxforce
     end if
   end do
 
-  if (wrmforce) then
+  if (wrmforce .and. .not. typicalneb) then
     write(9999,*) "Band max fspring0: ", maxforceband2, "on replica: ", maxforcerep
     write(9999,*)
   endif

@@ -149,7 +149,7 @@ close(88881)
     call getenergyandforce(rav,nrestr,nrep,distmatrix,intdistmatrix,energy,maxenergy,fav)
 	  call gettang(rav,tang,nrestr,nrep)
 	  call getnebforce(rav,devav,fav,tang,nrestr,nrep,kspring,maxforceband,ftol,relaxd,&
-											ftrue,ftang,fperp,fspring,.true.,dontg)
+											ftrue,ftang,fperp,fspring,.true.,dontg,.false.)
 		write(11111,*) j, maxenergy, maxforceband, steep_size
 		write(*,*) j, maxenergy,maxforceband, steep_size
 
@@ -199,13 +199,13 @@ close(88881)
 	do while ((k .le. nscycle) .and. (.not. equispaced))
 		call gettang(rav,tang,nrestr,nrep)
 		call getnebforce(rav,devav,fav,tang,nrestr,nrep,kspring,maxforceband2,0.d0,relaxd,&
-										ftrue,ftang,fperp,fspring,.false.,dontg)
+										ftrue,ftang,fperp,fspring,.false.,dontg,.false.)
 			do i=2,nrep-1
 				if (i.ne.middlepoint) call steep(rav,fspring,nrep,i,0.001d0,maxforceband2,nrestr,0.d0,stepl,.False.)
 			end do
 
 		! write(9999,*) "Band max fspring: ",k, maxforceband2
-	  ! write(9999,*) 
+	  ! write(9999,*)
 
 		call getdistrightminusleft(rav, nrep, nrestr, equispaced)
 

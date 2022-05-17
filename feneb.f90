@@ -17,14 +17,14 @@ double precision, allocatable, dimension(:,:) :: rref, profile, temp
 double precision, allocatable, dimension(:,:,:) :: rav, fav, tang, ftang, ftrue, fperp, rrefall, ravprevsetp, devav, ravout
 double precision, allocatable, dimension(:,:,:) :: fspring, dontg, selfdist,coordall
 logical ::  per, velin, velout, relaxd, converged, wgrad, wtemp, moved, maxpreached, equispaced, rextrema, test
-logical ::  dostat, H0, H0T, rfromtraj, usensteps, smartstep
+logical ::  dostat, H0, H0T, rfromtraj, usensteps, smartstep, typicalneb
 
 !------------ Read input
     call readinput(nrep,infile,reffile,outfile,topfile,mask,nrestr,lastmforce, &
                  rav,ravout,devav,fav,ftrue,ftang,fperp,fspring,tang,kref,kspring,steep_size,steep_spring, &
                  ftol,per,velin,velout,wgrad,wtemp,dt,wtempstart,wtempend,wtempfrec,mass,rrefall, &
                  nscycle,dontg,ravprevsetp,rextrema, skip,dostat, minsegmentlenght,nevalfluc,rfromtraj, &
-                 usensteps,nstepsexternal,smartstep)
+                 usensteps,nstepsexternal,smartstep,typicalneb)
 
 !------------
 
@@ -305,7 +305,7 @@ logical ::  dostat, H0, H0T, rfromtraj, usensteps, smartstep
     call gettang(rav,tang,nrestr,nrep)
     write(9999,*) "Replica", "|", "Max force", "|", "Converged"
     call getnebforce(rav,devav,fav,tang,nrestr,nrep,kspring,maxforceband,ftol,relaxd,&
-                    ftrue,ftang,fperp,fspring,.true.,dontg)
+                    ftrue,ftang,fperp,fspring,.true.,dontg,typicalneb)
   ! fav ---> fneb
 
     call getbarrier(profile, nrep, barrier, minpoint, maxpoint)
@@ -330,91 +330,114 @@ logical ::  dostat, H0, H0T, rfromtraj, usensteps, smartstep
     write(9999,*) "Max displacement due MD: ", maxdisp
 
 !----------- moves the band
-    if (.not. converged) then
-        if (smartstep) then
-          write(9999,*) "Using smartstep option"
-          write(9999,*) "Base step length: ", stepl
-        endif
-        do i=2,nrep-1
-          if (.not. relaxd) call steep(rav,fperp,nrep,i,steep_size,maxforceband,nrestr,lastmforce,stepl,smartstep)
-        end do
-        call getmaxdisplacement(nrestr,nrep,rav,rrefall,maxdisp)
-        write(9999,*) "Max displacement due MD+steepfperp: ", maxdisp
-
-        write(9999,'(1x,a,f8.6)') "Step length: ", stepl
-        if (stepl .lt. 1d-5) then
-          write(9999,*)
-          write(9999,*) "Warning: max precision reached on atomic displacement"
-          write(9999,*) "step length has been set to zero"
-          write(9999,*)
-        end if
-        rmsfneb=0.d0
-        do i=1,nrep
-          call getmaxforce(nrestr,nrep,i,fav,maxforce,ftol,relaxd,maxforceat,rmsfneb)
-        end do
-        rmsfneb=dsqrt(rmsfneb/dble(nrep*nrestr))
-
-        write(9999,'(1x,a,f8.6)') "rmsfneb(FNEB): ", rmsfneb/nrep
-
-        if (nscycle .eq. 1) write(9999,*) "WARNING: Using only fperp to move the band!"
-        if (nscycle .gt. 1) then
-
-          write(9999,*)
-          write(9999,*) "Performing extra optimization steps using fspring    "
-          write(9999,*) "to get a better distribution of replicas.            "
-          write(9999,'(1x,a,I8)') "Extra optmization movements: ", nscycle
-          write(9999,*)
-        end if
-
-        equispaced=.False.
-        k=1
-        do while ((k .le. nscycle) .and. (.not. equispaced))
-          ! if (.not. maxpreached) then
-          !Computes spring force and others
-          call gettang(rav,tang,nrestr,nrep) !to test whether to recalculate tg or not
-
-          call getnebforce(rav,devav,fav,tang,nrestr,nrep,kspring,maxforceband,ftol,converged,&
-                          ftrue,ftang,fperp,fspring,.false.,dontg)
-
-          !como wrmforce es false, acá usa fspring para determinar maxforceband
-          !Moves band using spring force only
-          ! write(9999,'(A6,2x,I3,2x,A15,2x,f8.6,2x,A20,2x,f8.6)') "Step: ", k, "Step length", &
-
-          !NO QUIERO TANTO OUTPUT
-          !write(9999,'(A6,2x,I7,2x,A15,2x,f20.10,2x,A20,2x,f20.10)') "Step: ", k, "Step length", &
-          ! steep_spring, "Band max fspringN: ", maxforceband
-          dontg=0.d0
-          ravprevsetp=rav
-          maxforcebandprevsetp=maxforceband
-
-            do i=2,nrep-1
-              call steep(rav,fspring,nrep,i,steep_spring,maxforcebandprevsetp,nrestr,lastmforce,stepl,.False.)
-            end do
-
-          call getdistrightminusleft(rav, nrep, nrestr, equispaced)
-          if ((k .eq. nscycle) .or. equispaced) then
+    if (.not. typicalneb) then
+      if (.not. converged) then
+          if (smartstep) then
+            write(9999,*) "Using smartstep option"
+            write(9999,*) "Base step length: ", stepl
+          endif
+          do i=2,nrep-1
+            if (.not. relaxd) call steep(rav,fperp,nrep,i,steep_size,maxforceband,nrestr,lastmforce,stepl,smartstep)
+          end do
+          call getmaxdisplacement(nrestr,nrep,rav,rrefall,maxdisp)
+          write(9999,*) "Max displacement due MD+steepfperp: ", maxdisp
+          write(9999,'(1x,a,f8.6)') "Step length: ", stepl
+          if (stepl .lt. 1d-5) then
             write(9999,*)
-            write(9999,*) "Band max fspringLast: ", maxforceband
-            write(9999,*) "Total spring steps: ", k
-            write(9999,*) "Equispaced: ", equispaced
+            write(9999,*) "Warning: max precision reached on atomic displacement"
+            write(9999,*) "step length has been set to zero"
             write(9999,*)
           end if
-          k=k+1
-        end do
+          rmsfneb=0.d0
+          do i=1,nrep
+            call getmaxforce(nrestr,nrep,i,fav,maxforce,ftol,relaxd,maxforceat,rmsfneb)
+          end do
+          rmsfneb=dsqrt(rmsfneb/dble(nrep*nrestr))
 
-        call getselfdist(rav, rrefall, nrep, nrestr, selfdist)
+          write(9999,'(1x,a,f8.6)') "rmsfneb(FNEB): ", rmsfneb/nrep
 
-        open(unit=1646, file="selfdist_afterstep.dat")
+
+          if (nscycle .eq. 0) write(9999,*) "WARNING: Using only fperp to move the band!"
+          if (nscycle .gt. 1) then
+
+            write(9999,*)
+            write(9999,*) "Performing extra optimization steps using fspring    "
+            write(9999,*) "to get a better distribution of replicas.            "
+            write(9999,'(1x,a,I8)') "Extra optmization movements: ", nscycle
+            write(9999,*)
+          end if
+
+          equispaced=.False.
+          k=1
+          do while ((k .le. nscycle) .and. (.not. equispaced))
+            !Computes spring force and others
+            call gettang(rav,tang,nrestr,nrep)
+
+            call getnebforce(rav,devav,fav,tang,nrestr,nrep,kspring,maxforceband,ftol,converged,&
+                            ftrue,ftang,fperp,fspring,.false.,dontg,typicalneb)
+            !como wrmforce es false, acá usa fspring para determinar maxforceband
+            dontg=0.d0
+            ravprevsetp=rav
+            maxforcebandprevsetp=maxforceband
+
+              do i=2,nrep-1
+                call steep(rav,fspring,nrep,i,steep_spring,maxforcebandprevsetp,nrestr,lastmforce,stepl,.False.)
+              end do
+
+            call getdistrightminusleft(rav, nrep, nrestr, equispaced)
+            if ((k .eq. nscycle) .or. equispaced) then
+              write(9999,*)
+              write(9999,*) "Band max fspringLast: ", maxforceband
+              write(9999,*) "Total spring steps: ", k
+              write(9999,*) "Equispaced: ", equispaced
+              write(9999,*)
+            end if
+            k=k+1
+          end do
+
+          call getselfdist(rav, rrefall, nrep, nrestr, selfdist)
+
+      open(unit=1646, file="selfdist_afterstep.dat")
         do i=1,nrestr
           do n=1,nrep-1
             write(1646,'(2x, I6,2x, f20.10)') n, selfdist(2,i,n)
           end do
           write(1646,*)
         end do
+      close(unit=1646)
 
         call getmaxdisplacement(nrestr,nrep,rav,rrefall,maxdisp)
 
         write(9999,*) "Max displacement due MD+steepfspring: ", maxdisp
+
+    else
+      write(9999,*) "Performing a conventional NEB optimization"
+      if (.not. converged) then
+          if (smartstep) then
+            write(9999,*) "Using smartstep option"
+            write(9999,*) "Base step length: ", stepl
+          endif
+          do i=2,nrep-1
+            if (.not. relaxd) call steep(rav,fav,nrep,i,steep_size,maxforceband,nrestr,lastmforce,stepl,smartstep)
+          end do
+          call getmaxdisplacement(nrestr,nrep,rav,rrefall,maxdisp)
+          write(9999,*) "Max displacement due MD+steepfNEB: ", maxdisp
+          write(9999,'(1x,a,f8.6)') "Step length: ", stepl
+          if (stepl .lt. 1d-5) then
+            write(9999,*)
+            write(9999,*) "Warning: max precision reached on atomic displacement"
+            write(9999,*) "step length has been set to zero"
+            write(9999,*)
+          end if
+          rmsfneb=0.d0
+          do i=1,nrep
+            call getmaxforce(nrestr,nrep,i,fav,maxforce,ftol,relaxd,maxforceat,rmsfneb)
+          end do
+          rmsfneb=dsqrt(rmsfneb/dble(nrep*nrestr))
+
+          write(9999,'(1x,a,f8.6)') "rmsfneb(FNEB): ", rmsfneb/nrep
+      end if
+    end if
 
     !------------ Get coordinates for previously optimized extrema
     if (.not. rextrema) then
