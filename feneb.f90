@@ -330,8 +330,8 @@ logical ::  dostat, H0, H0T, rfromtraj, usensteps, smartstep, typicalneb
     write(9999,*) "Max displacement due MD: ", maxdisp
 
 !----------- moves the band
-    if (.not. typicalneb) then
-      if (.not. converged) then
+    if (.not. converged) then
+      if (.not. typicalneb) then
           if (smartstep) then
             write(9999,*) "Using smartstep option"
             write(9999,*) "Base step length: ", stepl
@@ -397,47 +397,43 @@ logical ::  dostat, H0, H0T, rfromtraj, usensteps, smartstep, typicalneb
 
           call getselfdist(rav, rrefall, nrep, nrestr, selfdist)
 
-      open(unit=1646, file="selfdist_afterstep.dat")
-        do i=1,nrestr
-          do n=1,nrep-1
-            write(1646,'(2x, I6,2x, f20.10)') n, selfdist(2,i,n)
+        open(unit=1646, file="selfdist_afterstep.dat")
+          do i=1,nrestr
+            do n=1,nrep-1
+              write(1646,'(2x, I6,2x, f20.10)') n, selfdist(2,i,n)
+            end do
+            write(1646,*)
           end do
-          write(1646,*)
-        end do
-      close(unit=1646)
+        close(unit=1646)
 
         call getmaxdisplacement(nrestr,nrep,rav,rrefall,maxdisp)
 
         write(9999,*) "Max displacement due MD+steepfspring: ", maxdisp
-
-    else
-      write(9999,*) "Performing a conventional NEB optimization"
-      if (.not. converged) then
-          if (smartstep) then
-            write(9999,*) "Using smartstep option"
-            write(9999,*) "Base step length: ", stepl
-          endif
-          do i=2,nrep-1
-            if (.not. relaxd) call steep(rav,fav,nrep,i,steep_size,maxforceband,nrestr,lastmforce,stepl,smartstep)
-          end do
-          call getmaxdisplacement(nrestr,nrep,rav,rrefall,maxdisp)
-          write(9999,*) "Max displacement due MD+steepfNEB: ", maxdisp
-          write(9999,'(1x,a,f8.6)') "Step length: ", stepl
-          if (stepl .lt. 1d-5) then
-            write(9999,*)
-            write(9999,*) "Warning: max precision reached on atomic displacement"
-            write(9999,*) "step length has been set to zero"
-            write(9999,*)
-          end if
-          rmsfneb=0.d0
-          do i=1,nrep
-            call getmaxforce(nrestr,nrep,i,fav,maxforce,ftol,relaxd,maxforceat,rmsfneb)
-          end do
-          rmsfneb=dsqrt(rmsfneb/dble(nrep*nrestr))
-
-          write(9999,'(1x,a,f8.6)') "rmsfneb(FNEB): ", rmsfneb/nrep
+      else
+        write(9999,*) "Performing a conventional NEB optimization"
+        if (smartstep) then
+          write(9999,*) "Using smartstep option"
+          write(9999,*) "Base step length: ", stepl
+        endif
+        do i=2,nrep-1
+          if (.not. relaxd) call steep(rav,fav,nrep,i,steep_size,maxforceband,nrestr,lastmforce,stepl,smartstep)
+        end do
+        call getmaxdisplacement(nrestr,nrep,rav,rrefall,maxdisp)
+        write(9999,*) "Max displacement due MD+steepfNEB: ", maxdisp
+        write(9999,'(1x,a,f8.6)') "Step length: ", stepl
+        if (stepl .lt. 1d-5) then
+          write(9999,*)
+          write(9999,*) "Warning: max precision reached on atomic displacement"
+          write(9999,*) "step length has been set to zero"
+          write(9999,*)
+        end if
+        rmsfneb=0.d0
+        do i=1,nrep
+          call getmaxforce(nrestr,nrep,i,fav,maxforce,ftol,relaxd,maxforceat,rmsfneb)
+        end do
+        rmsfneb=dsqrt(rmsfneb/dble(nrep*nrestr))
+        write(9999,'(1x,a,f8.6)') "rmsfneb(FNEB): ", rmsfneb/nrep
       end if
-    end if
 
     !------------ Get coordinates for previously optimized extrema
     if (.not. rextrema) then

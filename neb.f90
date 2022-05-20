@@ -86,6 +86,10 @@ logical :: relaxdrep,relaxd,wrmforce,typicalneb
       call getmaxforce(nrestr,nrep,i,fav,maxforce,ftol,relaxdrep,maxforceat,rms)
       if (maxforce .gt. maxforceband) maxforcerep=i
       if (maxforce .gt. maxforceband) maxforceband=maxforce
+      write(9999,*) i, maxforce, relaxdrep                                                          |  ---------------------------------------------------------------------------------------------------
+      call getmaxstd(nrestr,nrep,i,fav,devav,maxstd,maxstdat,.False.)                               |  ---------------------------------------------------------------------------------------------------
+      if (maxstd .gt. maxstdband) maxstdrep=i                                                       |  ---------------------------------------------------------------------------------------------------
+      if (maxstd .gt. maxstdband) maxstdband=maxstd  
     end if
   end do
   if (wrmforce) then
