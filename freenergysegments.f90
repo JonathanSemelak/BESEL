@@ -119,6 +119,8 @@ do j=1,nrestr
     if (i.eq.3) sname = "s.z.rep."//chrep
     if (at .le. 9) write(chat,'(I1)') at
     if (at .gt. 9 .and. at .le. 99) write(chat,'(I2)') at
+    if (at .gt. 99 .and. at .le. 999) write(chat,'(I3)') at
+    if (at .gt. 999 .and. at .le. 9999) write(chat,'(I4)') at
     hname = trim(hname)//".at."
     hname = trim(hname)//trim(chat)
     auxunit = 1000000*i+10000*j+rep
