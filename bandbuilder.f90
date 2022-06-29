@@ -7,7 +7,7 @@
 use readandget
 use netcdf
 implicit none
-character(len=50) :: rcfile, pcfile, tsfile, prefix, chi, oname
+character(len=200) :: rcfile, pcfile, tsfile, prefix, chi, oname
 integer :: nrestr, nrep, i, j, k, middlepoint, natoms, nscycle, nmax,n1,n2,n3
 logical ::  usets, per, velin, velout, onlytest, iddp, relaxd, equispaced, moved
 double precision, dimension(3) :: BAND_slope

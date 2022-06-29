@@ -129,7 +129,7 @@ end subroutine readtop
 subroutine readinputbuilder(rcfile, pcfile, tsfile, prefix, nrestr, nrep, usets, per, velin, velout,&
   rav, mask, iddp, nmax, onlytest)
 implicit none
-character(len=50) :: rcfile, pcfile, tsfile, prefix, exp, keyword, line, all
+character(len=200) :: rcfile, pcfile, tsfile, prefix, exp, keyword, line, all
 integer :: nrestr, nrep, i, ierr, nmax
 logical ::  usets, per, velin, velout, onlytest, iddp
 integer, allocatable, dimension (:), intent(inout) :: mask
