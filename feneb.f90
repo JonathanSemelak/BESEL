@@ -3,7 +3,7 @@ use netcdf
 use readandget
 implicit none
 character(len=50) :: infile, reffile, outfile,topfile, chi, iname, rname, oname, avname, tempname
-integer :: nsteps, spatial, natoms, nrestr, nrep, nscycle,maxforceat, atj, maxstdat, tangoption
+integer :: nsteps, spatial, natoms, nrestr, nrep, nscycle,maxforceat, atj, maxstdat, tangoption, optoption
 integer :: i, j, k, n, start, nend, skip, wtempstart, wtempend, wtempfrec, tempfilesize, minsegmentlenght, nevalfluc, nstepsexternal
 integer, allocatable, dimension (:) :: mask
 real(4) :: coordinate
@@ -11,25 +11,39 @@ real(4), allocatable, dimension (:) :: coordx,coordy,coordz, coordstat
 integer, dimension (3) :: point
 double precision :: kref, steep_size, ftol, maxforce, kspring, maxforceband, lastmforce, maxforcebandprevsetp, steep_spring
 double precision :: stepl, rmsfneb, minpoint, maxpoint, barrier, dt, Z, goodrav, gooddevav, maxstd, maxdisp
+double precision :: FIRE_dt_max
+integer :: FIRE_Ndescend, iteration
 double precision, dimension(6) :: boxinfo
-double precision, allocatable, dimension(:) :: rmsd, mass
+double precision, allocatable, dimension(:) :: rmsd, mass, FIRE_alpha, FIRE_dt
 double precision, allocatable, dimension(:,:) :: rref, profile, temp
 double precision, allocatable, dimension(:,:,:) :: rav, fav, tang, ftang, ftrue, fperp, rrefall, ravprevsetp, devav, ravout
-double precision, allocatable, dimension(:,:,:) :: fspring, dontg, selfdist,coordall
+double precision, allocatable, dimension(:,:,:) :: fspring, dontg, selfdist,coordall, FIRE_vel
 logical ::  per, velin, velout, relaxd, converged, wgrad, wtemp, moved, maxpreached, equispaced, rextrema, test
-logical ::  dostat, H0, H0T, rfromtraj, usensteps, smartstep, typicalneb
+logical ::  dostat, H0, H0T, rfromtraj, usensteps, smartstep, typicalneb, historyfound
 
 !------------ Read input
     call readinput(nrep,infile,reffile,outfile,topfile,mask,nrestr,lastmforce, &
                  rav,ravout,devav,fav,ftrue,ftang,fperp,fspring,tang,kref,kspring,steep_size,steep_spring, &
                  ftol,per,velin,velout,wgrad,wtemp,dt,wtempstart,wtempend,wtempfrec,mass,rrefall, &
                  nscycle,dontg,ravprevsetp,rextrema, skip,dostat, minsegmentlenght,nevalfluc,rfromtraj, &
-                 usensteps,nstepsexternal,smartstep,typicalneb,tangoption)
+                 usensteps,nstepsexternal,smartstep,typicalneb,tangoption,optoption,FIRE_dt_max)
 
+!------------ Read feneb.history if the optimizer is FIRE
+if (optoption.eq.1) then
+  allocate(FIRE_vel(3,nrestr,nrep),FIRE_dt(nrep),FIRE_alpha(nrep))
+  INQUIRE(FILE="feneb.history", EXIST=historyfound)
+  if(historyfound) then
+    call readhistory(iteration,FIRE_Ndescend,FIRE_dt,FIRE_alpha,FIRE_vel,nrep,nrestr)
+  else
+    FIRE_Ndescend=0
+    iteration=1
+    FIRE_vel=0.d0
+    FIRE_dt=0.1d0
+  endif
+end if
 !------------
 
  test=.False.
-
  open(unit=9999, file="feneb.out") !Opten file for feneb output
 !------------ Main loop
   if (nrep .eq. 1) then !FE opt only
@@ -130,18 +144,25 @@ logical ::  dostat, H0, H0T, rfromtraj, usensteps, smartstep, typicalneb
 
     ravout=rav
     if (.not. relaxd) then
+      if(optoption.eq.0) then
        call steep(rav,fav,nrep,nrep,steep_size,maxforce,nrestr,lastmforce,stepl,smartstep)
        if (smartstep) then
          write(9999,*) "Using smartstep option"
          write(9999,*) "Base step length: ", stepl
-      endif
+       endif
        if (stepl .lt. 1d-10) then
          write(9999,*)
          write(9999,*) "Warning: max precision reached on atomic displacement"
          write(9999,*) "step length has been set to zero"
          write(9999,*)
        end if
-
+       elseif(optoption.eq.1)then
+         call FIRE(nrestr, rav(:,:,nrep), fav(:,:,nrep), FIRE_vel(:,:,nrep), FIRE_dt(nrep),&
+         FIRE_Ndescend, FIRE_dt_max, FIRE_alpha(nrep))
+         call writehistory(iteration,FIRE_Ndescend,FIRE_dt,FIRE_alpha,FIRE_vel,nrep,nrestr)
+       else
+         STOP "optoption should be 0 or 1"
+       endif
        call getfilenames(nrep,chi,infile,infile,outfile,iname,rname,oname,avname) !toma ultima foto p/ siguiente paso
        call getrefcoord(rname,nrestr,mask,natoms,rref,boxinfo,per,.True.)
        call writenewcoord(oname,rref,boxinfo,natoms,nrestr,mask,per,velout,rav,nrep,nrep,test)
@@ -332,28 +353,37 @@ logical ::  dostat, H0, H0T, rfromtraj, usensteps, smartstep, typicalneb
 !----------- moves the band
     if (.not. converged) then
       if (.not. typicalneb) then
-          if (smartstep) then
-            write(9999,*) "Using smartstep option"
-            write(9999,*) "Base step length: ", stepl
-          endif
-          do i=2,nrep-1
-            if (.not. relaxd) call steep(rav,fperp,nrep,i,steep_size,maxforceband,nrestr,lastmforce,stepl,smartstep)
-          end do
-          call getmaxdisplacement(nrestr,nrep,rav,rrefall,maxdisp)
-          write(9999,*) "Max displacement due MD+steepfperp: ", maxdisp
-          write(9999,'(1x,a,f8.6)') "Step length: ", stepl
-          if (stepl .lt. 1d-5) then
-            write(9999,*)
-            write(9999,*) "Warning: max precision reached on atomic displacement"
-            write(9999,*) "step length has been set to zero"
-            write(9999,*)
+          if(optoption.eq.0) then
+            if (smartstep) then
+              write(9999,*) "Using smartstep option"
+              write(9999,*) "Base step length: ", stepl
+            endif
+            do i=2,nrep-1
+              if (.not. relaxd) call steep(rav,fperp,nrep,i,steep_size,maxforceband,nrestr,lastmforce,stepl,smartstep)
+            end do
+            call getmaxdisplacement(nrestr,nrep,rav,rrefall,maxdisp)
+            write(9999,*) "Max displacement due MD+steepfperp: ", maxdisp
+            write(9999,'(1x,a,f8.6)') "Step length: ", stepl
+            if (stepl .lt. 1d-5) then
+              write(9999,*)
+              write(9999,*) "Warning: max precision reached on atomic displacement"
+              write(9999,*) "step length has been set to zero"
+              write(9999,*)
+            end if
+          elseif(optoption.eq.1) then
+            do i=2,nrep-1
+              if (.not. relaxd) call FIRE(nrestr, rav(:,:,i), fperp(:,:,i), FIRE_vel(:,:,i), FIRE_dt(i),&
+              FIRE_Ndescend, FIRE_dt_max, FIRE_alpha(i))
+            end do
+            call writehistory(iteration,FIRE_Ndescend,FIRE_dt,FIRE_alpha,FIRE_vel,nrep,nrestr)
+          else
+            STOP "optoption should be 0 or 1"
           end if
           rmsfneb=0.d0
           do i=1,nrep
             call getmaxforce(nrestr,nrep,i,fav,maxforce,ftol,relaxd,maxforceat,rmsfneb)
           end do
           rmsfneb=dsqrt(rmsfneb/dble(nrep*nrestr))
-
           write(9999,'(1x,a,f8.6)') "rmsfneb(FNEB): ", rmsfneb/nrep
 
 
@@ -411,21 +441,32 @@ logical ::  dostat, H0, H0T, rfromtraj, usensteps, smartstep, typicalneb
         write(9999,*) "Max displacement due MD+steepfspring: ", maxdisp
       else
         write(9999,*) "Performing a conventional NEB optimization"
-        if (smartstep) then
-          write(9999,*) "Using smartstep option"
-          write(9999,*) "Base step length: ", stepl
-        endif
-        do i=2,nrep-1
-          if (.not. relaxd) call steep(rav,fav,nrep,i,steep_size,maxforceband,nrestr,lastmforce,stepl,smartstep)
-        end do
-        call getmaxdisplacement(nrestr,nrep,rav,rrefall,maxdisp)
-        write(9999,*) "Max displacement due MD+steepfNEB: ", maxdisp
-        write(9999,'(1x,a,f8.6)') "Step length: ", stepl
-        if (stepl .lt. 1d-5) then
-          write(9999,*)
-          write(9999,*) "Warning: max precision reached on atomic displacement"
-          write(9999,*) "step length has been set to zero"
-          write(9999,*)
+
+        if(optoption.eq.0) then
+          if (smartstep) then
+            write(9999,*) "Using smartstep option"
+            write(9999,*) "Base step length: ", stepl
+          endif
+          do i=2,nrep-1
+            if (.not. relaxd) call steep(rav,fav,nrep,i,steep_size,maxforceband,nrestr,lastmforce,stepl,smartstep)
+          end do
+          call getmaxdisplacement(nrestr,nrep,rav,rrefall,maxdisp)
+          write(9999,*) "Max displacement due MD+steepfperp: ", maxdisp
+          write(9999,'(1x,a,f8.6)') "Step length: ", stepl
+          if (stepl .lt. 1d-5) then
+            write(9999,*)
+            write(9999,*) "Warning: max precision reached on atomic displacement"
+            write(9999,*) "step length has been set to zero"
+            write(9999,*)
+          end if
+        elseif(optoption.eq.1) then
+          do i=2,nrep-1
+            if (.not. relaxd) call FIRE(nrestr, rav(:,:,i), fav(:,:,i), FIRE_vel(:,:,i), FIRE_dt(i),&
+            FIRE_Ndescend, FIRE_dt_max, FIRE_alpha(i))
+          end do
+          call writehistory(iteration,FIRE_Ndescend,FIRE_dt,FIRE_alpha,FIRE_vel,nrep,nrestr)
+        else
+          STOP "optoption should be 0 or 1"
         end if
         rmsfneb=0.d0
         do i=1,nrep

@@ -93,3 +93,26 @@ if (per) write(auxunit,'(6(f12.7))') boxinfo(1:6)
 close (unit=auxunit)
 
 end subroutine writenewcoord
+
+subroutine writehistory(iteration,FIRE_Ndescend,FIRE_dt,FIRE_alpha,FIRE_vel,nrep,nrestr)
+implicit none
+integer, intent(in) :: nrep, nrestr
+integer, intent(in) :: FIRE_Ndescend, iteration
+double precision, dimension(nrep), intent(in):: FIRE_dt, FIRE_alpha
+double precision, dimension(3,nrestr,nrep), intent(in) :: FIRE_vel
+integer :: i ,j
+
+  write(9999,*) "Writing feneb.present"
+  open (unit=22000112, file="feneb.present", position='append')
+  write(22000112,*) iteration,FIRE_Ndescend
+  do i=1,nrep
+    write(22000112,*) FIRE_dt(i),FIRE_alpha(i)
+  end do
+  do i=1,nrestr
+    do j=1,nrep
+      write(22000112,*) FIRE_vel(1,i,j),FIRE_vel(2,i,j),FIRE_vel(3,i,j)
+    end do
+  end do
+  close(unit=22000112)
+
+end subroutine writehistory

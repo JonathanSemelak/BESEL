@@ -5,13 +5,13 @@ subroutine readinput(nrep,infile,reffile,outfile,topfile,mask,nrestr,lastmforce,
            rav,ravout,devav,fav,ftrue,ftang,fperp,fspring,tang,kref,kspring,steep_size,steep_spring,ftol,per, &
            velin,velout,wgrad,wtemp,dt,wtempstart,wtempend,wtempfrec,mass,rrefall,nscycle,dontg,ravprevsetp, &
            rextrema, skip, dostat, minsegmentlenght, nevalfluc,rfromtraj,usensteps,nstepsexternal,smartstep, &
-           typicalneb, tangoption)
+           typicalneb, tangoption, optoption, FIRE_dt_max)
 implicit none
 character(len=50) :: infile, reffile, outfile, line, exp, keyword, topfile
 integer :: nrestr, nrep, i, ierr, nscycle,skip, wtempfrec, wtempstart, wtempend
-integer :: minsegmentlenght, nevalfluc, nstepsexternal, tangoption
+integer :: minsegmentlenght, nevalfluc, nstepsexternal, tangoption, optoption
 logical ::  per, velin, velout, wgrad, rextrema, wtemp, dostat, rfromtraj, usensteps, smartstep, typicalneb
-double precision :: kref, kspring, steep_size, steep_spring, ftol, lastmforce, dt
+double precision :: kref, kspring, steep_size, steep_spring, ftol, lastmforce, dt, FIRE_dt_max
 integer, allocatable, dimension (:), intent(inout) :: mask
 double precision, allocatable, dimension(:,:,:), intent(inout) :: rav, fav, tang, ftang, ftrue,fperp, rrefall, ravprevsetp
 double precision, allocatable, dimension(:,:,:), intent(inout) :: fspring, dontg, devav, ravout
@@ -37,6 +37,9 @@ double precision, allocatable, dimension(:), intent(inout) :: mass
  minsegmentlenght=100
  nevalfluc=1000
  tangoption=0
+ optoption=0
+ FIRE_dt_max=1.5d0
+
 open (unit=1000, file='feneb.in', status='old', action='read') !read feneb.in
 do
    read (1000,"(a)",iostat=ierr) line ! read line into character variable
@@ -69,6 +72,8 @@ do
    if (keyword == 'smartstep') read(line,*) exp, smartstep
    if (keyword == 'typicalneb') read(line,*) exp, typicalneb
    if (keyword == 'tangoption') read(line,*) exp, tangoption
+   if (keyword == 'optoption') read(line,*) exp, optoption
+   if (keyword == 'dtmax') read(line,*) exp, FIRE_dt_max
 end do
 close (unit=1000)
 if (nrep .gt. 1) allocate(tang(3,nrestr,nrep),ftang(3,nrestr,nrep),ftrue(3,nrestr,nrep),&
@@ -264,7 +269,28 @@ close (unit=1000)
 
 end subroutine readinputsegmentsfreenergy
 
+subroutine readhistory(iteration,FIRE_Ndescend,FIRE_dt,FIRE_alpha,FIRE_vel,nrep,nrestr)
+implicit none
+integer, intent(in) :: nrep, nrestr
+integer, intent(out) :: FIRE_Ndescend, iteration
+double precision, dimension(nrep), intent(out):: FIRE_dt, FIRE_alpha
+double precision, dimension(3,nrestr,nrep), intent(out) :: FIRE_vel
+integer :: i ,j
 
+  write(9999,*) "Reading feneb.history"
+  open (unit=2200011, file="feneb.history", action='read')
+  read(2200011,*) iteration,FIRE_Ndescend
+  do i=1,nrep
+    read(2200011,*) FIRE_dt(i),FIRE_alpha(i)
+  end do
+  do i=1,nrestr
+    do j=1,nrep
+      read(2200011,*) FIRE_vel(1,i,j),FIRE_vel(2,i,j),FIRE_vel(3,i,j)
+    end do
+  end do
+  close(unit=2200011)
+
+end subroutine readhistory
 
 subroutine getfilenames(rep,chrep,infile,reffile,outfile,iname,rname,oname,avname)
 
