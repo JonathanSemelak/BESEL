@@ -1,22 +1,88 @@
 !Original subroutines by N. Foglia 03/2018
 !Oriented to free energy optimizations by J. Semelak 09/2020
 
-subroutine gettang(rav,tang,nrestr,nrep)
+subroutine gettang(rav,tang,nrestr,nrep,tangoption,profile)
 implicit none
 double precision, dimension(3,nrestr,nrep), intent(in) :: rav
 double precision, dimension(3,nrestr,nrep), intent(out) :: tang
-integer, intent(in) :: nrestr, nrep
-double precision, dimension(nrestr,nrep) :: norm
+double precision, dimension(2,nrep), intent(in) :: profile
+double precision, dimension(3,nrestr,nrep) :: tangA, tangB, tangC
+integer, intent(in) :: nrestr, nrep, tangoption
+double precision, dimension(nrestr,nrep) :: norm,normA,normB
+double precision :: A0,A1,A2,Amax,Amin
 integer :: i,j
+
 tang=0.d0
+tangA=0.d0
+tangB=0.d0
 norm=0.d0
+normA=0.d0
+normB=0.d0
+
+if (tangoption.eq.0) then
+  do i=2,nrep-1
+    do j=1,nrestr
+      tang(1:3,j,i) = rav(1:3,j,i+1) - rav(1:3,j,i-1)
+    end do
+  end do
+elseif (tangoption.eq.1.or.tangoption.eq.2) then
+  do i=2,nrep-1
+    do j=1,nrestr
+      tangA(1:3,j,i) = rav(1:3,j,i) - rav(1:3,j,i-1)
+      tangB(1:3,j,i) = rav(1:3,j,i+1) - rav(1:3,j,i)
+      normA(j,i) = tangA(1,j,i)**2 + tangA(2,j,i)**2 + tangA(3,j,i)**2
+      normA(j,i) = dsqrt(normA(j,i))
+      normB(j,i) = tangB(1,j,i)**2 + tangB(2,j,i)**2 + tangB(3,j,i)**2
+      normB(j,i) = dsqrt(normB(j,i))
+      if (normA(j,i) .lt. 1d-5) then
+        write(*,*) "WARNING: Tangent direction A norm is too small"
+        tangA(1:3,j,i) = 0.d0
+      else
+        tangA(1:3,j,i) = tangA(1:3,j,i)/normA(j,i)
+      endif
+      if (normB(j,i) .lt. 1d-5) then
+        write(*,*) "WARNING: Tangent direction B norm is too small"
+        tangB(1:3,j,i) = 0.d0
+      else
+        tangB(1:3,j,i) = tangB(1:3,j,i)/normB(j,i)
+      endif
+    end do
+  end do
+  if(tangoption.eq.1) then
+    do i=2,nrep-1
+      do j=1,nrestr
+        tang(1:3,j,i)=tangA(1:3,j,i)+tangB(1:3,j,i)
+      end do
+    end do
+  else
+    do i=2,nrep-1
+      A0=profile(2,i-1)
+      A1=profile(2,i)
+      A2=profile(2,i+1)
+      do j=1,nrep
+        if ((A2.gt.A1) .and. (A1.gt.A0)) then
+          tang(1:3,j,i)=tangB(1:3,j,i)
+        else if ((A0.gt.A1) .and. (A1.gt.A2)) then
+          tang(1:3,j,i)=tangA(1:3,j,i)
+        else
+          Amax=max(abs(A2-A1), abs(A1-A0))
+          Amin=min(abs(A2-A1), abs(A1-A0))
+          if (A2.gt.A0) tang(1:3,j,i)=Amax*tangB(1:3,j,i)+Amin*tangA(1:3,j,i)
+          if (A0.gt.A2) tang(1:3,j,i)=Amin*tangB(1:3,j,i)+Amax*tangA(1:3,j,i)
+        end if
+      end do
+    end do
+  endif
+else
+  STOP "tangoption should be 0, 1 or 2"
+endif
+
 do i=2,nrep-1
   do j=1,nrestr
-    tang(1:3,j,i) = rav(1:3,j,i+1) - rav(1:3,j,i-1)
     norm(j,i) = tang(1,j,i)**2 + tang(2,j,i)**2 + tang(3,j,i)**2
     norm(j,i) = dsqrt(norm(j,i))
     if (norm(j,i) .lt. 1d-5) then
-      write(*,*) "OJOTA"
+      write(*,*) "WARNING: Tangent direction norm is too small"
       tang(1:3,j,i) = 0.d0
     else
       tang(1:3,j,i) = tang(1:3,j,i)/norm(j,i)

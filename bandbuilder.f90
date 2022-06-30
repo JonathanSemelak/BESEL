@@ -8,7 +8,7 @@ use readandget
 use netcdf
 implicit none
 character(len=200) :: rcfile, pcfile, tsfile, prefix, chi, oname
-integer :: nrestr, nrep, i, j, k, middlepoint, natoms, nscycle, nmax,n1,n2,n3
+integer :: nrestr, nrep, i, j, k, middlepoint, natoms, nscycle, nmax,n1,n2,n3, tangoption
 logical ::  usets, per, velin, velout, onlytest, iddp, relaxd, equispaced, moved
 double precision, dimension(3) :: BAND_slope
 double precision, dimension(3) :: BAND_const
@@ -104,7 +104,7 @@ if (iddp) then
   allocate(distmatrix(nrestr,nrestr,nrep),intdistmatrix(nrestr,nrestr,nrep),energy(nrep))
 	allocate(fav(3,nrestr,nrep),fspring(3,nrestr,nrep),ftrue(3,nrestr,nrep),fperp(3,nrestr,nrep),ftang(3,nrestr,nrep))
 	allocate(tang(3,nrestr,nrep),devav(3,nrestr,nrep),rrefall(3,nrestr,nrep))
-	allocate(profile(2,nrep-1))
+	allocate(profile(2,nrep))
 
 	kspring=500.d0
   ftol=0.d0
@@ -114,6 +114,8 @@ if (iddp) then
   steep_size=0.01d0
 	devav=0.d0
 	rrefall=0.d0
+	profile=0.d0
+	tangoption=0
 ! TEST---------------------
 
 call getdistmatrix(nrestr,nrep,distmatrix,rav)
@@ -147,7 +149,7 @@ close(88881)
 			close(888811)
 		end if
     call getenergyandforce(rav,nrestr,nrep,distmatrix,intdistmatrix,energy,maxenergy,fav)
-	  call gettang(rav,tang,nrestr,nrep)
+	  call gettang(rav,tang,nrestr,nrep,tangoption,profile)
 	  call getnebforce(rav,devav,fav,tang,nrestr,nrep,kspring,maxforceband,ftol,relaxd,&
 											ftrue,ftang,fperp,fspring,.true.,dontg,.false.)
 		write(11111,*) j, maxenergy, maxforceband, steep_size
@@ -197,7 +199,7 @@ close(88881)
 
 	k=1
 	do while ((k .le. nscycle) .and. (.not. equispaced))
-		call gettang(rav,tang,nrestr,nrep)
+		call gettang(rav,tang,nrestr,nrep,tangoption,profile)
 		call getnebforce(rav,devav,fav,tang,nrestr,nrep,kspring,maxforceband2,0.d0,relaxd,&
 										ftrue,ftang,fperp,fspring,.false.,dontg,.false.)
 			do i=2,nrep-1
@@ -335,7 +337,6 @@ implicit none
 integer :: i,j,k,l,n,nrestr,nrep
 double precision, dimension (nrestr,nrestr,nrep) :: distmatrix, intdistmatrix
 double precision, dimension (nrep) :: energy
-double precision, dimension (2,nrep-2) :: profile
 double precision, dimension (3,nrestr,nrep) :: rav, fav
 double precision, dimension (3,nrestr,nrep) :: favn
 double precision :: dd,dij,fij,dx,dy,dz, D, energyreplica, maxenergy

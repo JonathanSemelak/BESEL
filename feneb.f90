@@ -3,7 +3,7 @@ use netcdf
 use readandget
 implicit none
 character(len=50) :: infile, reffile, outfile,topfile, chi, iname, rname, oname, avname, tempname
-integer :: nsteps, spatial, natoms, nrestr, nrep, nscycle,maxforceat, atj, maxstdat
+integer :: nsteps, spatial, natoms, nrestr, nrep, nscycle,maxforceat, atj, maxstdat, tangoption
 integer :: i, j, k, n, start, nend, skip, wtempstart, wtempend, wtempfrec, tempfilesize, minsegmentlenght, nevalfluc, nstepsexternal
 integer, allocatable, dimension (:) :: mask
 real(4) :: coordinate
@@ -24,7 +24,7 @@ logical ::  dostat, H0, H0T, rfromtraj, usensteps, smartstep, typicalneb
                  rav,ravout,devav,fav,ftrue,ftang,fperp,fspring,tang,kref,kspring,steep_size,steep_spring, &
                  ftol,per,velin,velout,wgrad,wtemp,dt,wtempstart,wtempend,wtempfrec,mass,rrefall, &
                  nscycle,dontg,ravprevsetp,rextrema, skip,dostat, minsegmentlenght,nevalfluc,rfromtraj, &
-                 usensteps,nstepsexternal,smartstep,typicalneb)
+                 usensteps,nstepsexternal,smartstep,typicalneb,tangoption)
 
 !------------
 
@@ -302,7 +302,7 @@ logical ::  dostat, H0, H0T, rfromtraj, usensteps, smartstep, typicalneb
     if (dostat) call geterror(rav,devav,nrep,nrestr,profile)
     call geterror(rav,devav,nrep,nrestr,profile)
     call getprofile(rav,fav,nrep,nrestr,profile)
-    call gettang(rav,tang,nrestr,nrep)
+    call gettang(rav,tang,nrestr,nrep,tangoption,profile)
     write(9999,*) "Replica", "|", "Max force", "|", "Converged"
     call getnebforce(rav,devav,fav,tang,nrestr,nrep,kspring,maxforceband,ftol,relaxd,&
                     ftrue,ftang,fperp,fspring,.true.,dontg,typicalneb)
@@ -371,7 +371,7 @@ logical ::  dostat, H0, H0T, rfromtraj, usensteps, smartstep, typicalneb
           k=1
           do while ((k .le. nscycle) .and. (.not. equispaced))
             !Computes spring force and others
-            call gettang(rav,tang,nrestr,nrep)
+            call gettang(rav,tang,nrestr,nrep,tangoption,profile)
 
             call getnebforce(rav,devav,fav,tang,nrestr,nrep,kspring,maxforceband,ftol,converged,&
                             ftrue,ftang,fperp,fspring,.false.,dontg,typicalneb)
