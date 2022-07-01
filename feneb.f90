@@ -19,14 +19,14 @@ double precision, allocatable, dimension(:,:) :: rref, profile, temp
 double precision, allocatable, dimension(:,:,:) :: rav, fav, tang, ftang, ftrue, fperp, rrefall, ravprevsetp, devav, ravout
 double precision, allocatable, dimension(:,:,:) :: fspring, dontg, selfdist,coordall, FIRE_vel
 logical ::  per, velin, velout, relaxd, converged, wgrad, wtemp, moved, maxpreached, equispaced, rextrema, test
-logical ::  dostat, H0, H0T, rfromtraj, usensteps, smartstep, typicalneb, historyfound
+logical ::  dostat, H0, H0T, rfromtraj, usensteps, smartstep, typicalneb, historyfound, tangrecalc
 
 !------------ Read input
     call readinput(nrep,infile,reffile,outfile,topfile,mask,nrestr,lastmforce, &
                  rav,ravout,devav,fav,ftrue,ftang,fperp,fspring,tang,kref,kspring,steep_size,steep_spring, &
                  ftol,per,velin,velout,wgrad,wtemp,dt,wtempstart,wtempend,wtempfrec,mass,rrefall, &
                  nscycle,dontg,ravprevsetp,rextrema, skip,dostat, minsegmentlenght,nevalfluc,rfromtraj, &
-                 usensteps,nstepsexternal,smartstep,typicalneb,tangoption,optoption,FIRE_dt_max)
+                 usensteps,nstepsexternal,smartstep,typicalneb,tangoption,optoption,FIRE_dt_max, tangrecalc)
 
 !------------ Read feneb.history if the optimizer is FIRE
 if (optoption.eq.1) then
@@ -399,9 +399,10 @@ end if
 
           equispaced=.False.
           k=1
+          if(.not.tangrecalc) call gettang(rav,tang,nrestr,nrep,tangoption,profile)
           do while ((k .le. nscycle) .and. (.not. equispaced))
             !Computes spring force and others
-            call gettang(rav,tang,nrestr,nrep,tangoption,profile)
+            if(tangrecalc) call gettang(rav,tang,nrestr,nrep,tangoption,profile)
 
             call getnebforce(rav,devav,fav,tang,nrestr,nrep,kspring,maxforceband,ftol,converged,&
                             ftrue,ftang,fperp,fspring,.false.,dontg,typicalneb)

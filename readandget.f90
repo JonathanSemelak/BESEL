@@ -5,12 +5,12 @@ subroutine readinput(nrep,infile,reffile,outfile,topfile,mask,nrestr,lastmforce,
            rav,ravout,devav,fav,ftrue,ftang,fperp,fspring,tang,kref,kspring,steep_size,steep_spring,ftol,per, &
            velin,velout,wgrad,wtemp,dt,wtempstart,wtempend,wtempfrec,mass,rrefall,nscycle,dontg,ravprevsetp, &
            rextrema, skip, dostat, minsegmentlenght, nevalfluc,rfromtraj,usensteps,nstepsexternal,smartstep, &
-           typicalneb, tangoption, optoption, FIRE_dt_max)
+           typicalneb, tangoption, optoption, FIRE_dt_max, tangrecalc)
 implicit none
 character(len=50) :: infile, reffile, outfile, line, exp, keyword, topfile
 integer :: nrestr, nrep, i, ierr, nscycle,skip, wtempfrec, wtempstart, wtempend
 integer :: minsegmentlenght, nevalfluc, nstepsexternal, tangoption, optoption
-logical ::  per, velin, velout, wgrad, rextrema, wtemp, dostat, rfromtraj, usensteps, smartstep, typicalneb
+logical ::  per, velin, velout, wgrad, rextrema, wtemp, dostat, rfromtraj, usensteps, smartstep, typicalneb, tangrecalc
 double precision :: kref, kspring, steep_size, steep_spring, ftol, lastmforce, dt, FIRE_dt_max
 integer, allocatable, dimension (:), intent(inout) :: mask
 double precision, allocatable, dimension(:,:,:), intent(inout) :: rav, fav, tang, ftang, ftrue,fperp, rrefall, ravprevsetp
@@ -39,6 +39,7 @@ double precision, allocatable, dimension(:), intent(inout) :: mass
  tangoption=0
  optoption=0
  FIRE_dt_max=1.5d0
+ tangrecalc=.True.
 
 open (unit=1000, file='feneb.in', status='old', action='read') !read feneb.in
 do
@@ -74,6 +75,7 @@ do
    if (keyword == 'tangoption') read(line,*) exp, tangoption
    if (keyword == 'optoption') read(line,*) exp, optoption
    if (keyword == 'dtmax') read(line,*) exp, FIRE_dt_max
+   if (keyword == 'tangrecalc') read(line,*) exp, tangrecalc
 end do
 close (unit=1000)
 if (nrep .gt. 1) allocate(tang(3,nrestr,nrep),ftang(3,nrestr,nrep),ftrue(3,nrestr,nrep),&

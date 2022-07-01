@@ -59,7 +59,7 @@ elseif (tangoption.eq.1.or.tangoption.eq.2) then
       A0=profile(2,i-1)
       A1=profile(2,i)
       A2=profile(2,i+1)
-      do j=1,nrep
+      do j=1,nrestr
         if ((A2.gt.A1) .and. (A1.gt.A0)) then
           tang(1:3,j,i)=tangB(1:3,j,i)
         else if ((A0.gt.A1) .and. (A1.gt.A2)) then
