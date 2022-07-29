@@ -116,10 +116,11 @@ end do
 
 end subroutine
 
-subroutine getdistrightminusleft(rav, nrep, nrestr, equispaced)
+subroutine getdistrightminusleft(rav, nrep, nrestr, equispaced, maxdist)
 implicit none
 double precision, dimension(3,nrestr,nrep), intent(in) :: rav
 double precision :: distright, distleft
+double precision, intent(in) :: maxdist
 integer, intent(in) :: nrestr, nrep
 logical, intent(inout) :: equispaced
 integer :: i,j
@@ -133,7 +134,7 @@ do i=2,nrep-1
   end do
   distright=sqrt(distright)
   distleft=sqrt(distleft)
-  equispaced=(equispaced .and. (abs(distright-distleft) .lt. 0.0001d0))
+  equispaced=(equispaced .and. (abs(distright-distleft) .lt. maxdist))
 end do
 
 end subroutine getdistrightminusleft

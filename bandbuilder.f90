@@ -153,7 +153,7 @@ close(88881)
 	  call getnebforce(rav,devav,fav,tang,nrestr,nrep,kspring,maxforceband,ftol,relaxd,&
 											ftrue,ftang,fperp,fspring,.true.,dontg,.false.)
 		write(11111,*) j, maxenergy, maxforceband, steep_size
-		write(*,*) j, maxenergy,maxforceband, steep_size
+		! write(*,*) j, maxenergy,maxforceband, steep_size
 
 	  do i=2,middlepoint-1
       moved=.False.
@@ -194,7 +194,7 @@ close(88881)
 
 	equispaced=.False.
 	! equispaced=.True.
-	call getdistrightminusleft(rav, nrep, nrestr, equispaced)
+	call getdistrightminusleft(rav, nrep, nrestr, equispaced, 0.0001d0)
 	! write(*,*) "Eq: ", equispaced
 
 	k=1
@@ -209,7 +209,7 @@ close(88881)
 		! write(9999,*) "Band max fspring: ",k, maxforceband2
 	  ! write(9999,*)
 
-		call getdistrightminusleft(rav, nrep, nrestr, equispaced)
+		call getdistrightminusleft(rav, nrep, nrestr, equispaced, 0.0001d0)
 
 		if ((k .eq. nscycle) .or. equispaced) then
 			write(9999,*)

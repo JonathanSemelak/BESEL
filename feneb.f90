@@ -11,7 +11,7 @@ real(4), allocatable, dimension (:) :: coordx,coordy,coordz, coordstat
 integer, dimension (3) :: point
 double precision :: kref, steep_size, ftol, maxforce, kspring, maxforceband, lastmforce, maxforcebandprevsetp, steep_spring
 double precision :: stepl, rmsfneb, minpoint, maxpoint, barrier, dt, Z, goodrav, gooddevav, maxstd, maxdisp
-double precision :: FIRE_dt_max
+double precision :: FIRE_dt_max, maxdist
 integer :: FIRE_Ndescend, iteration
 double precision, dimension(6) :: boxinfo
 double precision, allocatable, dimension(:) :: rmsd, mass, FIRE_alpha, FIRE_dt
@@ -26,7 +26,7 @@ logical ::  dostat, H0, H0T, rfromtraj, usensteps, smartstep, typicalneb, histor
                  rav,ravout,devav,fav,ftrue,ftang,fperp,fspring,tang,kref,kspring,steep_size,steep_spring, &
                  ftol,per,velin,velout,wgrad,wtemp,dt,wtempstart,wtempend,wtempfrec,mass,rrefall, &
                  nscycle,dontg,ravprevsetp,rextrema, skip,dostat, minsegmentlenght,nevalfluc,rfromtraj, &
-                 usensteps,nstepsexternal,smartstep,typicalneb,tangoption,optoption,FIRE_dt_max, tangrecalc)
+                 usensteps,nstepsexternal,smartstep,typicalneb,tangoption,optoption,FIRE_dt_max, tangrecalc, maxdist)
 
 !------------ Read feneb.history if the optimizer is FIRE
 if (optoption.eq.1) then
@@ -411,11 +411,11 @@ end if
             ravprevsetp=rav
             maxforcebandprevsetp=maxforceband
 
-              do i=2,nrep-1
-                call steep(rav,fspring,nrep,i,steep_spring,maxforcebandprevsetp,nrestr,lastmforce,stepl,.False.)
-              end do
+            do i=2,nrep-1
+              call steep(rav,fspring,nrep,i,steep_spring,maxforcebandprevsetp,nrestr,lastmforce,stepl,.False.)
+            end do
 
-            call getdistrightminusleft(rav, nrep, nrestr, equispaced)
+            call getdistrightminusleft(rav, nrep, nrestr, equispaced, maxdist)
             if ((k .eq. nscycle) .or. equispaced) then
               write(9999,*)
               write(9999,*) "Band max fspringLast: ", maxforceband
@@ -428,18 +428,18 @@ end if
 
           call getselfdist(rav, rrefall, nrep, nrestr, selfdist)
 
-        open(unit=1646, file="selfdist_afterstep.dat")
+          open(unit=1646, file="selfdist_afterstep.dat")
           do i=1,nrestr
             do n=1,nrep-1
               write(1646,'(2x, I6,2x, f20.10)') n, selfdist(2,i,n)
             end do
             write(1646,*)
           end do
-        close(unit=1646)
+          close(unit=1646)
 
-        call getmaxdisplacement(nrestr,nrep,rav,rrefall,maxdisp)
+          call getmaxdisplacement(nrestr,nrep,rav,rrefall,maxdisp)
 
-        write(9999,*) "Max displacement due MD+steepfspring: ", maxdisp
+          write(9999,*) "Max displacement due MD+steepfspring: ", maxdisp
       else
         write(9999,*) "Performing a conventional NEB optimization"
 
