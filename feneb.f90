@@ -409,6 +409,7 @@ end if
               call gettang(rav,tang,nrestr,nrep,1,profile)
             else
               call gettang(rav,tang,nrestr,nrep,tangoption,profile)
+            endif
           endif
           do while ((k .le. nscycle) .and. (.not. equispaced))
             !Computes spring force and others
@@ -418,6 +419,7 @@ end if
                 call gettang(rav,tang,nrestr,nrep,1,profile)
               else
                 call gettang(rav,tang,nrestr,nrep,tangoption,profile)
+              endif
             endif
 
             call getnebforce(rav,devav,fav,tang,nrestr,nrep,kspring,maxforceband,ftol,converged,&
