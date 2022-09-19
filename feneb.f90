@@ -27,7 +27,7 @@ logical ::  dostat, H0, H0T, rfromtraj, usensteps, smartstep, typicalneb, histor
                  ftol,per,velin,velout,wgrad,wtemp,dt,wtempstart,wtempend,wtempfrec,mass,rrefall, &
                  nscycle,dontg,ravprevsetp,rextrema, skip,dostat, minsegmentlenght,nevalfluc,rfromtraj, &
                  usensteps,nstepsexternal,smartstep,typicalneb,tangoption,optoption,FIRE_dt_max, tangrecalc, maxdist)
-
+!test
 !------------ Read feneb.history if the optimizer is FIRE
 if (optoption.eq.1) then
   allocate(FIRE_vel(3,nrestr,nrep),FIRE_dt(nrep),FIRE_alpha(nrep))
