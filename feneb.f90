@@ -399,10 +399,26 @@ end if
 
           equispaced=.False.
           k=1
-          if(.not.tangrecalc) call gettang(rav,tang,nrestr,nrep,tangoption,profile)
+
+          if (tang .eq. 2) then
+            write(9999,*) "Tangoption=2 is not available for spring optimization, using tangoption=1 instead"
+            write(9999,*) "(the optimization with Fperp will be performed with tangoption=2)"
+          end if
+          if(.not.tangrecalc) then
+            if (tang .eq. 2) then
+              call gettang(rav,tang,nrestr,nrep,1,profile)
+            else
+              call gettang(rav,tang,nrestr,nrep,tangoption,profile)
+          endif
           do while ((k .le. nscycle) .and. (.not. equispaced))
             !Computes spring force and others
-            if(tangrecalc) call gettang(rav,tang,nrestr,nrep,tangoption,profile)
+
+            if(tangrecalc) then
+              if (tang .eq. 2) then
+                call gettang(rav,tang,nrestr,nrep,1,profile)
+              else
+                call gettang(rav,tang,nrestr,nrep,tangoption,profile)
+            endif
 
             call getnebforce(rav,devav,fav,tang,nrestr,nrep,kspring,maxforceband,ftol,converged,&
                             ftrue,ftang,fperp,fspring,.false.,dontg,typicalneb)
