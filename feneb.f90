@@ -400,12 +400,12 @@ end if
           equispaced=.False.
           k=1
 
-          if (tang .eq. 2) then
+          if (tangoption .eq. 2) then
             write(9999,*) "Tangoption=2 is not available for spring optimization, using tangoption=1 instead"
             write(9999,*) "(the optimization with Fperp will be performed with tangoption=2)"
           end if
           if(.not.tangrecalc) then
-            if (tang .eq. 2) then
+            if (tangoption .eq. 2) then
               call gettang(rav,tang,nrestr,nrep,1,profile)
             else
               call gettang(rav,tang,nrestr,nrep,tangoption,profile)
@@ -415,7 +415,7 @@ end if
             !Computes spring force and others
 
             if(tangrecalc) then
-              if (tang .eq. 2) then
+              if (tangoption .eq. 2) then
                 call gettang(rav,tang,nrestr,nrep,1,profile)
               else
                 call gettang(rav,tang,nrestr,nrep,tangoption,profile)
