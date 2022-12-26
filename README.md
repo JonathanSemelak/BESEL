@@ -1,4 +1,3 @@
-![alt text](https://github.com/JonathanSemelak/feneb/blob/master/img1.ong?raw=true)
 ![plot](./img1.png)
 
 # feneb
