@@ -1,3 +1,5 @@
+![alt text](https://github.com/JonathanSemelak/feneb/blob/master/img1.ong?raw=true)
+
 # feneb
 A tool for performing nudged elastic bands simulations on the free energy surface using Amber .nc files.
 
