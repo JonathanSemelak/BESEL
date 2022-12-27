@@ -8,7 +8,8 @@ You run the MD with AMBER, feed this code with .rst7 and .nc files, and you will
 
 ![plot](./img2.png)
 
-Check the manual for details!
+Using a bash script is recommended for automatization (see bash_script_example.sh). 
+Check the manual for details! 
 
 # Requirements
 This code requires NETCDF Libraries.
