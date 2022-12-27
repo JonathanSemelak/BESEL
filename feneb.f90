@@ -1,13 +1,13 @@
 !-----------------------------------------------------------------------------------------------!
-!  This code performes nudged elastic bands on the free energy surface, using free energy 
+!  This code performes nudged elastic bands on the free energy surface, using free energy
 !  gradients computed from biased molecular dynamics
 !
 !  References:
-!   - Semelak, et. al. (2022).ChemRxiv. Cambridge: Cambridge Open Engage. 
+!   - Semelak, et. al. (2022).ChemRxiv. Cambridge: Cambridge Open Engage.
 !      This content is a preprint and has not been peer-reviewed.
 !   - Bohner, et. al. (2014). Nudged-elastic band used to find reaction
 !     coordinates based on the free energy. The Journal of Chemical Physics, 140(7), 074109.
-!  
+!
 ! Written by J. A. Semelak
 !----------------------------------------------------------------------------------------------!
 
@@ -22,7 +22,7 @@ integer, allocatable, dimension (:) :: mask
 real(4) :: coordinate
 real(4), allocatable, dimension (:) :: coordx,coordy,coordz, coordstat
 integer, dimension (3) :: point
-double precision :: kref, steep_size, ftol, maxforce, kspring, maxforceband, lastmforce, maxforcebandprevsetp, steep_spring
+double precision :: kref, steep_size, ftol, maxforce, kspring, maxforceband, maxforcebandprevsetp, steep_spring
 double precision :: stepl, rmsfneb, minpoint, maxpoint, barrier, dt, Z, goodrav, gooddevav, maxstd, maxdisp
 double precision :: FIRE_dt_max, maxdist
 integer :: FIRE_Ndescend, iteration
@@ -35,12 +35,11 @@ logical ::  per, velin, velout, relaxd, converged, wgrad, wtemp, moved, maxpreac
 logical ::  dostat, H0, H0T, rfromtraj, usensteps, smartstep, typicalneb, historyfound, tangrecalc
 
 !------------ Read input
-    call readinput(nrep,infile,reffile,outfile,topfile,mask,nrestr,lastmforce, &
+    call readinput(nrep,infile,reffile,outfile,topfile,mask,nrestr, &
                  rav,ravout,devav,fav,ftrue,ftang,fperp,fspring,tang,kref,kspring,steep_size,steep_spring, &
                  ftol,per,velin,velout,wgrad,wtemp,dt,wtempstart,wtempend,wtempfrec,mass,rrefall, &
                  nscycle,dontg,ravprevsetp,rextrema, skip,dostat, minsegmentlenght,nevalfluc,rfromtraj, &
                  usensteps,nstepsexternal,smartstep,typicalneb,tangoption,optoption,FIRE_dt_max, tangrecalc, maxdist)
-!test
 !------------ Read feneb.history if the optimizer is FIRE
 if (optoption.eq.1) then
   allocate(FIRE_vel(3,nrestr,nrep),FIRE_dt(nrep),FIRE_alpha(nrep))
@@ -57,7 +56,7 @@ end if
 !------------
 
  test=.False.
- open(unit=9999, file="feneb.out") !Opten file for feneb output
+ open(unit=9999, file="feneb.out") !Open file for feneb output
 !------------ Main loop
   if (nrep .eq. 1) then !FE opt only
     write(9999,*)
@@ -158,7 +157,7 @@ end if
     ravout=rav
     if (.not. relaxd) then
       if(optoption.eq.0) then
-       call steep(rav,fav,nrep,nrep,steep_size,maxforce,nrestr,lastmforce,stepl,smartstep)
+       call steep(rav,fav,nrep,nrep,steep_size,maxforce,nrestr,stepl,smartstep)
        if (smartstep) then
          write(9999,*) "Using smartstep option"
          write(9999,*) "Base step length: ", stepl
@@ -372,7 +371,7 @@ end if
               write(9999,*) "Base step length: ", stepl
             endif
             do i=2,nrep-1
-              if (.not. relaxd) call steep(rav,fperp,nrep,i,steep_size,maxforceband,nrestr,lastmforce,stepl,smartstep)
+              if (.not. relaxd) call steep(rav,fperp,nrep,i,steep_size,maxforceband,nrestr,stepl,smartstep)
             end do
             call getmaxdisplacement(nrestr,nrep,rav,rrefall,maxdisp)
             write(9999,*) "Max displacement due MD+steepfperp: ", maxdisp
@@ -443,7 +442,7 @@ end if
             maxforcebandprevsetp=maxforceband
 
             do i=2,nrep-1
-              call steep(rav,fspring,nrep,i,steep_spring,maxforcebandprevsetp,nrestr,lastmforce,stepl,.False.)
+              call steep(rav,fspring,nrep,i,steep_spring,maxforcebandprevsetp,nrestr,stepl,.False.)
             end do
 
             call getdistrightminusleft(rav, nrep, nrestr, equispaced, maxdist)
@@ -480,7 +479,7 @@ end if
             write(9999,*) "Base step length: ", stepl
           endif
           do i=2,nrep-1
-            if (.not. relaxd) call steep(rav,fav,nrep,i,steep_size,maxforceband,nrestr,lastmforce,stepl,smartstep)
+            if (.not. relaxd) call steep(rav,fav,nrep,i,steep_size,maxforceband,nrestr,stepl,smartstep)
           end do
           call getmaxdisplacement(nrestr,nrep,rav,rrefall,maxdisp)
           write(9999,*) "Max displacement due MD+steepfperp: ", maxdisp

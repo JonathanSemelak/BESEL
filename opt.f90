@@ -25,13 +25,13 @@ subroutine getmaxforce(nrestr,nrep,rep,fav,maxforce,ftol,relaxd,maxforceat,rmsfn
 
 end subroutine getmaxforce
 
-subroutine steep(rav,fav,nrep,rep,steep_size,maxforce,nrestr,lastmforce,stepl,smartstep)
+subroutine steep(rav,fav,nrep,rep,steep_size,maxforce,nrestr,stepl,smartstep)
 implicit none
 double precision, dimension(3,nrestr,nrep), intent(inout) :: rav
 double precision, dimension(3,nrestr,nrep) :: rnew
 double precision, dimension(3,nrestr,nrep), intent(in) :: fav
 double precision, intent(out) :: stepl
-double precision :: lastmforce, steep_size, step, n1, n2, n3
+double precision :: steep_size, step, n1, n2, n3
 integer, intent(in) :: nrep, rep, nrestr
 double precision, intent(inout) :: maxforce
 integer :: i,j,auxunit

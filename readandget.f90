@@ -1,7 +1,7 @@
 module readandget
 implicit none
 contains
-subroutine readinput(nrep,infile,reffile,outfile,topfile,mask,nrestr,lastmforce, &
+subroutine readinput(nrep,infile,reffile,outfile,topfile,mask,nrestr, &
            rav,ravout,devav,fav,ftrue,ftang,fperp,fspring,tang,kref,kspring,steep_size,steep_spring,ftol,per, &
            velin,velout,wgrad,wtemp,dt,wtempstart,wtempend,wtempfrec,mass,rrefall,nscycle,dontg,ravprevsetp, &
            rextrema, skip, dostat, minsegmentlenght, nevalfluc,rfromtraj,usensteps,nstepsexternal,smartstep, &
@@ -11,7 +11,7 @@ character(len=50) :: infile, reffile, outfile, line, exp, keyword, topfile
 integer :: nrestr, nrep, i, ierr, nscycle,skip, wtempfrec, wtempstart, wtempend
 integer :: minsegmentlenght, nevalfluc, nstepsexternal, tangoption, optoption
 logical ::  per, velin, velout, wgrad, rextrema, wtemp, dostat, rfromtraj, usensteps, smartstep, typicalneb, tangrecalc
-double precision :: kref, kspring, steep_size, steep_spring, ftol, lastmforce, dt, FIRE_dt_max, maxdist
+double precision :: kref, kspring, steep_size, steep_spring, ftol, dt, FIRE_dt_max, maxdist
 integer, allocatable, dimension (:), intent(inout) :: mask
 double precision, allocatable, dimension(:,:,:), intent(inout) :: rav, fav, tang, ftang, ftrue,fperp, rrefall, ravprevsetp
 double precision, allocatable, dimension(:,:,:), intent(inout) :: fspring, dontg, devav, ravout
@@ -60,7 +60,6 @@ do
    if (keyword == 'steepsize') read(line,*) exp, steep_size
    if (keyword == 'steepspring') read(line,*) exp, steep_spring
    if (keyword == 'ftol') read(line,*) exp, ftol
-   if (keyword == 'lastmforce') read(line,*) exp, lastmforce
    if (keyword == 'wgrad') read(line,*) exp, wgrad
    if (keyword == 'nscycle') read(line,*) exp, nscycle
    if (keyword == 'rextrema') read(line,*) exp, rextrema
