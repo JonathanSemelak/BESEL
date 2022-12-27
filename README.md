@@ -8,11 +8,17 @@ You run the MD with AMBER, feed this code with .rst7 and .nc files, and you will
 
 ![plot](./img2.png)
 
+Check the manual for details!
+
 # Requirements
 This code requires NETCDF Libraries.
 
 # Compilation 
-Execute ./compile.sh
+Execute
+
+```
+  ./compile_feneb.sh
+```
 
 # References 
 - Semelak, et. al. (2022). Minimum free energy pathways with the nudged elastic band method in combination with a QM-MM Hamiltonian. ChemRxiv. Cambridge: Cambridge Open Engage. This content is a preprint and has not been peer-reviewed.
