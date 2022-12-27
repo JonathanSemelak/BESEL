@@ -4,7 +4,7 @@
 A tool for performing nudged elastic bands simulations on the free energy surface using Amber .nc files.
 
 # How it works
-You run the MD with AMBER, feed this code with .rst7 and .nc files, and you will get new .rst7 files to continue the optimization. Additionally, every time this code is executed, an output file will be genereated whith thermodynamic information (free energy gradients, free energy differences).
+Run molecular dynamics with AMBER, feed this code with .rst7 and .nc files, and you will get new .rst7 files to continue the optimization. Additionally, every time this code is executed, an output file will be generated whith thermodynamic information (free energy gradients, free energy differences).
 
 ![plot](./img2.png)
 
