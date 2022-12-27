@@ -1,8 +1,4 @@
-#NETCDF_DIR=/home/fpedron/prog/Amber18
-
 NETCDFALL=$(echo /usr/bin/nf-config --fflags --flibs)
-
-#echo $NETCDFALL
 
 gfortran -c readandget.f90 `$NETCDFALL`
 gfortran -c opt.f90
