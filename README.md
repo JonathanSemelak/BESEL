@@ -1,4 +1,4 @@
-                                                                 ![plot](./img1.png)
+![plot](./img1.png)
 
 # FENEB
 A tool for performing nudged elastic bands simulations on the free energy surface using Amber .nc files.
