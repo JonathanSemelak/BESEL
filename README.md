@@ -9,7 +9,7 @@ You run the MD with AMBER, feed this code with .rst7 and .nc files, and you will
 ![plot](./img2.png)
 
 # Requirements
-NETCDF Libraries.
+This code requires NETCDF Libraries.
 
 # Compilation 
 Execute ./compile.sh
