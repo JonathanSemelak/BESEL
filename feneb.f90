@@ -1,3 +1,16 @@
+!-----------------------------------------------------------------------------------------------!
+!  This code performes nudged elastic bands on the free energy surface, using free energy 
+!  gradients computed from biased molecular dynamics
+!
+!  References:
+!   - Semelak, et. al. (2022).ChemRxiv. Cambridge: Cambridge Open Engage. 
+!      This content is a preprint and has not been peer-reviewed.
+!   - Bohner, et. al. (2014). Nudged-elastic band used to find reaction
+!     coordinates based on the free energy. The Journal of Chemical Physics, 140(7), 074109.
+!  
+! Written by J. A. Semelak
+!----------------------------------------------------------------------------------------------!
+
 program feneb
 use netcdf
 use readandget
@@ -424,7 +437,7 @@ end if
 
             call getnebforce(rav,devav,fav,tang,nrestr,nrep,kspring,maxforceband,ftol,converged,&
                             ftrue,ftang,fperp,fspring,.false.,dontg,typicalneb)
-            !como wrmforce es false, acá usa fspring para determinar maxforceband
+            !since wrmforce is false, maxforceband is determined with fsrping
             dontg=0.d0
             ravprevsetp=rav
             maxforcebandprevsetp=maxforceband
