@@ -32,14 +32,15 @@ double precision, allocatable, dimension(:,:) :: rref, profile, temp
 double precision, allocatable, dimension(:,:,:) :: rav, fav, tang, ftang, ftrue, fperp, rrefall, ravprevsetp, devav, ravout
 double precision, allocatable, dimension(:,:,:) :: fspring, dontg, selfdist,coordall, FIRE_vel
 logical ::  per, velin, velout, relaxd, converged, wgrad, wtemp, moved, maxpreached, equispaced, rextrema, test
-logical ::  dostat, H0, H0T, rfromtraj, usensteps, smartstep, typicalneb, historyfound, tangrecalc
+logical ::  dostat, H0, H0T, rfromtraj, usensteps, smartstep, typicalneb, historyfound, tangrecalc, stopifconverged
 
 !------------ Read input
     call readinput(nrep,infile,reffile,outfile,topfile,mask,nrestr, &
                  rav,ravout,devav,fav,ftrue,ftang,fperp,fspring,tang,kref,kspring,steep_size,steep_spring, &
                  ftol,per,velin,velout,wgrad,wtemp,dt,wtempstart,wtempend,wtempfrec,mass,rrefall, &
                  nscycle,dontg,ravprevsetp,rextrema, skip,dostat, minsegmentlenght,nevalfluc,rfromtraj, &
-                 usensteps,nstepsexternal,smartstep,typicalneb,tangoption,optoption,FIRE_dt_max, tangrecalc, maxdist)
+                 usensteps,nstepsexternal,smartstep,typicalneb,tangoption,optoption,FIRE_dt_max, tangrecalc, maxdist, &
+                 stopifconverged)
 !------------ Read feneb.history if the optimizer is FIRE
 if (optoption.eq.1) then
   allocate(FIRE_vel(3,nrestr,nrep),FIRE_dt(nrep),FIRE_alpha(nrep))
@@ -155,7 +156,7 @@ end if
     write(9999,*) "Max displacement due MD: ", maxdisp
 
     ravout=rav
-    if (.not. relaxd) then
+    if (.not. (relaxd .and. stopifconverged)) then
       if(optoption.eq.0) then
        call steep(rav,fav,nrep,nrep,steep_size,maxforce,nrestr,stepl,smartstep)
        if (smartstep) then
@@ -182,13 +183,13 @@ end if
 
        call getmaxdisplacement(nrestr,nrep,rav,rrefall,maxdisp)
        write(9999,*) "Max displacement due MD+steep: ", maxdisp
-
-       write(9999,*) "System converged: F"
-    else
-       write(9999,*) "System converged: T"
-       write(9999,*) "Convergence criteria of ", ftol, " (kcal/mol A) achieved"
     endif
-
+    if (relaxd) then
+      write(9999,*) "System converged: T"
+      write(9999,*) "Convergence criteria of ", ftol, " (kcal/mol A) achieved"
+    else
+      write(9999,*) "System converged: F"
+    endif
 
   elseif (nrep .gt. 1) then !NEB on FE surface
 
@@ -363,7 +364,7 @@ end if
     write(9999,*) "Max displacement due MD: ", maxdisp
 
 !----------- moves the band
-    if (.not. converged) then
+    if (.not. (converged .and. stopifconverged)) then
       if (.not. typicalneb) then
           if(optoption.eq.0) then
             if (smartstep) then

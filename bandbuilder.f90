@@ -9,7 +9,7 @@ use netcdf
 implicit none
 character(len=200) :: rcfile, pcfile, tsfile, prefix, chi, oname
 integer :: nrestr, nrep, i, j, k, middlepoint, natoms, nscycle, nmax,n1,n2,n3, tangoption
-logical ::  usets, per, velin, velout, onlytest, iddp, relaxd, equispaced, moved
+logical ::  usets, per, velin, velout, onlytest, iddp, relaxd, equispaced, moved, wselfdist
 double precision, dimension(3) :: BAND_slope
 double precision, dimension(3) :: BAND_const
 double precision, dimension(6):: boxinfo
@@ -22,7 +22,8 @@ double precision :: kspring, ftol, dontg, maxforceband, maxforceband2, stepl, st
 double precision :: energyreplica, maxenergy
 
 !reads imputfile
-call readinputbuilder(rcfile, pcfile, tsfile, prefix, nrestr, nrep, usets, per, velin, velout, rav, mask, iddp, nmax, onlytest)
+call readinputbuilder(rcfile, pcfile, tsfile, prefix, nrestr, nrep, usets, per, velin, velout, rav, &
+mask, iddp, nmax, onlytest,wselfdist)
 
 if (onlytest) then
 	allocate(rref(3,natoms))
@@ -39,13 +40,15 @@ if (onlytest) then
 	allocate(selfdist(nrestr,nrep-1))
 	call selfdistiniband(rav, nrep, nrestr, selfdist)
 
-	open(unit=1111, file="selfdist.dat")
-	do i=1,nrestr
-		do j=1,nrep-1
-			write(1111,'(2x, I6,2x, f20.10)') j, selfdist(i,j)
-		end do
-		write(1111,*)
-	end do
+  if(wselfdist) then
+	  open(unit=1111, file="selfdist.dat")
+	  do i=1,nrestr
+		  do j=1,nrep-1
+			  write(1111,'(2x, I6,2x, f20.10)') j, selfdist(i,j)
+		  end do
+		  write(1111,*)
+	  end do
+  end if
 STOP
 end if
 
@@ -252,15 +255,16 @@ end do
 allocate(selfdist(nrestr,nrep-1))
 call selfdistiniband(rav, nrep, nrestr, selfdist)
 
-open(unit=1111, file="selfdist.dat")
-do i=1,nrestr
-	do j=1,nrep-1
-		write(1111,'(2x, I6,2x, f20.10)') j, selfdist(i,j)
-	end do
-	write(1111,*)
-end do
-close(1111)
-
+if(wselfdist) then
+  open(unit=1111, file="selfdist.dat")
+  do i=1,nrestr
+  	do j=1,nrep-1
+	  	write(1111,'(2x, I6,2x, f20.10)') j, selfdist(i,j)
+	  end do
+	  write(1111,*)
+  end do
+  close(1111)
+end if
 end program bandbuilder
 
 

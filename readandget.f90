@@ -5,28 +5,27 @@ subroutine readinput(nrep,infile,reffile,outfile,topfile,mask,nrestr, &
            rav,ravout,devav,fav,ftrue,ftang,fperp,fspring,tang,kref,kspring,steep_size,steep_spring,ftol,per, &
            velin,velout,wgrad,wtemp,dt,wtempstart,wtempend,wtempfrec,mass,rrefall,nscycle,dontg,ravprevsetp, &
            rextrema, skip, dostat, minsegmentlenght, nevalfluc,rfromtraj,usensteps,nstepsexternal,smartstep, &
-           typicalneb, tangoption, optoption, FIRE_dt_max, tangrecalc, maxdist)
+           typicalneb, tangoption, optoption, FIRE_dt_max, tangrecalc, maxdist, stopifconverged)
 implicit none
 character(len=50) :: infile, reffile, outfile, line, exp, keyword, topfile
 integer :: nrestr, nrep, i, ierr, nscycle,skip, wtempfrec, wtempstart, wtempend
 integer :: minsegmentlenght, nevalfluc, nstepsexternal, tangoption, optoption
-logical ::  per, velin, velout, wgrad, rextrema, wtemp, dostat, rfromtraj, usensteps, smartstep, typicalneb, tangrecalc
+logical :: per, velin, velout, wgrad, rextrema, wtemp, dostat, rfromtraj, usensteps, smartstep, typicalneb, tangrecalc
+logical :: stopifconverged
 double precision :: kref, kspring, steep_size, steep_spring, ftol, dt, FIRE_dt_max, maxdist
 integer, allocatable, dimension (:), intent(inout) :: mask
 double precision, allocatable, dimension(:,:,:), intent(inout) :: rav, fav, tang, ftang, ftrue,fperp, rrefall, ravprevsetp
 double precision, allocatable, dimension(:,:,:), intent(inout) :: fspring, dontg, devav, ravout
 double precision, allocatable, dimension(:), intent(inout) :: mass
-! double precision, allocatable, dimension(:,:), intent(inout) :: temp
 
 ! set some default variables
- nscycle=1
+ nscycle=50000
  rextrema=.False.
- steep_spring=0.01d0
+ steep_spring=0.001d0
  steep_size=0.01d0
  smartstep=.False.
  skip=0
  typicalneb=.False.
- !VELTEST
  wtemp=.False.
  dostat=.False.
  rfromtraj=.False.
@@ -36,11 +35,13 @@ double precision, allocatable, dimension(:), intent(inout) :: mass
  dt=0.001
  minsegmentlenght=100
  nevalfluc=1000
- tangoption=0
+ tangoption=1
  optoption=0
  FIRE_dt_max=1.5d0
  tangrecalc=.True.
  maxdist=0.001d0
+ stopifconverged=.False.
+ wgrad=.False.
 open (unit=1000, file='feneb.in', status='old', action='read') !read feneb.in
 do
    read (1000,"(a)",iostat=ierr) line ! read line into character variable
@@ -76,6 +77,7 @@ do
    if (keyword == 'dtmax') read(line,*) exp, FIRE_dt_max
    if (keyword == 'tangrecalc') read(line,*) exp, tangrecalc
    if (keyword == 'maxdist') read(line,*) exp, maxdist
+   if (keyword == 'stopifconverged') read(line,*) exp, stopifconverged
 end do
 close (unit=1000)
 if (nrep .gt. 1) allocate(tang(3,nrestr,nrep),ftang(3,nrestr,nrep),ftrue(3,nrestr,nrep),&
@@ -136,17 +138,21 @@ end subroutine readtop
 
 
 subroutine readinputbuilder(rcfile, pcfile, tsfile, prefix, nrestr, nrep, usets, per, velin, velout,&
-  rav, mask, iddp, nmax, onlytest)
+  rav, mask, iddp, nmax, onlytest, wselfdist)
 implicit none
 character(len=200) :: rcfile, pcfile, tsfile, prefix, exp, keyword, line, all
 integer :: nrestr, nrep, i, ierr, nmax
-logical ::  usets, per, velin, velout, onlytest, iddp
+logical ::  usets, per, velin, velout, onlytest, iddp, wselfdist
 integer, allocatable, dimension (:), intent(inout) :: mask
 double precision, allocatable, dimension(:,:,:), intent(inout) :: rav
 onlytest = .false.
 usets = .false.
 iddp = .false.
 nmax = 2500
+tsfile = 'None'
+iddp = .False.
+nmax = 500
+wselfdist = .False.
 open (unit=1000, file="bandbuilder.in", status='old', action='read') !read align.in
 do
    read (1000,"(a)",iostat=ierr) line ! read line into character variable
@@ -165,6 +171,7 @@ do
    if (keyword == 'onlytest') read(line,*) exp, onlytest
    if (keyword == 'nmax') read(line,*) exp, nmax
    if (keyword == 'iddp') read(line,*) exp, iddp
+   if (keyword == 'wselfdist') read(line,*) exp, wselfdist
 end do
 
 close (unit=1000)
