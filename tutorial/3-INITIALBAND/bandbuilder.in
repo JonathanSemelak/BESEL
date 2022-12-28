@@ -1,0 +1,9 @@
+prefix ALAD_r
+rcfile ALAD_r.rst7
+pcfile ALAD_p.rst7
+nrep 15
+nrestr 5
+mask 5 7 9 15 17
+velin F 
+velout F 
+per F 

@@ -1,0 +1,55 @@
+
+ Performing NEB on the FE surface
+
+ Reading masses from file: ALAD.prmtop
+   12.010000000000000        14.010000000000000        12.010000000000000     
+   12.010000000000000        14.010000000000000     
+
+ Replica|Max force|Converged
+           2   1.6369843398898003      T
+           3   4.0591771631849705      F
+           4   7.3205946434603657      F
+           5   10.528918561493699      F
+           6   10.567781811215180      F
+           7   5.7801046926149846      F
+           8   6.4958188792095966      F
+           9   6.4254993150223987      F
+          10   6.3159367773982931      F
+          11   7.5698001269768938      F
+          12   8.4040753960011774      F
+          13   3.3049737489354536      F
+          14   1.5428636770939608      T
+
+ Band max force:    10.567781811215180      on replica:            6
+
+ Band max STD:    2.8476021403262084E-003 on replica:            9
+
+ System converged: F
+
+ Band max fneb:    23.802992236282339      on replica:            9
+
+ Band max fspring0:    22.919323680099371      on replica:            9
+
+ Max displacement due MD:    2.0187264068985300E-002
+ Using smartstep option
+ Base step length:    6.9156985142514812E-310
+ Max displacement due MD+steepfperp:    2.0841816670354785E-002
+ Step length: 0.002000
+ rmsfneb(FNEB): 0.489661
+
+ Performing extra optimization steps using fspring    
+ to get a better distribution of replicas.            
+ Extra optmization movements:    50000
+
+
+ Band max fspringLast:    13.551662172549367     
+ Total spring steps:           18
+ Equispaced:  T
+
+ Max displacement due MD+steepfspring:    1.1723716056221190E-002
+
+ Extrema info
+ Barrier:    7.6038229115520863     
+ Minimum point:    1.0000000000000000     
+ Maximum point:    8.0000000000000000     
+

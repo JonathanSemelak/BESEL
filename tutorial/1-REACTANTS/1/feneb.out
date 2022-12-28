@@ -1,0 +1,15 @@
+
+ Performing FE full optmization for a single replica
+
+ Reading masses from file: ALAD.prmtop
+   12.010000000000000        14.010000000000000        12.010000000000000     
+   12.010000000000000        14.010000000000000     
+
+ Max force:   0.67129179776659298     
+ Max STD:    1.1187499825677853E-002
+ Max displacement due MD:    5.3638767410273402E-003
+ Using smartstep option
+ Base step length:    1.0000000000000000E-003
+ Max displacement due MD+steep:    6.1629147687334296E-003
+ System converged: T
+ Convergence criteria of    2.2500000000000000       (kcal/mol A) achieved
