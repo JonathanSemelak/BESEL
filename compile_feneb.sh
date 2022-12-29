@@ -22,3 +22,5 @@ gfortran readandget.o profiles.o integrator.f90 -o integrator `$NETCDFALL`
 
 gfortran readandget.o freenergysegments.f90 -o segments `$NETCDFALL`
 
+gfortran -o getmaxgrad getmaxgrad.f90
+
