@@ -169,7 +169,6 @@ logical :: relaxdrep,relaxd,wrmforce,typicalneb
     if (.not. relaxd) write(9999,*) "System converged: F"
   endif
 
-!Test ----------------
   maxforceband2=0.d0
   do i=2,nrep-1
     if (wrmforce) then
@@ -195,6 +194,20 @@ logical :: relaxdrep,relaxd,wrmforce,typicalneb
 
   if (wrmforce .and. .not. typicalneb) then
     write(9999,*) "Band max fspring0: ", maxforceband2, "on replica: ", maxforcerep
+    write(9999,*)
+  endif
+
+  maxforceband2=0.d0
+  do i=2,nrep-1
+    if (wrmforce .and. typicalneb) then
+      call getmaxforce(nrestr,nrep,i,fperp,maxforce,ftol,relaxdrep,maxforceat,rms)
+      if (maxforce .gt. maxforceband2) maxforcerep=i
+      if (maxforce .gt. maxforceband2) maxforceband2=maxforce
+    end if
+  end do
+
+  if (wrmforce .and. typicalneb) then
+    write(9999,*) "Band max fperp: ", maxforceband2, "on replica: ", maxforcerep
     write(9999,*)
   endif
 !---------------------
