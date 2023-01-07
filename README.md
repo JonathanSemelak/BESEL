@@ -9,7 +9,7 @@ Run molecular dynamics with AMBER, feed this code with .rst7 and .nc files, and 
 ![plot](./img2.png)
 
 Using a bash script is recommended for automatization (see bash_script_example.sh). 
-Check the manual for details! 
+Check the tutorial folder for examples and a short tutorial! 
 
 # Requirements
 This code requires NETCDF Libraries.
