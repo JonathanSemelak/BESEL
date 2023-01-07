@@ -1,7 +1,7 @@
 ![plot](./img1.png)
 
 # FENEB
-A tool for performing nudged elastic bands simulations on the free energy surface using Amber .nc files.
+A tool for performing nudged elastic bands simulations on the free energy surface using Amber.
 
 # How it works
 Run molecular dynamics with AMBER, feed this code with .rst7 and .nc files, and you will get new .rst7 files to continue the optimization. Additionally, every time this code is executed, an output file will be generated with thermodynamic information.
