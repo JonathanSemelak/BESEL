@@ -17,6 +17,9 @@ integer, allocatable, dimension (:), intent(inout) :: mask
 double precision, allocatable, dimension(:,:,:), intent(inout) :: rav, fav, tang, ftang, ftrue,fperp, rrefall, ravprevsetp
 double precision, allocatable, dimension(:,:,:), intent(inout) :: fspring, dontg, devav, ravout
 double precision, allocatable, dimension(:), intent(inout) :: mass
+integer :: start_range, end_range, i_mask, mask_index
+character(len=20) :: substr
+character(len=20), dimension(2) :: range
 
 ! set some default variables
  nscycle=50000
@@ -86,20 +89,65 @@ allocate(mass(nrestr),mask(nrestr),rav(3,nrestr,nrep),fav(3,nrestr,nrep),rrefall
         ravprevsetp(3,nrestr,nrep),devav(3,nrestr,nrep),ravout(3,nrestr,nrep))
 
 open (unit=1000, file="feneb.in", status='old', action='read') !read feneb.in now that mask is allocated
+mask_index = 1
 do
-   read (1000,"(a)",iostat=ierr) line ! read line into character variable
-   if (ierr /= 0) exit
-   read (line,*) keyword ! read first keyword of line
-   if (keyword == 'mask') read(line,*) exp, mask(1:nrestr)
-   if (keyword == 'all') then
-     do i=1,nrestr
-       mask(i)=i
-     end do
-   end if
+    read (1000,"(a)",iostat=ierr) line ! read line into character variable
+    if (ierr /= 0) exit
+           read (line,*) keyword ! read first keyword of line
+    if (keyword == 'mask') then
+      line=line(6:) ! remove the first five characters which are 'mask'
+      substr = ''
+    do i = 1, len_trim(line)+1
+        if (line(i:i) == ' ' .or. i==len_trim(line)+1) then
+                 ! Here you have completed a "word" and can handle it as a single number
+                 ! or the start of a range
+          if (index(substr, '-') > 0) then
+            call get_range(substr, range) ! parse range of numbers
+            read(range(1), *) start_range
+            read(range(2), *) end_range
+            do i_mask = start_range, end_range
+                if (mask_index > nrestr) then
+                  print *, "Error: Too many indices for 'mask'. Increase 'nrestr'."
+                  stop
+                end if
+                mask(mask_index) = i_mask
+                mask_index = mask_index + 1
+            end do
+          else
+            read(substr, *) i_mask
+            if (mask_index > nrestr) then
+                print *, "Error: Too many indices for 'mask'. Increase 'nrestr'."
+                stop
+            end if
+            mask(mask_index) = i_mask
+            mask_index = mask_index + 1
+          end if
+          substr = ''  ! Reset substr for the next "word"
+      else
+          substr = trim(substr) // line(i:i)
+      end if
+    end do
+    end if
+    if (keyword == 'all') then
+      do i=1,nrestr
+        mask(i)=i
+      end do
+    end if
 end do
 close (unit=1000)
 
 end subroutine readinput
+
+subroutine get_range(input_string, output_array)
+   implicit none
+   character(len=*), intent(in) :: input_string
+   character(len=20), dimension(2), intent(out) :: output_array
+   integer :: pos
+
+   pos = index(input_string, '-')
+   output_array(1) = input_string(:pos-1)
+   output_array(2) = input_string(pos+1:)
+end subroutine get_range
 
 subroutine readtop(topfile,natoms,mask,mass,nrestr)
 implicit none
@@ -145,6 +193,9 @@ integer :: nrestr, nrep, i, ierr, nmax
 logical ::  usets, per, velin, velout, onlytest, iddp, wselfdist
 integer, allocatable, dimension (:), intent(inout) :: mask
 double precision, allocatable, dimension(:,:,:), intent(inout) :: rav
+integer :: start_range, end_range, i_mask, mask_index
+character(len=20) :: substr
+character(len=20), dimension(2) :: range
 onlytest = .false.
 usets = .false.
 iddp = .false.
@@ -177,19 +228,52 @@ end do
 close (unit=1000)
 
 allocate(mask(nrestr),rav(3,nrestr,nrep))
-open (unit=1000, file="bandbuilder.in", status='old', action='read') !read align.in
+open (unit=1000, file="feneb.in", status='old', action='read') !read feneb.in now that mask is allocated
+mask_index = 1
 do
-   read (1000,"(a)",iostat=ierr) line ! read line into character variable
-   if (ierr /= 0) exit
-   read (line,*) keyword ! read first keyword of line
-   if (keyword == 'mask') read(line,*) exp, mask(1:nrestr)
-   if (keyword == 'all') then
-     do i=1,nrestr
-       mask(i)=i
-     end do
-   end if
+    read (1000,"(a)",iostat=ierr) line ! read line into character variable
+    if (ierr /= 0) exit
+           read (line,*) keyword ! read first keyword of line
+    if (keyword == 'mask') then
+      line=line(6:) ! remove the first five characters which are 'mask'
+      substr = ''
+    do i = 1, len_trim(line)+1
+        if (line(i:i) == ' ' .or. i==len_trim(line)+1) then
+                 ! Here you have completed a "word" and can handle it as a single number
+                 ! or the start of a range
+          if (index(substr, '-') > 0) then
+            call get_range(substr, range) ! parse range of numbers
+            read(range(1), *) start_range
+            read(range(2), *) end_range
+            do i_mask = start_range, end_range
+                if (mask_index > nrestr) then
+                  print *, "Error: Too many indices for 'mask'. Increase 'nrestr'."
+                  stop
+                end if
+                mask(mask_index) = i_mask
+                mask_index = mask_index + 1
+            end do
+          else
+            read(substr, *) i_mask
+            if (mask_index > nrestr) then
+                print *, "Error: Too many indices for 'mask'. Increase 'nrestr'."
+                stop
+            end if
+            mask(mask_index) = i_mask
+            mask_index = mask_index + 1
+          end if
+          substr = ''  ! Reset substr for the next "word"
+      else
+          substr = trim(substr) // line(i:i)
+      end if
+    end do
+    end if
+    if (keyword == 'all') then
+      do i=1,nrestr
+        mask(i)=i
+      end do
+    end if
 end do
-
 close (unit=1000)
 
 end subroutine readinputbuilder
