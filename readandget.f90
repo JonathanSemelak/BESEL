@@ -179,9 +179,6 @@ do i=1,nrestr
   mass(i)=massall(at)
 end do
 
-
-
-
 end subroutine readtop
 
 
@@ -228,7 +225,7 @@ end do
 close (unit=1000)
 
 allocate(mask(nrestr),rav(3,nrestr,nrep))
-open (unit=1000, file="feneb.in", status='old', action='read') !read feneb.in now that mask is allocated
+open (unit=1000, file="bandbuilder.in", status='old', action='read') !read feneb.in now that mask is allocated
 mask_index = 1
 do
     read (1000,"(a)",iostat=ierr) line ! read line into character variable
