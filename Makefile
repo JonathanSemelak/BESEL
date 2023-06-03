@@ -7,38 +7,55 @@ FC := gfortran
 
 SRC := readandget.f90 writeall.f90 opt.f90 statistics.f90 neb.f90 profiles.f90 fire.f90
 OBJ := $(SRC:.f90=.o)
+BIN_DIR := bin
 
 .PHONY: all clean
 
-all: feneb bandbuilder extractor getdihe getnrmsd integrator segments getmaxgrad
+all: directories feneb bandbuilder extractor getdihe getnrmsd integrator segments getmaxgrad
+	@echo "FENEB installation is complete! 🎉"
+	@echo "Don't forget to export the bin path: export PATH=\$$PATH:$(PWD)/$(BIN_DIR)"
+
+directories: 
+	@echo "Creating bin directory..."
+	@mkdir -p $(BIN_DIR)
 
 feneb: $(OBJ) feneb.f90
-	$(FC) $(OBJ) feneb.f90 -o $@ $(NETCDFALL)
+	@echo "Compiling feneb..."
+	$(FC) $(OBJ) feneb.f90 -o $(BIN_DIR)/$@ $(NETCDFALL)
 
 bandbuilder: readandget.o opt.o statistics.o neb.o writeall.o profiles.o bandbuilder.f90
-	$(FC) readandget.o opt.o statistics.o neb.o writeall.o profiles.o bandbuilder.f90 -o $@ $(NETCDFALL)
+	@echo "Compiling bandbuilder..."
+	$(FC) readandget.o opt.o statistics.o neb.o writeall.o profiles.o bandbuilder.f90 -o $(BIN_DIR)/$@ $(NETCDFALL)
 
 extractor: readandget.o extractcoordtofile.f90
-	$(FC) readandget.o extractcoordtofile.f90 -o $@ $(NETCDFALL)
+	@echo "Compiling extractor..."
+	$(FC) readandget.o extractcoordtofile.f90 -o $(BIN_DIR)/$@ $(NETCDFALL)
 
 getdihe: readandget.o getdihe.f90
-	$(FC) readandget.o getdihe.f90 -o $@ $(NETCDFALL)
+	@echo "Compiling getdihe..."
+	$(FC) readandget.o getdihe.f90 -o $(BIN_DIR)/$@ $(NETCDFALL)
 
 getnrmsd: readandget.o getnrmsd.f90
-	$(FC) readandget.o getnrmsd.f90 -o $@ $(NETCDFALL)
+	@echo "Compiling getnrmsd..."
+	$(FC) readandget.o getnrmsd.f90 -o $(BIN_DIR)/$@ $(NETCDFALL)
 
 integrator: readandget.o profiles.o integrator.f90
-	$(FC) readandget.o profiles.o integrator.f90 -o $@ $(NETCDFALL)
+	@echo "Compiling integrator..."
+	$(FC) readandget.o profiles.o integrator.f90 -o $(BIN_DIR)/$@ $(NETCDFALL)
 
 segments: readandget.o freenergysegments.f90
-	$(FC) readandget.o freenergysegments.f90 -o $@ $(NETCDFALL)
+	@echo "Compiling segments..."
+	$(FC) readandget.o freenergysegments.f90 -o $(BIN_DIR)/$@ $(NETCDFALL)
 
 getmaxgrad: getmaxgrad.f90
-	$(FC) -o getmaxgrad getmaxgrad.f90
+	@echo "Compiling getmaxgrad..."
+	$(FC) -o $(BIN_DIR)/getmaxgrad getmaxgrad.f90
 
 %.o: %.f90
+	@echo "Compiling $<..."
 	$(FC) -c $< -o $@ $(NETCDFALL)
 
 clean:
-	rm -f *.o feneb bandbuilder extractor getdihe getnrmsd integrator segments getmaxgrad
+	@echo "Cleaning up..."
+	rm -f *.o $(BIN_DIR)/*
 
