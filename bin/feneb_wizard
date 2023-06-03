@@ -34,7 +34,12 @@ NAPUNITS=s                                            #In which units (h,s,m)
 
 # Function to print a help message
 print_help() {
-  echo "Usage: ./feneb_script.sh [OPTIONS]"
+  echo "----------------------------------------------------------------------"
+  echo "                             FENEB WIZARD                             "
+  echo "----------------------------------------------------------------------"
+  echo "This is a bash script that automatices the run of a FENEB calculation."
+  echo " "
+  echo "Usage: feneb_wizard [OPTIONS]"
   echo "Options: [default]"
   echo "-s  path to sander [sander]"
   echo "-f  path to feneb [feneb]"
@@ -42,7 +47,7 @@ print_help() {
   echo "-m  sander input [prod.mdin]"
   echo "-t  topology file [SYSTEM.prmtop]"
   echo "-n  prefix for all coordinates files [SYSTEM]"
-  echo "-  number of images [15]"
+  echo "-i  number of images [15]"
   echo "-x  starting optimization step [1]"
   echo "-d  maximum optimization steps to be performed [10]"
   echo "-g  delete .nc files after processing (1 for True) [1]"
