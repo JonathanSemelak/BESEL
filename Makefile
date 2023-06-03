@@ -11,13 +11,9 @@ BIN_DIR := bin
 
 .PHONY: all clean
 
-all: directories feneb bandbuilder extractor getdihe getnrmsd integrator segments getmaxgrad
+all: feneb bandbuilder extractor getdihe getnrmsd integrator segments getmaxgrad
 	@echo "FENEB installation is complete! 🎉"
 	@echo "Don't forget to export the bin path: export PATH=\$$PATH:$(PWD)/$(BIN_DIR)"
-
-directories: 
-	@echo "Creating bin directory..."
-	@mkdir -p $(BIN_DIR)
 
 feneb: $(OBJ) feneb.f90
 	@echo "Compiling feneb..."
