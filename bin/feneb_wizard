@@ -124,6 +124,9 @@ is_num() {
   fi
 }
 
+# Before doing anything, prints the print_help
+print_help
+
 # Check if the number of images is greater than 2
 is_num "$NIMAGES" "NIMAGES"
 if [ "$NIMAGES" -le 2 ]; then
@@ -221,7 +224,7 @@ for file in "${REQUIRED_FILES[@]}"; do
 done
 
 # Check if STEP-STARTREP-1 directory exists
-PREVSTEP=$(($STARTSTEP-1|bc))
+PREVSTEP=$((STARTSTEP-1|bc))
 if [ ! -d "STEP-$PREVSTEP" ]; then
     echo "Error: STEP-$PREVSTEP directory not found."
     exit 1
@@ -248,8 +251,41 @@ elif [ "$REXTREMA" == "F" ]; then
   fi
 fi
 
+#If M < N, then we need to split the MD runs in packages. A smarter option would be
+#to implement the FENEB code in the MPI version of sander, but I don't want to patch
+#the AMBER code.
+if [ $REXTREMA == "T" ] #If the extremes of the band are fixed
+then
+  NRUNS=$((NIMAGES-2))
+else
+  NRUNS=$((NIMAGES))
+fi
+
+NPACKAGES=$((NRUNS/NCPU))
+NREMAINING=$((NRUNS-NPACKAGES*NCPU))
+
+echo "----------------------------------------------------------------------------------------------------------------------"
+echo "                                          STARTING THE FENEB SIMULATION"
+echo "----------------------------------------------------------------------------------------------------------------------"
+echo " "
+echo "The simulation will be parallelized according to the required number of"
+echo "MD simulations to be performed and the number of cpu threads available."
+echo " "
+if [ $NREMAINING == '0' ]; then
+  echo  "The $NRUNS  MD simulations will be run in $NPACKAGES packages of $NCPU each."
+else
+  echo  "The $NRUNS  MD simulations will be run in $NPACKAGES packages of $NCPU each"
+  echo  "and an extra one with $NREMAINING simulations"
+fi
+#Note NPACKAGES is rounded down. For example, if M=8 and NRUNS=23 (25 images with fixed extremes),
+#NPACKAGES will be equal to 2. So, after running 2*8=16 MD runs, we still need to run the remaining
+#NRUNS-(NPACKAGES*M) runs.
+
 for ((step=STARTSTEP; step<=MAXSTEPS; step++)); # Optimization loop
 do
+        echo "----------------"
+        echo " STEP: $step  "
+        echo "----------------"
         mkdir -p STEP-$step #Creates a directory for the $i-th optimization step
         cd STEP-$step
         #Copy input files and topology
@@ -266,6 +302,7 @@ do
           ENDREP=$((NIMAGES))
         fi
         #Copy coordinates from previous optimization step ("0" if this is the first optimization step)
+        PREVSTEP=$((step-1|bc))
         if [ $step == "1" ] #If this is the first optimization step, copy _r_ files to _f_
           then
           for ((k=STARTREP; k<=ENDREP; k++));
@@ -281,41 +318,6 @@ do
           done
         fi
         echo "Running MD"
-	#If M < N, then we need to split the MD runs in packages. A smarter option would be
-	#to implement the FENEB code in the MPI version of sander, but I don't want to patch
-	#the AMBER code.
-  if [ $REXTREMA == "T" ] #If the extremes of the band are fixed
-  then
-    NRUNS=$((NIMAGES-2))
-  else
-    NRUNS=$((NIMAGES))
-  fi
-
-	NPACKAGES=$((NRUNS/NCPU))
-  NREMAINING=$((NRUNS-NPACKAGES*NCPU))
-
-  if [ "$step" == "$STARTSTEP" ];then
-  print_help
-  fi
-  echo "----------------------------------------------------------------------------------------------------------------------"
-  echo "                                          STARTING THE FENEB SIMULATION"
-  echo "----------------------------------------------------------------------------------------------------------------------"
-  echo " "
-  echo "The simulation will be parallelized according to the required number of"
-  echo "MD simulations to be performed and the number of cpu threads available."
-  echo " "
-  if [ $NREMAINING == '0' ]; then
-    echo  "The $NRUNS  MD simulations will be run in $NPACKAGES packages of $NCPU each."
-  else
-    echo  "The $NRUNS  MD simulations will be run in $NPACKAGES packages of $NCPU each"
-    echo  "and an extra one with $NREMAINING simulations"
-  fi
-  echo "----------------"
-  echo " STEP: $step  "
-  echo "----------------"
-	#Note NPACKAGES is rounded down. For example, if M=8 and NRUNS=23 (25 images with fixed extremes),
-  #NPACKAGES will be equal to 2. So, after running 2*8=16 MD runs, we still need to run the remaining
-	#NRUNS-(NPACKAGES*M) runs.
 
   FROM=$((STARTREP))
 	UPTO=$((FROM+NCPU-1))
