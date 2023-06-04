@@ -10,8 +10,6 @@
 SANDER=sander                                         #Should be replaced by the corresponding path to sander
 FENEB=feneb                                           #Should be replaced by the corresponding path to feneb
 MDIN=prod.mdin                                        #Sander input
-TOPOLOGY=SYSTEM.prmtop                                #Topology file
-NAME=SYSTEM                                           #Prefix for all coordinates files.
 NIMAGES=15                                            #Number of images
 NCPU=1                                                #Number of available CPU threads
 STARTSTEP=1                                           #Starting optimization step.
@@ -21,43 +19,53 @@ GREPEVOLUTION=T                                       #Append band and maxgrad e
 NAPTIME=10                                            #How long should the script sleep
 NAPUNITS=s                                            #In which units (h,s,m)
 #-------------------------------------------------------------------------------------------------------------
-#NOTES:
-#[1] The directory where this script is executed must contain an "inputs" directory, with $TOPOLOGY, $MDIN,
-# feneb.in, feneb.extrema1 and feneb.extrema2 files (note it is assumed "rextrema" is set to True in
-# feneb.in) as well as a directory called called $STARTSTEP-1, with the coordinates corresponding to
-# the previous band ("0", in case $STARTSTEP=1).
-# This directory is automatically generated, but if this is the first step, must be manually created
-#[2] Before executing the feneb code, this script checks whether the $NIMAGES MD runs have finished or not
-# If it is not the case, the scriptsleeps a $NAPTIME $m time and checks again
-# Usually only a couple of minutes (or even seconds) are necesary
-#-------------------------------------------------------------------------------------------------------------
 
 # Function to print a help message
+# Function to print a help message
 print_help() {
-  echo "----------------------------------------------------------------------"
-  echo "                             FENEB WIZARD                             "
-  echo "----------------------------------------------------------------------"
-  echo "This is a bash script that automatices the run of a FENEB calculation."
-  echo " "
-  echo "Usage: feneb_wizard [OPTIONS]"
-  echo "Options: [default]"
-  echo "-s  path to sander [sander]"
-  echo "-f  path to feneb [feneb]"
-  echo "-c  numer of cpu threads available [1]"
-  echo "-m  sander input [prod.mdin]"
-  echo "-t  topology file [SYSTEM.prmtop]"
-  echo "-n  prefix for all coordinates files [SYSTEM]"
-  echo "-i  number of images [15]"
-  echo "-x  starting optimization step [1]"
-  echo "-d  maximum optimization steps to be performed [10]"
-  echo "-g  delete .nc files after processing (1 for True) [1]"
-  echo "-a  append band and maxgrad evolution (1 for True) [1]"
-  echo "-u  how long should the script sleep [10]"
-  echo "-v  in which units [s]"
+  echo
+  echo "----------------------------------------------------------------------------------------------------------------------"
+  echo "                                                  FENEB WIZARD "
+  echo "----------------------------------------------------------------------------------------------------------------------"
+  echo
+  echo "Welcome to Feneb Wizard, a tool designed to automate the running of Feneb calculations."
+  echo
+  echo "USAGE:"
+  echo "feneb_wizard [OPTIONS]"
+  echo
+  echo "OPTIONS:"
+  echo "-s  Specify the path to sander [default: sander]"
+  echo "-f  Specify the path to feneb [default: feneb]"
+  echo "-m  Specify the sander input [default: prod.mdin]"
+  echo "-c  Specify the number of available CPU threads [default: 1]"
+  echo "-x  Specify the starting optimization step [default: 1]"
+  echo "-d  Specify the maximum optimization steps to be performed [default: 10]"
+  echo "-g  Delete .nc files after processing (enter T for True) [default: T]"
+  echo "-a  Append band and maxgrad evolution (enter T for True) [default: T]"
+  echo "-u  Set sleep duration of the script [default: 10]"
+  echo "-v  Specify the units for sleep duration (s for seconds, m for minutes, d for days) [default: s]"
+  echo
+  echo "----------------------------------------------------------------------------------------------------------------------"
+  echo "NOTES:"
+  echo "1. The following files must be provided in the 'inputs' folder:"
+  echo "    - feneb.in file and any other necessary feneb.* file (like feneb.extrema1 and feneb.extrema2)"
+  echo "    - A sander input for the MD simulations (prod.mdin by default, as specified by -m)"
+  echo "    - The topology file named PREFIX.prmtop, where PREFIX is read from the feneb.in file (prefix)"
+  echo
+  echo "2. The 'STEP-(K-1)' folder:"
+  echo "   In each optimization step (K), the simulation is run in a 'STEP-K' folder, with the restraint coordinates"
+  echo "   taken from the previous one. This folder is automatically generated by this script, but for the first step (-x 1),"
+  echo "   a 'STEP-0' folder must be manually generated."
+  echo
+  echo "3. This script checks if all the MD runs have finished before executing the feneb code."
+  echo "   If they haven't, the script sleeps for a predefined time (as set by -u and -v) and checks again."
+  echo "   Typically, only a few minutes (or even seconds) are necessary."
+  echo
 }
 
+
 # Parse command line arguments
-while getopts "hs:f:m:c:t:n:i:x:d:g:a:u:" opt; do
+while getopts "hs:f:m:c:i:x:d:g:a:u:" opt; do
   case ${opt} in
     h ) print_help
         exit 0
@@ -72,17 +80,6 @@ while getopts "hs:f:m:c:t:n:i:x:d:g:a:u:" opt; do
         if ! [[ "$NCPU" =~ ^[0-9]+$ ]]
         then
           echo "Error: -c option requires a numeric argument."
-          exit 1
-        fi
-      ;;
-    t ) TOPOLOGY=$OPTARG
-      ;;
-    n ) NAME=$OPTARG
-      ;;
-    i ) NIMAGES=$OPTARG
-        if ! [[ "$NIMAGES" =~ ^[0-9]+$ ]]
-        then
-          echo "Error: -i option requires a numeric argument."
           exit 1
         fi
       ;;
@@ -101,18 +98,8 @@ while getopts "hs:f:m:c:t:n:i:x:d:g:a:u:" opt; do
         fi
       ;;
     g ) DELETENC=$OPTARG
-        if ! [[ "$DELETENC" =~ ^[0-9]+$ ]]
-        then
-          echo "Error: -g option requires a numeric argument."
-          exit 1
-        fi
       ;;
     a ) GREPEVOLUTION=$OPTARG
-        if ! [[ "$GREPEVOLUTION" =~ ^[0-9]+$ ]]
-        then
-          echo "Error: -a option requires a numeric argument."
-          exit 1
-        fi
       ;;
     u ) NAPTIME=$OPTARG
         if ! [[ "$NAPTIME" =~ ^[0-9]+$ ]]
@@ -120,6 +107,8 @@ while getopts "hs:f:m:c:t:n:i:x:d:g:a:u:" opt; do
           echo "Error: -u option requires a numeric argument."
           exit 1
         fi
+      ;;
+    v ) UNITS=$OPTARG
       ;;
     * ) echo "Invalid option"
         exit 1
@@ -169,7 +158,7 @@ if [ ! -d "inputs" ]; then
 fi
 
 # Check if required files exist
-REQUIRED_FILES=("feneb.in" "prod.mdin" "$TOPOLOGY")
+REQUIRED_FILES=("feneb.in" "prod.mdin")
 for file in "${REQUIRED_FILES[@]}"; do
     if [ ! -f "inputs/$file" ]; then
         echo "Error: Required file $file not found in inputs directory."
@@ -211,6 +200,25 @@ else
   echo "Error: The number of images not found in feneb.in (nrep)"
   exit 1
 fi
+
+# Determine PREFIX by inspecting the feneb.in file
+if  grep -s -q -F "prefix" "inputs/feneb.in";
+then
+  NAME=$(grep prefix inputs/feneb.in|awk '{print $2}')
+  TOPOLOGY=${NAME}.prmtop
+else
+  echo "Error: Prefix for prmtop and coordinates not found in feneb.in (prefix)"
+  exit 1
+fi
+
+# Now that prefix is set, search for TOPOLOGY
+REQUIRED_FILES=("$TOPOLOGY")
+for file in "${REQUIRED_FILES[@]}"; do
+    if [ ! -f "inputs/$file" ]; then
+        echo "Error: Required file $file not found in inputs directory."
+        exit 1
+    fi
+done
 
 # Check if DELETENC, REXTREMA, and GREPEVOLUTION are either 'T' or 'F'
 for var in "DELETENC" "GREPEVOLUTION"; do
@@ -281,30 +289,11 @@ do
   NREMAINING=$((NRUNS-NPACKAGES*NCPU))
 
   if [ "$step" == "$STARTSTEP" ];then
-  echo "----------------------------------------------------------------------"
-  echo "                             FENEB WIZARD                             "
-  echo "----------------------------------------------------------------------"
-  echo "This is a bash script that automatices the run of a FENEB calculation."
-  echo " "
-  echo "Usage: feneb_wizard [OPTIONS]"
-  echo "Options: [default]"
-  echo "-s  path to sander [sander]"
-  echo "-f  path to feneb [feneb]"
-  echo "-c  numer of cpu threads available [1]"
-  echo "-m  sander input [prod.mdin]"
-  echo "-t  topology file [SYSTEM.prmtop]"
-  echo "-n  prefix for all coordinates files [SYSTEM]"
-  echo "-x  starting optimization step [1]"
-  echo "-d  maximum optimization steps to be performed [10]"
-  echo "-g  delete .nc files after processing (T for True) [T]"
-  echo "-a  append band and maxgrad evolution (T for True) [T]"
-  echo "-u  how long should the script sleep [10]"
-  echo "-v  in which units [s]"
-  echo " "
+  print_help
   fi
-  echo "----------------------------------------------------------------------"
-  echo "                    STARTING THE FENEB SIMULATION                     "
-  echo "----------------------------------------------------------------------"
+  echo "----------------------------------------------------------------------------------------------------------------------"
+  echo "                                          STARTING THE FENEB SIMULATION"
+  echo "----------------------------------------------------------------------------------------------------------------------"
   echo " "
   echo "The simulation will be parallelized according to the required number of"
   echo "MD simulations to be performed and the number of cpu threads available."
@@ -315,9 +304,9 @@ do
     echo  "The $NRUNS  MD simulations will be run in $NPACKAGES packages of $NCPU each"
     echo  "and an extra one with $NREMAINING simulations"
   fi
-  echo "----------------------------------------------------------------------"
+  echo "----------------"
   echo " STEP: $step  "
-  echo "----------------------------------------------------------------------"
+  echo "----------------"
 	#Note NPACKAGES is rounded down. For example, if M=8 and NRUNS=23 (25 images with fixed extremes),
   #NPACKAGES will be equal to 2. So, after running 2*8=16 MD runs, we still need to run the remaining
 	#NRUNS-(NPACKAGES*M) runs.
@@ -435,6 +424,8 @@ do
     echo " " >> ../bandevolution.dat
     echo $step $GRADPERP >> ../maxgradevolution.dat
   fi
-    echo "Step: "$step " finished"
     cd ..
 done
+echo "----------------------------------------------------------------------------------------------------------------------"
+echo "                                             HAPPY LANDING"
+echo "----------------------------------------------------------------------------------------------------------------------"

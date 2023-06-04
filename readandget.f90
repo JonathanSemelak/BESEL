@@ -7,7 +7,7 @@ subroutine readinput(nrep,infile,reffile,outfile,topfile,mask,nrestr, &
            rextrema, skip, dostat, minsegmentlenght, nevalfluc,rfromtraj,usensteps,nstepsexternal,smartstep, &
            typicalneb, tangoption, optoption, FIRE_dt_max, tangrecalc, maxdist, stopifconverged)
 implicit none
-character(len=50) :: infile, reffile, outfile, line, exp, keyword, topfile
+character(len=50) :: infile, reffile, outfile, line, exp, keyword, topfile, prefix
 integer :: nrestr, nrep, i, ierr, nscycle,skip, wtempfrec, wtempstart, wtempend
 integer :: minsegmentlenght, nevalfluc, nstepsexternal, tangoption, optoption
 logical :: per, velin, velout, wgrad, rextrema, wtemp, dostat, rfromtraj, usensteps, smartstep, typicalneb, tangrecalc
@@ -50,10 +50,7 @@ do
    read (1000,"(a)",iostat=ierr) line ! read line into character variable
    if (ierr /= 0) exit
    read (line,*) keyword ! read first keyword of line
-   if (keyword == 'infile') read(line,*) exp,infile
-   if (keyword == 'reffile') read(line,*) exp,reffile
-   if (keyword == 'outfile') read(line,*) exp,outfile
-   if (keyword == 'topfile') read(line,*) exp,topfile
+   if (keyword == 'prefix') read(line,*) exp,prefix
    if (keyword == 'per') read(line,*) exp, per
    if (keyword == 'velin') read(line,*) exp, velin
    if (keyword == 'velout') read(line,*) exp, velout
@@ -135,6 +132,14 @@ do
     end if
 end do
 close (unit=1000)
+
+! Finally, defines files names that use to be part of the input file
+! In the future this should be cleanner...
+
+infile = trim(prefix) // "_f"
+reffile = trim(prefix) // "_r"
+outfile = trim(prefix) // "_o"
+topfile = trim(prefix) // ".prmtop"
 
 end subroutine readinput
 
