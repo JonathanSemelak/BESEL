@@ -222,8 +222,8 @@ done
 
 # Check if STEP-STARTREP-1 directory exists
 PREVSTEP=$(($STARTSTEP-1|bc))
-if [ ! -d "STEP-" ]; then
-    echo "Error: inputs directory not found."
+if [ ! -d "STEP-$PREVSTEP" ]; then
+    echo "Error: STEP-$PREVSTEP directory not found."
     exit 1
 fi
 
