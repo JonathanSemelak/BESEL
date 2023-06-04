@@ -220,6 +220,13 @@ for file in "${REQUIRED_FILES[@]}"; do
     fi
 done
 
+# Check if STEP-STARTREP-1 directory exists
+PREVSTEP=$(($STARTSTEP-1|bc))
+if [ ! -d "STEP-" ]; then
+    echo "Error: inputs directory not found."
+    exit 1
+fi
+
 # Check if DELETENC, REXTREMA, and GREPEVOLUTION are either 'T' or 'F'
 for var in "DELETENC" "GREPEVOLUTION"; do
   if ! echo "${!var}" | grep -E -q '^[TF]$'; then
@@ -243,8 +250,8 @@ fi
 
 for ((step=STARTSTEP; step<=MAXSTEPS; step++)); # Optimization loop
 do
-        mkdir -p $step #Creates a directory for the $i-th optimization step
-        cd $step
+        mkdir -p STEP-$step #Creates a directory for the $i-th optimization step
+        cd STEP-$step
         #Copy input files and topology
         cp ../inputs/$MDIN .
         cp ../inputs/feneb.* .
@@ -259,19 +266,18 @@ do
           ENDREP=$((NIMAGES))
         fi
         #Copy coordinates from previous optimization step ("0" if this is the first optimization step)
-        j=$(($step-1|bc)) #Previous optimization step
         if [ $step == "1" ] #If this is the first optimization step, copy _r_ files to _f_
           then
           for ((k=STARTREP; k<=ENDREP; k++));
           do
-            cp ../$j/${NAME}_r_${k}.rst7 .
+            cp ../STEP-${PREVSTEP}/${NAME}_r_${k}.rst7 .
             cp ${NAME}_r_${k}.rst7 ${NAME}_fprev_${k}.rst7
           done
         else #copy _f_ files from previous step and call them _fprev_
           for ((k=STARTREP; k<=ENDREP; k++));
           do
-            cp ../$j/${NAME}_o_${k}.rst7 ${NAME}_r_${k}.rst7
-            cp ../$j/${NAME}_f_${k}.rst7 ${NAME}_fprev_${k}.rst7
+            cp ../STEP-${PREVSTEP}/${NAME}_o_${k}.rst7 ${NAME}_r_${k}.rst7
+            cp ../STEP-${PREVSTEP}/${NAME}_f_${k}.rst7 ${NAME}_fprev_${k}.rst7
           done
         fi
         echo "Running MD"
