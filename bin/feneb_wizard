@@ -337,6 +337,7 @@ do
               seq_finished=T
               last_finished=$((l))
             fi
+            l=$((l+1))
             done
             if [ $l -ge $STARTREP]; then
             echo "Images from $STARTREP to $l have finished"
