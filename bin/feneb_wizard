@@ -336,21 +336,23 @@ do
             if  grep -s -q -F "wallclock()" "${NAME}_${l}.out"; then
               seq_finished=T
               last_finished=$((l))
+            else
+              seq_finished=F
             fi
             l=$((l+1))
             done
-            if [ $l -ge $STARTREP ]; then
+            if [ $last_finished -ge $STARTREP ]; then
             echo "Images from $STARTREP to $l have finished"
-            echo "Only the remaining $((NRUNS-l)) will be run during this first step"
-            NRUNS=$((NRUNS-l))
-            STARTREP=$((l+1))
+            echo "Only the remaining $((NRUNS-last_finished)) will be run during this first step"
+            NRUNS=$((NRUNS-last_finishedl))
+            STARTREP=$((last_finished+1))
             NPACKAGES=$((NRUNS/NCPU))
             NREMAINING=$((NRUNS-NPACKAGES*NCPU))
-            echo "Only for this step, the remaining $((NRUNS-l)) will be run during this first step"
+            echo "Only for this step, the remaining $((NRUNS-last_finished)) will be run during this first step"
             if [ $NREMAINING == '0' ]; then
-              echo  "The $((NRUNS-l))  MD simulations will be run in $NPACKAGES packages of $NCPU each."
+              echo  "The $((NRUNS-last_finished))  MD simulations will be run in $NPACKAGES packages of $NCPU each."
             else
-              echo  "The $((NRUNS-l))  MD simulations will be run in $NPACKAGES packages of $NCPU each"
+              echo  "The $((NRUNS-last_finished))  MD simulations will be run in $NPACKAGES packages of $NCPU each"
               echo  "and an extra one with $NREMAINING simulations"
             fi
             fi
