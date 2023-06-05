@@ -320,8 +320,8 @@ do
 
         echo "Running MD"
 
-        if [ $restart == "T" ]; then
-          if [ $step == "$STARTSTEP" ]; then
+        if [ $restart = 'T' ]; then
+          if [ $step = '$STARTSTEP' ]; then
             echo "Trying to restart from incomplete simulation..."
             echo "Searching files..."
             seq_finished=T
