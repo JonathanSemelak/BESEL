@@ -317,26 +317,64 @@ do
             cp ../STEP-${PREVSTEP}/${NAME}_f_${k}.rst7 ${NAME}_fprev_${k}.rst7
           done
         fi
+
         echo "Running MD"
 
-  FROM=$((STARTREP))
-	UPTO=$((FROM+NCPU-1))
+        if [ $restart == "T" ]; then
+          if [ $step == "$STARTSTEP" ]; then
+            echo "Trying to restart from incomplete simulation..."
+            echo "Searching files..."
+            seq_finished=T
+            last_finished=$((STARTREP))
+            l=$((STARTREP))
+            while [ "$seq_finished" = "T" -a $l -le $ENDREP ];
+            do
+            if  grep -s -q -F "wallclock()" "${NAME}_${l}.out"; then
+              seq_finished=T
+              last_finished=$((l))
+            fi
+            done
+            if [ $l -ge $STARTREP]; then
+            echo "Images from $STARTREP to $l have finished"
+            echo "Only the remaining $((NRUNS-l)) will be run during this first step"
+            NRUNS=$((NRUNS-l))
+            OLDSTARTREP=$((STARTREP))
+            STARTREP=$((l+1))
+            NPACKAGES=$((NRUNS/NCPU))
+            NREMAINING=$((NRUNS-NPACKAGES*NCPU))
+            echo "Only for this step, the remaining $((NRUNS-l)) will be run during this first step"
+            if [ $NREMAINING == '0' ]; then
+              echo  "The $((NRUNS-l))  MD simulations will be run in $NPACKAGES packages of $NCPU each."
+            else
+              echo  "The $((NRUNS-l))  MD simulations will be run in $NPACKAGES packages of $NCPU each"
+              echo  "and an extra one with $NREMAINING simulations"
+            fi
+            fi
+          fi
+        else
+          STARTREP=$((OLDSTARTREP))
+          NPACKAGES=$((NRUNS/NCPU))
+          NREMAINING=$((NRUNS-NPACKAGES*NCPU))
+        fi
+
+        FROM=$((STARTREP))
+	      UPTO=$((FROM+NCPU-1))
         for ((i=1; i<=NPACKAGES; i++)); # Start running each PACKAGE of M MD simulations
         do
           echo "Running package $i (range from $FROM to $UPTO)"
           for ((k=FROM;k<UPTO;k++)); # Start running M-1 MD
           do
             $SANDER -O -i prod.mdin \
-                       -o prod_${k}.out \
+                       -o ${NAME}_${k}.out \
                        -p $TOPOLOGY \
                        -c ${NAME}_fprev_${k}.rst7 \
                        -r ${NAME}_f_${k}.rst7 \
                        -x ${NAME}_f_${k}.nc \
                        -ref ${NAME}_r_${k}.rst7 &
           done
-	  #Run the last MD (of this package), and waits until its finished
+	       #Run the last MD (of this package), and waits until its finished
           $SANDER -O -i prod.mdin \
-                  -o prod_${k}.out \
+                  -o ${NAME}_${k}.out \
                   -p $TOPOLOGY \
                   -c ${NAME}_fprev_${k}.rst7 \
                   -r ${NAME}_f_${k}.rst7 \
@@ -349,7 +387,7 @@ do
             count=0
             for ((l=FROM; l<=UPTO; l++));
             do
-              if  grep -s -q -F "wallclock()" "prod_${l}.out";
+              if  grep -s -q -F "wallclock()" "${NAME}_${l}.out";
               then
                 count=$((count+1))
               else
@@ -373,7 +411,7 @@ do
         for ((k=FROM; k<UPTO; k++)); # Starts in k+1 image, according to last FROM update
         do
           $SANDER -O -i prod.mdin \
-                     -o prod_${k}.out \
+                     -o ${NAME}_${k}.out \
                      -p $TOPOLOGY \
                      -c ${NAME}_fprev_${k}.rst7 \
                      -r ${NAME}_f_${k}.rst7 \
@@ -382,7 +420,7 @@ do
         done
         #Run the last remaining MD, and waits until its finished
         $SANDER -O -i prod.mdin \
-                   -o prod_${k}.out \
+                   -o ${NAME}_${k}.out \
                    -p $TOPOLOGY \
                    -c ${NAME}_fprev_${k}.rst7 \
                    -r ${NAME}_f_${k}.rst7 \
@@ -395,7 +433,7 @@ do
           count=0
           for ((l=FROM; l<=UPTO; l++));
           do
-          if  grep -s -q -F "wallclock()" "prod_${l}.out";
+          if  grep -s -q -F "wallclock()" "${NAME}_${l}.out";
           then
             count=$((count+1))
           else
