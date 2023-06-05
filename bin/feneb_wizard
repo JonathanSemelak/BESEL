@@ -339,7 +339,7 @@ do
             fi
             l=$((l+1))
             done
-            if [ $l -ge $STARTREP]; then
+            if [ $l -ge $STARTREP ]; then
             echo "Images from $STARTREP to $l have finished"
             echo "Only the remaining $((NRUNS-l)) will be run during this first step"
             NRUNS=$((NRUNS-l))
