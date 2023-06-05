@@ -18,6 +18,7 @@ DELETENC=T                                            #Delete .nc files after pr
 GREPEVOLUTION=T                                       #Append band and maxgrad evolution ("1" for True)
 NAPTIME=10                                            #How long should the script sleep
 NAPUNITS=s                                            #In which units (h,s,m)
+RESTART=F                                            #In which units (h,s,m)
 #-------------------------------------------------------------------------------------------------------------
 
 # Function to print a help message
