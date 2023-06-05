@@ -44,7 +44,7 @@ print_help() {
   echo "-a  Append band and maxgrad evolution (enter T for True) [default: T]"
   echo "-u  Set sleep duration of the script [default: 10]"
   echo "-v  Specify the units for sleep duration (s for seconds, m for minutes, d for days) [default: s]"
-  echo
+  echo "-r  Resume a previous simulation (enter T for True) [default: F]"
   echo "----------------------------------------------------------------------------------------------------------------------"
   echo "NOTES:"
   echo "1. The following files must be provided in the 'inputs' folder:"
@@ -65,7 +65,7 @@ print_help() {
 
 
 # Parse command line arguments
-while getopts "hs:f:m:c:i:x:d:g:a:u:" opt; do
+while getopts "hs:f:m:c:i:x:d:g:a:u:r:" opt; do
   case ${opt} in
     h ) print_help
         exit 0
@@ -109,6 +109,8 @@ while getopts "hs:f:m:c:i:x:d:g:a:u:" opt; do
         fi
       ;;
     v ) UNITS=$OPTARG
+      ;;
+    r ) RESTART=$OPTARG
       ;;
     * ) echo "Invalid option"
         exit 1
@@ -320,7 +322,7 @@ do
 
         echo "Running MD"
 
-        if [ $restart = 'T' ]; then
+        if [ $RESTART = 'T' ]; then
           if [ $step = '$STARTSTEP' ]; then
             echo "Trying to restart from incomplete simulation..."
             echo "Searching files..."
