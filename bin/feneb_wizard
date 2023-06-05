@@ -266,6 +266,7 @@ fi
 
 NPACKAGES=$((NRUNS/NCPU))
 NREMAINING=$((NRUNS-NPACKAGES*NCPU))
+STARTREP=$((OLDSTARTREP)) #Only necessary for restart option
 
 echo "----------------------------------------------------------------------------------------------------------------------"
 echo "                                          STARTING THE FENEB SIMULATION"
@@ -324,7 +325,7 @@ do
         echo "Running MD"
 
         if [ $RESTART = 'T' ]; then
-          if [ $step = '$STARTSTEP' ]; then
+          if [ $step -eq $STARTSTEP ]; then
             echo "Trying to restart from incomplete simulation..."
             echo "Searching files..."
             seq_finished=T
@@ -341,7 +342,6 @@ do
             echo "Images from $STARTREP to $l have finished"
             echo "Only the remaining $((NRUNS-l)) will be run during this first step"
             NRUNS=$((NRUNS-l))
-            OLDSTARTREP=$((STARTREP))
             STARTREP=$((l+1))
             NPACKAGES=$((NRUNS/NCPU))
             NREMAINING=$((NRUNS-NPACKAGES*NCPU))
