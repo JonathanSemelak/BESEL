@@ -353,11 +353,11 @@ do
               echo  "and an extra one with $NREMAINING simulations"
             fi
             fi
+          else
+            STARTREP=$((OLDSTARTREP))
+            NPACKAGES=$((NRUNS/NCPU))
+            NREMAINING=$((NRUNS-NPACKAGES*NCPU))
           fi
-        else
-          STARTREP=$((OLDSTARTREP))
-          NPACKAGES=$((NRUNS/NCPU))
-          NREMAINING=$((NRUNS-NPACKAGES*NCPU))
         fi
 
         FROM=$((STARTREP))
