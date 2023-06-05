@@ -266,7 +266,9 @@ fi
 
 NPACKAGES=$((NRUNS/NCPU))
 NREMAINING=$((NRUNS-NPACKAGES*NCPU))
-STARTREP=$((OLDSTARTREP)) #Only necessary for restart option
+OLDSTARTREP=$((STARTREP)) #Only necessary for restart option
+OLDNRUNS=$((NRUNS)) #Only necessary for restart option
+
 
 echo "----------------------------------------------------------------------------------------------------------------------"
 echo "                                          STARTING THE FENEB SIMULATION"
@@ -344,20 +346,21 @@ do
             if [ $last_finished -ge $STARTREP ]; then
             echo "Images from $STARTREP to $l have finished"
             echo "Only the remaining $((NRUNS-last_finished)) will be run during this first step"
-            NRUNS=$((NRUNS-last_finishedl))
+            NRUNS=$((NRUNS-last_finished))
             STARTREP=$((last_finished+1))
             NPACKAGES=$((NRUNS/NCPU))
             NREMAINING=$((NRUNS-NPACKAGES*NCPU))
-            echo "Only for this step, the remaining $((NRUNS-last_finished)) will be run during this first step"
+            echo "Only for this step, the remaining $((NRUNS)) will be run during this first step"
             if [ $NREMAINING == '0' ]; then
-              echo  "The $((NRUNS-last_finished))  MD simulations will be run in $NPACKAGES packages of $NCPU each."
+              echo  "The $((NRUNS))  MD simulations will be run in $NPACKAGES packages of $NCPU each."
             else
-              echo  "The $((NRUNS-last_finished))  MD simulations will be run in $NPACKAGES packages of $NCPU each"
+              echo  "The $((NRUNS))  MD simulations will be run in $NPACKAGES packages of $NCPU each"
               echo  "and an extra one with $NREMAINING simulations"
             fi
             fi
           else
             STARTREP=$((OLDSTARTREP))
+            NRUNS=$((OLDNRUNS))
             NPACKAGES=$((NRUNS/NCPU))
             NREMAINING=$((NRUNS-NPACKAGES*NCPU))
           fi
