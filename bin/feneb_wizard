@@ -263,6 +263,15 @@ then
 else
   NRUNS=$((NIMAGES))
 fi
+#From now on we also need to know if the extremes are fixed or not
+if [ $REXTREMA == "T" ] #If the extremes of the band are fixed
+then
+  STARTREP=2
+  ENDREP=$((NIMAGES-1))
+else
+  STARTREP=1
+  ENDREP=$((NIMAGES))
+fi
 
 NPACKAGES=$((NRUNS/NCPU))
 NREMAINING=$((NRUNS-NPACKAGES*NCPU))
@@ -298,15 +307,7 @@ do
         cp ../inputs/$MDIN .
         cp ../inputs/feneb.* .
         cp ../inputs/$TOPOLOGY  .
-        #From now on we need to know if the extremes are fixed or not
-        if [ $REXTREMA == "T" ] #If the extremes of the band are fixed
-        then
-          STARTREP=2
-          ENDREP=$((NIMAGES-1))
-        else
-          STARTREP=1
-          ENDREP=$((NIMAGES))
-        fi
+
         #Copy coordinates from previous optimization step ("0" if this is the first optimization step)
         PREVSTEP=$((step-1|bc))
         if [ $step == "1" ] #If this is the first optimization step, copy _r_ files to _f_
