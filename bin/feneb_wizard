@@ -1,9 +1,7 @@
 #!/bin/bash
 #-------------------------------------------------------------------------------------------------------------
-# This is an example script to run a FENEB optimization starting with
-# an initial band of NIMAGES images, and running them in parallel.
-#
-# It is assumed that at least NCPU cpu threads are available.
+# This is a tool to run a FENEB optimization starting with an initial band of NIMAGES images, and running them
+# in parallel using NCPU cpu threads.
 #
 # Written by Jonathan A. Semelak
 #-------------------------------------------------------------------------------------------------------------
@@ -18,11 +16,10 @@ DELETENC=T                                            #Delete .nc files after pr
 GREPEVOLUTION=T                                       #Append band and maxgrad evolution ("1" for True)
 NAPTIME=10                                            #How long should the script sleep
 NAPUNITS=s                                            #In which units (h,s,m)
-RESTART=F                                            #In which units (h,s,m)
+RESTART=F                                             #In which units (h,s,m)
+STOPIFCONVERGED=F                                     #Stop the simulation if convergence is achieved.
 #-------------------------------------------------------------------------------------------------------------
 
-# Function to print a help message
-# Function to print a help message
 print_help() {
   echo
   echo "----------------------------------------------------------------------------------------------------------------------"
@@ -240,6 +237,12 @@ for var in "DELETENC" "GREPEVOLUTION"; do
     exit 1
   fi
 done
+
+# Determine STOPIFCONVERGED by inspecting the feneb.in file
+if  grep -s -q -F "stopifconverged" "inputs/feneb.in";
+then
+  STOPIFCONVERGED=$(grep stopifconverged inputs/feneb.in|awk '{print $2}')
+fi
 
 # Check NCPU against NIMAGES or NIMAGES-2 based on REXTREMA value
 if [ "$REXTREMA" == "T" ]; then
@@ -468,11 +471,6 @@ do
           rm *.nc
   fi
 
-	for ((k=STARTREP; k<=ENDREP; k++)); #Copy files for next movement
-        do
-          cp ${NAME}_o_${k}.rst7 ${NAME}_r_${k}.rst7
-  done
-
   if [ $GREPEVOLUTION == "T" ] #Copy optimization information to .dat files
   then
     GRADPERP=$(grep "Band max force:" feneb.out|awk '{print $4}')
@@ -480,7 +478,16 @@ do
     echo " " >> ../bandevolution.dat
     echo $step $GRADPERP >> ../maxgradevolution.dat
   fi
+
+
+  # Check convergence if required by STOPIFCONVERGED
+  if  grep -s -q -F "achieved" "feneb.out";
+    echo "Convergence achieved: Stoping simulation."
+    exit 1
+  fi
+
     cd ..
+
 done
 echo "----------------------------------------------------------------------------------------------------------------------"
 echo "                                             HAPPY LANDING"
