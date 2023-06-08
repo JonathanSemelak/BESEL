@@ -26,7 +26,7 @@ character(len=20), dimension(2) :: range
  rextrema=.False.
  steep_spring=0.001d0
  steep_size=0.01d0
- smartstep=.False.
+ smartstep=.True.
  skip=0
  typicalneb=.False.
  wtemp=.False.
@@ -48,6 +48,7 @@ character(len=20), dimension(2) :: range
  per=.True.
  velin=.False.
  velout=.False.
+ steepsize=0.d0
 open (unit=1000, file='feneb.in', status='old', action='read') !read feneb.in
 do
    read (1000,"(a)",iostat=ierr) line ! read line into character variable
