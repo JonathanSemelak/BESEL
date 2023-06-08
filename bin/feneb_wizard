@@ -8,7 +8,6 @@
 SANDER=sander                                         #Should be replaced by the corresponding path to sander
 FENEB=feneb                                           #Should be replaced by the corresponding path to feneb
 MDIN=prod.mdin                                        #Sander input
-NIMAGES=15                                            #Number of images
 NCPU=1                                                #Number of available CPU threads
 STARTSTEP=1                                           #Starting optimization step.
 MAXSTEPS=10                                           #Maximum optimization steps to be performed.
@@ -127,17 +126,6 @@ is_num() {
 # Before doing anything, prints the print_help
 print_help
 
-# Check if the number of images is greater than 2
-is_num "$NIMAGES" "NIMAGES"
-if [ "$NIMAGES" -le 2 ]; then
-  if [ "$NIMAGES" -eq 1 ]; then
-    echo "NIMAGES=1 did you mean to perform a free energy optimization?"
-  else
-    echo "Error: NIMAGES must be greater than 2."
-    exit 1
-  fi
-fi
-
 # Check if NAPUNITS is either 's', 'm', or 'd'
 if ! echo "$NAPUNITS" | grep -E -q '^[smd]$'; then
   echo "Error: NAPUNITS must be either 's', 'm', or 'd'."
@@ -202,6 +190,15 @@ then
 else
   echo "Error: The number of images not found in feneb.in (nrep)"
   exit 1
+fi
+# Check if the number of images is greater than 2
+if [ "$NIMAGES" -le 2 ]; then
+  if [ "$NIMAGES" -eq 1 ]; then
+    echo "NIMAGES=1 did you mean to perform a free energy optimization?"
+  else
+    echo "Error: NIMAGES must be greater than 2."
+    exit 1
+  fi
 fi
 
 # Determine PREFIX by inspecting the feneb.in file
