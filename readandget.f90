@@ -45,6 +45,9 @@ character(len=20), dimension(2) :: range
  maxdist=0.001d0
  stopifconverged=.False.
  wgrad=.False.
+ per=.True.
+ velin=.False.
+ velout=.False.
 open (unit=1000, file='feneb.in', status='old', action='read') !read feneb.in
 do
    read (1000,"(a)",iostat=ierr) line ! read line into character variable
@@ -206,6 +209,9 @@ tsfile = 'None'
 iddp = .False.
 nmax = 500
 wselfdist = .False.
+per=.True.
+velin=.False.
+velout=.False.
 open (unit=1000, file="bandbuilder.in", status='old', action='read') !read align.in
 do
    read (1000,"(a)",iostat=ierr) line ! read line into character variable
