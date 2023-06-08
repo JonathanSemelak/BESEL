@@ -165,7 +165,10 @@ logical :: relaxdrep,relaxd,wrmforce,typicalneb
     write(9999,*) "Band max STD: ", maxstdband, "on replica: ", maxstdrep
     write(9999,*)
     if(maxforceband .le. ftol) relaxd=.TRUE.
-    if (relaxd) write(9999,*) "System converged: T"
+    if (relaxd) then
+      write(9999,*) "System converged: T"
+      write(9999,*) "Convergence criteria of ", ftol, " (kcal/mol A) achieved"
+    endif
     if (.not. relaxd) write(9999,*) "System converged: F"
   endif
 
