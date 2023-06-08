@@ -480,15 +480,22 @@ do
   fi
 
 
-  # Check convergence if required by STOPIFCONVERGED
-  if  grep -s -q -F "achieved" "feneb.out";
-    echo "Convergence achieved: Stoping simulation."
-    exit 1
+  if [ $STOPIFCONVERGED == "T" ] # Check convergence if required by STOPIFCONVERGED
+  then
+    if  grep -s -q -F "achieved" "feneb.out";
+    then
+      echo "Convergence achieved: Stoping simulation..."
+      echo "----------------------------------------------------------------------------------------------------------------------"
+      echo "                                             HAPPY LANDING"
+      echo "                                       FENEB OPTIMIZATION CONVERGED"
+      echo "----------------------------------------------------------------------------------------------------------------------"
+      exit 1
+    fi
   fi
-
-    cd ..
+  cd ..
 
 done
 echo "----------------------------------------------------------------------------------------------------------------------"
 echo "                                             HAPPY LANDING"
+echo "                                      MAXIMUM NUMBER OF STEPS REACHED"
 echo "----------------------------------------------------------------------------------------------------------------------"
