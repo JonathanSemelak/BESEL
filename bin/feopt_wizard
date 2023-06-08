@@ -173,7 +173,7 @@ echo "--------------------------------------------------------------------------
 echo "                                          STARTING THE FEOPT SIMULATION"
 echo "----------------------------------------------------------------------------------------------------------------------"
 echo " "
-echo "The restraint reference will be updated after each MD simulation"
+echo "The restraint reference will be updated after each MD simulation."
 echo " "
 
 k=1 #The extreme is called PREFIX_1
@@ -230,8 +230,8 @@ do
     then
       echo "Convergence achieved: Stoping simulation..."
       echo "----------------------------------------------------------------------------------------------------------------------"
-      echo "                                             HAPPY LANDING"
-      echo "                                       FEOPT OPTIMIZATION CONVERGED"
+      echo "                                                 HAPPY LANDING"
+      echo "                                           FEOPT OPTIMIZATION CONVERGED"
       echo "----------------------------------------------------------------------------------------------------------------------"
       exit 1
     fi
@@ -240,6 +240,6 @@ do
 
 done
 echo "----------------------------------------------------------------------------------------------------------------------"
-echo "                                             HAPPY LANDING"
-echo "                                      MAXIMUM NUMBER OF STEPS REACHED"
+echo "                                              HAPPY LANDING"
+echo "                                       MAXIMUM NUMBER OF STEPS REACHED"
 echo "----------------------------------------------------------------------------------------------------------------------"
