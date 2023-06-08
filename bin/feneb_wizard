@@ -62,7 +62,7 @@ print_help() {
 
 
 # Parse command line arguments
-while getopts "hs:f:m:c:i:x:d:g:a:u:r:" opt; do
+while getopts "hs:f:m:c:x:d:g:a:u:r:" opt; do
   case ${opt} in
     h ) print_help
         exit 0
