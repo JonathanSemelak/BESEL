@@ -1,0 +1,9 @@
+prefix ALAD 
+per F
+nrep 1
+nrestr 5   
+mask 5 7 9 15 17 
+kref 100
+skip 500
+ftol 2.25
+stopifconverged T
