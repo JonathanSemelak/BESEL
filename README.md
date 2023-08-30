@@ -20,7 +20,7 @@ The feneb code uses an input file "feneb.in". Below and example feneb.in file:
  ksring 200          !Spring force constant (kcal/mol A**2)
  kref 500            !Bias force constant (kcal/mol A**2) for V(q)=k/2(q-qref)**2
  nrestr 5            !Number of atoms forming the Reaction Coordinate Space
- mask 1 5 6 7 5      !Indexes of the atoms forming the Reaction Coordinate Space
+ mask 1 2 5-7        !Indexes of the atoms forming the Reaction Coordinate Space
  skip 1000           !Number of initial frames ommited for analysis
 ```
 
