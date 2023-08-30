@@ -17,7 +17,7 @@ integer, allocatable, dimension (:), intent(inout) :: mask
 double precision, allocatable, dimension(:,:,:), intent(inout) :: rav, fav, tang, ftang, ftrue,fperp, rrefall, ravprevsetp
 double precision, allocatable, dimension(:,:,:), intent(inout) :: fspring, dontg, devav, ravout
 double precision, allocatable, dimension(:), intent(inout) :: mass
-integer :: start_range, end_range, i_mask, mask_index
+integer :: start_range, end_range, i_mask, mask_index, comment_loc
 character(len=20) :: substr
 character(len=20), dimension(2) :: range
 
@@ -48,11 +48,20 @@ character(len=20), dimension(2) :: range
  per=.True.
  velin=.False.
  velout=.False.
+ kspring=500.d0
+ ftol=2.25d0
+
 open (unit=1000, file='feneb.in', status='old', action='read') !read feneb.in
 do
    read (1000,"(a)",iostat=ierr) line ! read line into character variable
    if (ierr /= 0) exit
-   read (line,*) keyword ! read first keyword of line
+   ! Trim line at the first "!" character to remove comments
+   comment_loc = index(line, "!")
+   if (comment_loc /= 0) then
+       line = line(1:comment_loc-1)
+   end if
+   read (line,*,iostat=ierr) keyword ! read first keyword of line
+   if (ierr /= 0) cycle
    if (keyword == 'prefix') read(line,*) exp,prefix
    if (keyword == 'per') read(line,*) exp, per
    if (keyword == 'velin') read(line,*) exp, velin
