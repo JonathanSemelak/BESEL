@@ -228,7 +228,7 @@ do
   then
     if  grep -s -q -F "achieved" "feneb.out";
     then
-      echo "Convergence achieved: Stoping simulation..."
+      echo "Convergence achieved: Stopping simulation..."
       echo "----------------------------------------------------------------------------------------------------------------------"
       echo "                                                 HAPPY LANDING"
       echo "                                           FEOPT OPTIMIZATION CONVERGED"
