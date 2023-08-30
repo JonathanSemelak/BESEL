@@ -45,7 +45,7 @@ print_help() {
   echo "----------------------------------------------------------------------------------------------------------------------"
   echo "NOTES:"
   echo "1. The following files must be provided in the 'inputs' folder:"
-  echo "    - feneb.in file and any other necessary feneb.* file (like feneb.extrema1 and feneb.extrema2)"
+  echo "    - feneb.in file and any other necessary feneb.* file (like feneb.reactants and feneb.products)"
   echo "    - A sander input for the MD simulations (prod.mdin by default, as specified by -m)"
   echo "    - The topology file named PREFIX.prmtop, where PREFIX is read from the feneb.in file (prefix)"
   echo
@@ -173,7 +173,7 @@ else
 fi
 
 if [ "$REXTREMA" == "T" ]; then
-  REQUIRED_FILES=("feneb.extrema1" "feneb.extrema2")
+  REQUIRED_FILES=("feneb.reactants" "feneb.products")
   for file in "${REQUIRED_FILES[@]}"; do
     if [ ! -f "inputs/$file" ]; then
         echo "Error: REXTREMA=T in feneb.in but required file $file not found in inputs directory."
