@@ -53,22 +53,21 @@ character(len=20), dimension(2) :: range
 
 open (unit=1000, file='feneb.in', status='old', action='read') !read feneb.in
 do
-  read (1000,"(a)",iostat=ierr) line ! read line into character variable
-  if (ierr /= 0) exit
+    read (1000,'(a)',iostat=ierr) line ! read line into character variable
+    if (ierr /= 0) exit  ! Exit if end of file or error
 
-  ! Read keyword first, consuming it from the line
-  read (line,*,iostat=ierr) keyword
-  if (ierr /= 0) cycle
+    ! Find and trim the comment
+    comment_loc = index(line, "!")
+    if (comment_loc > 0) then
+        line = line(1:comment_loc-1)
+    end if
 
-  ! Find the keyword length and trim the line to contain only the portion after keyword
-  keyword_length = len_trim(keyword)
-  line = line(keyword_length+1:)
+    ! Trim spaces
+    line = adjustl(trim(line))
 
-  ! Trim line at the first "!" character to remove comments
-  comment_loc = index(line, "!")
-  if (comment_loc /= 0) then
-      line = line(1:comment_loc-1)
-  end if
+    ! Read keyword
+    read(line, *, iostat=ierr) keyword
+    if (ierr /= 0) cycle
 
   ! Read the remaining values based on keyword
    if (keyword == 'prefix') read(line,*) exp, prefix
