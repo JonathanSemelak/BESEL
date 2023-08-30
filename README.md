@@ -27,7 +27,8 @@ The feneb code uses an input file "feneb.in". Below and example feneb.in file:
 Below all the variables available for feneb.in with their default options:
 
 ```
- prefix                  !No default for this variable. Must be defined.
+ prefix                  !Prefix of .prmtop .nc and .rst7 files. No default for this variable. Must be defined.
+ nrep                    !Number of replicas (including the extremes). No default for this variable. Must be defined.
  per                   T !System is periodic
  velin                 F !Input .rst7 files have velocity info
  velout                F !Include dummy velocity info for output files
@@ -58,6 +59,22 @@ Below all the variables available for feneb.in with their default options:
 
 ```
 
+If you want to use this code for a full optimization on the free energy surface, set nrep=1. All keywords related with NEB will be ignored in this case.
+
+It is strongly recommended to use the feneb_wizard (and feopt_wizard). This will automatice the whole procedure. To learn how to use it, just type:
+
+```
+feneb_wizard -h
+
+```
+
+Or :
+
+```
+feopt_wizard -h
+
+```
+
 Check the tutorial folder for examples and a short tutorial!
 
 # Requirements
@@ -70,7 +87,7 @@ Execute
   make
 ```
 
-NETCDF_DIR is assumed to be /usr. If not, override with
+NETCDF_DIR is assumed to be /usr. If not, override with:
 
 ```
   make NETCDF_DIR=/your/path/to/netcdf`
