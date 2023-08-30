@@ -39,7 +39,6 @@ Below all the variables available for feneb.in with their default options:
  smartstep             T !Ignore steep_size and use a gradient based criteria for deciding the step lenght
  skip                  0 !Number of initial frames ommited for analysis
  typicalneb            F !Instead of an uncoupled feneb optimization, run a feneb optimization with the NEB force
- rfromtraj             F !Instead of using AMBER netcdf files (.nc) read fene.traj files (generated with the "extractor" tool)
  usensteps             F !Use only a certain number of steps from the trajectory files
  nstepsexternal     5000 !Specifiy how many steps will be used
  wtemp                 F !Write temperature for the atoms in the Reaction Coordinate Space
