@@ -17,7 +17,7 @@ integer, allocatable, dimension (:), intent(inout) :: mask
 double precision, allocatable, dimension(:,:,:), intent(inout) :: rav, fav, tang, ftang, ftrue,fperp, rrefall, ravprevsetp
 double precision, allocatable, dimension(:,:,:), intent(inout) :: fspring, dontg, devav, ravout
 double precision, allocatable, dimension(:), intent(inout) :: mass
-integer :: start_range, end_range, i_mask, mask_index, comment_loc
+integer :: start_range, end_range, i_mask, mask_index, comment_loc, keyword_length
 character(len=20) :: substr
 character(len=20), dimension(2) :: range
 
