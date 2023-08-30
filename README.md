@@ -48,8 +48,6 @@ Below all the variables available for feneb.in with their default options:
  minsegmentlenght    100 !Has to do with the Mann-Kendall test. Only modify if you know what you're doing.
  nevalfluc          1000 !Number of minimum frames to evaluate fluctuations (Has to do with the Mann-Kendall test)
  tangoption            1 !Tangent option definition: 0, classic; 1, improved; 2, free energy based tangent (uses tg+ and tg-)
- optoption             0 !Optimization method: 0, steepest descent (recommended); 1, FIRE (not extensively tested)
- FIRE_dt_max       1.5d0 !FIRES maximum time step
  tangrecalc            T !Recalculate the tangent every uncoupled string optimization step
  maxdist         0.001d0 !Criteria for the replicas to be "equispaced" (A)
  stopifconverged       F !Stop if the convergence criteria is achived (if so, no new band is generated)
