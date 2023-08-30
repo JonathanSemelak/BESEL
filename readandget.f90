@@ -221,11 +221,11 @@ end subroutine readtop
 
 
 subroutine readinputbuilder(rcfile, pcfile, tsfile, prefix, nrestr, nrep, usets, per, velin, velout,&
-  rav, mask, iddp, nmax, onlytest, wselfdist)
+  rav, mask, idpp, nmax, onlytest, wselfdist)
 implicit none
 character(len=200) :: rcfile, pcfile, tsfile, prefix, exp, keyword, line, all
 integer :: nrestr, nrep, i, ierr, nmax
-logical ::  usets, per, velin, velout, onlytest, iddp, wselfdist
+logical ::  usets, per, velin, velout, onlytest, idpp, wselfdist
 integer, allocatable, dimension (:), intent(inout) :: mask
 double precision, allocatable, dimension(:,:,:), intent(inout) :: rav
 integer :: start_range, end_range, i_mask, mask_index
@@ -233,10 +233,9 @@ character(len=20) :: substr
 character(len=20), dimension(2) :: range
 onlytest = .false.
 usets = .false.
-iddp = .false.
-nmax = 2500
+idpp = .false.
 tsfile = 'None'
-iddp = .False.
+idpp = .False.
 nmax = 500
 wselfdist = .False.
 per=.True.
@@ -271,7 +270,7 @@ do
    if (keyword == 'velout') read(line,*) exp, velout
    if (keyword == 'onlytest') read(line,*) exp, onlytest
    if (keyword == 'nmax') read(line,*) exp, nmax
-   if (keyword == 'iddp') read(line,*) exp, iddp
+   if (keyword == 'idpp') read(line,*) exp, idpp
    if (keyword == 'wselfdist') read(line,*) exp, wselfdist
 end do
 

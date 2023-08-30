@@ -9,7 +9,7 @@ use netcdf
 implicit none
 character(len=200) :: rcfile, pcfile, tsfile, prefix, chi, oname
 integer :: nrestr, nrep, i, j, k, middlepoint, natoms, nscycle, nmax,n1,n2,n3, tangoption
-logical ::  usets, per, velin, velout, onlytest, iddp, relaxd, equispaced, moved, wselfdist
+logical ::  usets, per, velin, velout, onlytest, idpp, relaxd, equispaced, moved, wselfdist
 double precision, dimension(3) :: BAND_slope
 double precision, dimension(3) :: BAND_const
 double precision, dimension(6):: boxinfo
@@ -23,7 +23,7 @@ double precision :: energyreplica, maxenergy
 
 !reads imputfile
 call readinputbuilder(rcfile, pcfile, tsfile, prefix, nrestr, nrep, usets, per, velin, velout, rav, &
-mask, iddp, nmax, onlytest,wselfdist)
+mask, idpp, nmax, onlytest,wselfdist)
 
 if (onlytest) then
 	allocate(rref(3,natoms))
@@ -102,7 +102,7 @@ do i=1,nrestr
   end if
 end do
 
-if (iddp) then
+if (idpp) then
 
   allocate(distmatrix(nrestr,nrestr,nrep),intdistmatrix(nrestr,nrestr,nrep),energy(nrep))
 	allocate(fav(3,nrestr,nrep),fspring(3,nrestr,nrep),ftrue(3,nrestr,nrep),fperp(3,nrestr,nrep),ftang(3,nrestr,nrep))
