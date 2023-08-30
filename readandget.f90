@@ -108,9 +108,22 @@ allocate(mass(nrestr),mask(nrestr),rav(3,nrestr,nrep),fav(3,nrestr,nrep),rrefall
 open (unit=1000, file="feneb.in", status='old', action='read') !read feneb.in now that mask is allocated
 mask_index = 1
 do
-    read (1000,"(a)",iostat=ierr) line ! read line into character variable
-    if (ierr /= 0) exit
-           read (line,*) keyword ! read first keyword of line
+    read (1000,'(a)',iostat=ierr) line ! read line into character variable
+    if (ierr /= 0) exit  ! Exit if end of file or error
+
+    ! Find and trim the comment
+    comment_loc = index(line, "!")
+    if (comment_loc > 0) then
+        line = line(1:comment_loc-1)
+    end if
+
+    ! Trim spaces
+    line = adjustl(trim(line))
+
+    ! Read keyword
+    read(line, *, iostat=ierr) keyword
+    if (ierr /= 0) cycle
+
     if (keyword == 'mask') then
       line=line(6:) ! remove the first five characters which are 'mask'
       substr = ''
