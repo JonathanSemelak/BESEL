@@ -33,7 +33,7 @@ Below all the variables available for feneb.in with their default options:
  velin                 F !Input .rst7 files have velocity info
  velout                F !Include dummy velocity info for output files
  nscycle           50000 !Max. optimization steps in string optimization
- rextrema              F !Use info from previous extremes optimization (requires feneb.extrema1 and feneb.extrema2)
+ rextrema              F !Use info from previous extremes optimization (requires feneb.reactants and feneb.products)
  steep_spring    0.001d0 !Step length (in A)  for string optimization
  steep_size       0.01d0 !Step length (in A)  for steepest descent optimization
  smartstep             T !Ignore steep_size and use a gradient based criteria for deciding the step lenght

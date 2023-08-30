@@ -645,14 +645,14 @@ double precision, dimension(3,nrestr,nrep), intent(inout) :: rav, fav
 integer, intent(in) :: nrestr,nrep
 integer :: i, exp
 
-write(9999,*) "Reading extrema coordinates and forces from feneb.extrema1 and feneb.extrema2 files"
+write(9999,*) "Reading extrema coordinates and forces from feneb.reactants and feneb.products files"
 
-open(unit=210421, file="feneb.extrema1", status='old', action='read')
+open(unit=210421, file="feneb.reactants", status='old', action='read')
 do i=1,nrestr
   read(210421,'(2x, I6,2x, 6(f20.10,2x))') exp, rav(1:3,exp,1), fav(1:3,exp,1)
 end do
 close(210421)
-open(unit=210422, file="feneb.extrema2", status='old', action='read')
+open(unit=210422, file="feneb.products", status='old', action='read')
 do i=1,nrestr
   read(210422,'(2x, I6,2x, 6(f20.10,2x))') exp, rav(1:3,exp,nrep), fav(1:3,exp,nrep)
 end do
