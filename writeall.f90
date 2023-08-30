@@ -5,7 +5,7 @@ integer, intent(in) :: nrestr, rep, nrep
 double precision, dimension(3,nrestr,nrep), intent(in) :: rav, fav
 integer :: i
 
-open(unit=1001, file="Pos_forces.dat", position='append')
+open(unit=1001, file="feneb.gradients", position='append')
 do i=1,nrestr
 write(1001,'(2x, I6,2x, 6(f20.10,2x))') i, rav(1:3,i,rep), fav(1:3,i,rep)
 end do

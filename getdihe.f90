@@ -57,7 +57,7 @@ program getdihe
   endif
   !determine npict and nrestr
   if (.not. readfromrst7) then
-    open(unit=25, file="Pos_forces.dat")
+    open(unit=25, file="feneb.gradients")
     nlines=0
     atnum=0
     atnum_old=0
@@ -78,7 +78,7 @@ program getdihe
     allocate (rav(3,nrestr,npict))
     allocate (phi(npict), psi(npict))
 
-    open(unit=25, file="Pos_forces.dat")
+    open(unit=25, file="feneb.gradients")
     do i=1,npict
     do j=1,nrestr
       read(25,*) trash, rav(1:3,j,i)

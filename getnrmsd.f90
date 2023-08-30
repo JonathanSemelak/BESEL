@@ -54,7 +54,7 @@ program getnrmsd
   endif
   !determine nrep and nrestr
   if (.not. readfromrst7) then
-    open(unit=25, file="Pos_forces.dat")
+    open(unit=25, file="feneb.gradients")
     nlines=0
     atnum=0
     atnum_old=0
@@ -75,7 +75,7 @@ program getnrmsd
     allocate (rav(3,nrestr,nrep))
     allocate (nrmsd(nrep))
 
-    open(unit=25, file="Pos_forces.dat")
+    open(unit=25, file="feneb.gradients")
     do i=1,nrep
     do j=1,nrestr
       read(25,*) trash, rav(1:3,j,i)

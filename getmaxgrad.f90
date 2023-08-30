@@ -7,7 +7,7 @@ double precision :: maxgradnorm
 integer :: i, j, k, trash, nlines, io, atnum, atnum_old, nrestr, nrep
 integer :: maxgradreplica
 
-open(unit=25, file="Pos_forces.dat")
+open(unit=25, file="feneb.gradients")
 nlines=0
 atnum=0
 atnum_old=0
@@ -27,7 +27,7 @@ close(25)
 
 allocate (rav(3,nrestr,nrep),fav(3,nrestr,nrep))
 
-open(unit=25, file="Pos_forces.dat")
+open(unit=25, file="feneb.gradients")
 do i=1,nrep
   do j=1,nrestr
     read(25,*) trash, rav(1:3,j,i), fav(1:3,j,i)
