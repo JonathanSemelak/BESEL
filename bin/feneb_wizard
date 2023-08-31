@@ -149,7 +149,7 @@ if [ ! -d "inputs" ]; then
 fi
 
 # Check if required files exist
-REQUIRED_FILES=("feneb.in" "prod.mdin")
+REQUIRED_FILES=("feneb.in" "${MDIN}")
 for file in "${REQUIRED_FILES[@]}"; do
     if [ ! -f "inputs/$file" ]; then
         echo "Error: Required file $file not found in inputs directory."
@@ -304,7 +304,7 @@ do
         mkdir -p STEP-$step #Creates a directory for the $i-th optimization step
         cd STEP-$step
         #Copy input files and topology
-        cp ../inputs/$MDIN .
+        cp ../inputs/${MDIN} .
         cp ../inputs/feneb.* .
         cp ../inputs/$TOPOLOGY  .
 
@@ -374,7 +374,7 @@ do
           echo "Running package $i (range from $FROM to $UPTO)"
           for ((k=FROM;k<UPTO;k++)); # Start running M-1 MD
           do
-            $SANDER -O -i prod.mdin \
+            $SANDER -O -i ${MDIN} \
                        -o ${NAME}_${k}.out \
                        -p $TOPOLOGY \
                        -c ${NAME}_fprev_${k}.rst7 \
@@ -383,7 +383,7 @@ do
                        -ref ${NAME}_r_${k}.rst7 &
           done
 	       #Run the last MD (of this package), and waits until its finished
-          $SANDER -O -i prod.mdin \
+          $SANDER -O -i ${MDIN} \
                   -o ${NAME}_${k}.out \
                   -p $TOPOLOGY \
                   -c ${NAME}_fprev_${k}.rst7 \
@@ -420,7 +420,7 @@ do
         UPTO=$((ENDREP))
         for ((k=FROM; k<UPTO; k++)); # Starts in k+1 image, according to last FROM update
         do
-          $SANDER -O -i prod.mdin \
+          $SANDER -O -i ${MDIN} \
                      -o ${NAME}_${k}.out \
                      -p $TOPOLOGY \
                      -c ${NAME}_fprev_${k}.rst7 \
@@ -429,7 +429,7 @@ do
                      -ref ${NAME}_r_${k}.rst7 &
         done
         #Run the last remaining MD, and waits until its finished
-        $SANDER -O -i prod.mdin \
+        $SANDER -O -i ${MDIN} \
                    -o ${NAME}_${k}.out \
                    -p $TOPOLOGY \
                    -c ${NAME}_fprev_${k}.rst7 \
