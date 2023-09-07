@@ -2,7 +2,7 @@ program freeenergysegments
 use readandget
 use netcdf
 implicit none
-character(len=50) :: infile, reffile, iname, rname, hname, sname, chrep, chat
+character(len=500) :: infile, reffile, iname, rname, hname, sname, chrep, chat
 logical :: netcdf,per,velin,startfound,endfound,normalize
 integer :: i, j, k, at, nsteps, spatial, natoms, nrestr, rep, auxunit, auxunit2, bins, start, end, cutlenght
 integer, allocatable, dimension (:) :: mask

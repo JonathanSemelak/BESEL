@@ -7,7 +7,7 @@ subroutine readinput(nrep,infile,reffile,outfile,topfile,mask,nrestr, &
            rextrema, skip, dostat, minsegmentlenght, nevalfluc,rfromtraj,usensteps,nstepsexternal,smartstep, &
            typicalneb, tangoption, optoption, FIRE_dt_max, tangrecalc, maxdist, stopifconverged)
 implicit none
-character(len=50) :: infile, reffile, outfile, line, exp, keyword, topfile, prefix
+character(len=500) :: infile, reffile, outfile, line, exp, keyword, topfile, prefix
 integer :: nrestr, nrep, i, ierr, nscycle,skip, wtempfrec, wtempstart, wtempend
 integer :: minsegmentlenght, nevalfluc, nstepsexternal, tangoption, optoption
 logical :: per, velin, velout, wgrad, rextrema, wtemp, dostat, rfromtraj, usensteps, smartstep, typicalneb, tangrecalc
@@ -18,8 +18,8 @@ double precision, allocatable, dimension(:,:,:), intent(inout) :: rav, fav, tang
 double precision, allocatable, dimension(:,:,:), intent(inout) :: fspring, dontg, devav, ravout
 double precision, allocatable, dimension(:), intent(inout) :: mass
 integer :: start_range, end_range, i_mask, mask_index, comment_loc
-character(len=20) :: substr
-character(len=20), dimension(2) :: range
+character(len=500) :: substr
+character(len=500), dimension(2) :: range
 
 ! set some default variables
  nscycle=50000
@@ -178,8 +178,8 @@ end subroutine readinput
 
 subroutine get_range(input_string, output_array)
    implicit none
-   character(len=*), intent(in) :: input_string
-   character(len=20), dimension(2), intent(out) :: output_array
+   character(len=500), intent(in) :: input_string
+   character(len=500), dimension(2), intent(out) :: output_array
    integer :: pos
 
    pos = index(input_string, '-')
@@ -189,7 +189,7 @@ end subroutine get_range
 
 subroutine readtop(topfile,natoms,mask,mass,nrestr)
 implicit none
-character(len=50) :: topfile
+character(len=500) :: topfile
 double precision, dimension(natoms) :: massall
 double precision, dimension(nrestr) :: mass
 integer, dimension(nrestr) :: mask
@@ -223,14 +223,14 @@ end subroutine readtop
 subroutine readinputbuilder(rcfile, pcfile, tsfile, prefix, nrestr, nrep, usets, per, velin, velout,&
   rav, mask, idpp, nmax, onlytest, wselfdist)
 implicit none
-character(len=200) :: rcfile, pcfile, tsfile, prefix, exp, keyword, line, all
+character(len=500) :: rcfile, pcfile, tsfile, prefix, exp, keyword, line, all
 integer :: nrestr, nrep, i, ierr, nmax
 logical ::  usets, per, velin, velout, onlytest, idpp, wselfdist
 integer, allocatable, dimension (:), intent(inout) :: mask
 double precision, allocatable, dimension(:,:,:), intent(inout) :: rav
 integer :: start_range, end_range, i_mask, mask_index, comment_loc
-character(len=20) :: substr
-character(len=20), dimension(2) :: range
+character(len=500) :: substr
+character(len=500), dimension(2) :: range
 onlytest = .false.
 usets = .false.
 idpp = .false.
@@ -343,7 +343,7 @@ end subroutine readinputbuilder
 subroutine readinputextrator(nrestr,mask,infile,i)
 
 implicit none
-character(len=50) :: infile, exp, keyword, line
+character(len=500) :: infile, exp, keyword, line
 integer  :: nrestr, i, j, ierr
 integer, allocatable, dimension (:) :: mask
 
@@ -376,7 +376,7 @@ end subroutine readinputextrator
 
 subroutine readinputsegmentsfreenergy(nrestr,mask,infile,reffile,i,netcdf,bins,kref,temp,per,velin,boxinfo,truncar,normalize)
 implicit none
-character(len=50) :: infile, reffile, exp, keyword, line
+character(len=500) :: infile, reffile, exp, keyword, line
 integer  :: nrestr, i, j, ierr, bins
 logical :: netcdf, per, velin, normalize
 integer, allocatable, dimension (:) :: mask
@@ -451,8 +451,8 @@ subroutine getfilenames(rep,chrep,infile,reffile,outfile,iname,rname,oname,avnam
 
 implicit none
 integer, intent(in) :: rep
-character(len=50), intent(in) :: infile, reffile, outfile
-character(len=50), intent(out) :: chrep, iname, rname, oname, avname
+character(len=500), intent(in) :: infile, reffile, outfile
+character(len=500), intent(out) :: chrep, iname, rname, oname, avname
 
 if (rep .le. 9) write(chrep,'(I1)') rep
 if (rep .gt. 9 .and. rep .le. 99) write(chrep,'(I2)') rep
@@ -477,8 +477,8 @@ use netcdf
 implicit none
 integer(kind=4), intent(out) :: nsteps,spatial,natoms
 integer(kind=4) :: ncid
-character(len=50), intent(in) :: iname
-character(len=50) :: xname, yname, zname
+character(len=500), intent(in) :: iname
+character(len=500) :: xname, yname, zname
 call check(nf90_open(iname, nf90_nowrite, ncid))
 call check(nf90_inquire_dimension(ncid,1,xname,nsteps))
 call check(nf90_inquire_dimension(ncid,2,yname,spatial))
@@ -492,7 +492,7 @@ implicit none
 real (kind=4), DIMENSION(nsteps) :: coordx, coordy, coordz
 integer(kind=4), intent(in) :: natoms, nsteps, spatial, nrestr
 integer(kind=4) :: ncid
-character(len=50), intent(in) :: iname
+character(len=500), intent(in) :: iname
 integer, dimension(3) :: point,endp
 integer, dimension(nrestr) :: mask
 double precision, dimension(3,nrestr,nsteps) :: coordall
@@ -521,7 +521,7 @@ end subroutine getcoordfromnetcdf
 
 subroutine getcoordfromfenebtraj(nsteps,coordall,nrestr,i)
 implicit none
-character(len=50) :: chi
+character(len=500) :: chi
 integer :: i, j, k, nsteps, nrestr
 double precision, allocatable, dimension(:,:,:), intent(inout) :: coordall
 
@@ -552,7 +552,7 @@ double precision, dimension(3,nrestr,nsteps) :: coordall
 double precision, dimension(3,natoms), intent(in) :: rref
 double precision, dimension(tempfilesize,nrep), intent(inout) :: temp
 double precision, dimension(nrestr), intent(in) :: mass
-character(len=50) :: chi, chrep
+character(len=500) :: chi, chrep
 integer :: i,j,k,ati,auxunit,skip,tempfilesize,nsteps2
 logical :: wgrad,wtemp
 
@@ -614,7 +614,7 @@ subroutine getrefcoord(rname,nrestr,mask,natoms,rref,boxinfo,per,velin)
 implicit none
 integer :: nrestr
 integer, intent(out) :: natoms
-character(len=50), intent(in) :: rname
+character(len=500), intent(in) :: rname
 double precision, dimension(:,:), allocatable :: rref
 double precision, dimension(6), intent(out) :: boxinfo
 integer, dimension(nrestr),intent(in) :: mask

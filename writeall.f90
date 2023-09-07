@@ -49,7 +49,7 @@ end subroutine writeposdev
 subroutine writenewcoord(oname,rref,boxinfo,natoms,nrestr,mask,per,velout,rav,nrep,rep,test)
 
 implicit none
-character(len=50), intent(in) :: oname
+character(len=500), intent(in) :: oname
 integer, intent(in) :: natoms, nrestr, nrep, rep
 double precision, dimension(3,nrestr,nrep) :: rav
 double precision, dimension(3,natoms), intent(in) :: rref

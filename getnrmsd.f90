@@ -10,7 +10,7 @@ program getnrmsd
   double precision :: dihedro2
   integer :: i,j,k, rep, nrep, trash, at1, at2, at3, at4, ierr
   integer :: nlines, io, atnum, atnum_old, nrestr, natoms
-  character(len=50) :: exp, line, keyword, chrep, rname,reffile
+  character(len=500) :: exp, line, keyword, chrep, rname,reffile
   logical :: readfromrst7, velin, per
 
 

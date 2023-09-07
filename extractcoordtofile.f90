@@ -2,8 +2,8 @@ program extractcoordtofile
 use readandget
 use netcdf
 implicit none
-character(len=50) :: infile, inname
-character(len=50) :: chi, iname
+character(len=500) :: infile, inname
+character(len=500) :: chi, iname
 integer :: i, j, k, ati, nsteps, spatial, natoms, nrestr
 integer, allocatable, dimension (:) :: mask
 real(4), allocatable, dimension (:) :: coordx,coordy,coordz

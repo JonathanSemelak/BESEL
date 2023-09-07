@@ -15,7 +15,7 @@ program feneb
 use netcdf
 use readandget
 implicit none
-character(len=50) :: infile, reffile, outfile,topfile, chi, iname, rname, oname, avname, tempname
+character(len=500) :: infile, reffile, outfile,topfile, chi, iname, rname, oname, avname, tempname
 integer :: nsteps, spatial, natoms, nrestr, nrep, nscycle,maxforceat, atj, maxstdat, tangoption, optoption
 integer :: i, j, k, n, start, nend, skip, wtempstart, wtempend, wtempfrec, tempfilesize, minsegmentlenght, nevalfluc, nstepsexternal
 integer, allocatable, dimension (:) :: mask
