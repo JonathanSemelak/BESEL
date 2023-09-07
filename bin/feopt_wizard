@@ -20,7 +20,7 @@ print_help() {
   echo "                                                  FEOPT WIZARD "
   echo "----------------------------------------------------------------------------------------------------------------------"
   echo
-  echo "Welcome to Feneb Wizard, a tool designed to automate the running of a Free Energy Optimizaion."
+  echo "Welcome to Feopt Wizard, a tool designed to automate the running of a Free Energy Optimizaion."
   echo
   echo "USAGE:"
   echo "feopt_wizard [OPTIONS]"
