@@ -102,7 +102,7 @@ if [ ! -d "inputs" ]; then
 fi
 
 # Check if required files exist
-REQUIRED_FILES=("feneb.in" "prod.mdin")
+REQUIRED_FILES=("feneb.in" "${MDIN}")
 for file in "${REQUIRED_FILES[@]}"; do
     if [ ! -f "inputs/$file" ]; then
         echo "Error: Required file $file not found in inputs directory."
@@ -202,7 +202,7 @@ do
 
         echo "Running MD"
 
-        $SANDER -O -i prod.mdin \
+        $SANDER -O -i ${MDIN} \
                    -o ${NAME}_${k}.out \
                    -p $TOPOLOGY \
                    -c ${NAME}_fprev_${k}.rst7 \
