@@ -1,5 +1,5 @@
 	program bandbuilder
-!
+
 !This program generates an initial set of replicas for NEB calculations in Amber .rst7 format,
 !using only reactives and products restarts (and TS if possible)
 !Original subroutine by N. Foglia 03/2018
@@ -7,7 +7,7 @@
 use readandget
 use netcdf
 implicit none
-character(len=500) :: rcfile, pcfile, tsfile, prefix, chi, oname
+character(len=500) :: rcfile, pcfile, tsfile, prefix, chi, oname, arg
 integer :: nrestr, nrep, i, j, k, middlepoint, natoms, nscycle, nmax,n1,n2,n3, tangoption
 logical ::  usets, per, velin, velout, onlytest, idpp, relaxd, equispaced, moved, wselfdist
 double precision, dimension(3) :: BAND_slope
@@ -20,6 +20,15 @@ double precision, allocatable, dimension(:,:,:) :: rav, distmatrix, intdistmatri
 double precision, allocatable, dimension(:,:,:) :: fav, tang, ftang, ftrue, fperp, fspring, devav
 double precision :: kspring, ftol, dontg, maxforceband, maxforceband2, stepl, steep_spring, steep_size
 double precision :: energyreplica, maxenergy
+
+!------------ Print version
+if (IARGC() .ge. 1) then
+     call GETARG(1, arg)
+     if (arg == '--version') then
+        print *, 'bandbuilder: Version 2'
+        stop
+     end if
+end if
 
 !reads imputfile
 call readinputbuilder(rcfile, pcfile, tsfile, prefix, nrestr, nrep, usets, per, velin, velout, rav, &
@@ -114,7 +123,7 @@ if (idpp) then
 	dontg=0.d0
 	relaxd=.false.
   nscycle=5000
-  steep_size=0.01d0
+  steep_size=0.001d0
 	devav=0.d0
 	rrefall=0.d0
 	profile=0.d0
@@ -151,21 +160,24 @@ close(88881)
 			end do
 			close(888811)
 		end if
+
     call getenergyandforce(rav,nrestr,nrep,distmatrix,intdistmatrix,energy,maxenergy,fav)
 	  call gettang(rav,tang,nrestr,nrep,tangoption,profile)
 	  call getnebforce(rav,devav,fav,tang,nrestr,nrep,kspring,maxforceband,ftol,relaxd,&
 											ftrue,ftang,fperp,fspring,.true.,dontg,.false.)
 		write(11111,*) j, maxenergy, maxforceband, steep_size
-		! write(*,*) j, maxenergy,maxforceband, steep_size
-
+    flush(11111)
 	  do i=2,middlepoint-1
       moved=.False.
 			! moved=.True.
 		  do while (.not. moved)
 				ravprev=rav
-		    call steep(rav,fperp,nrep,i,steep_size,maxforceband,nrestr,0.d0,stepl,.False.)
+				write(1010,*) "AASD1"
+				flush(1010)
+		    call steep(rav,fperp,nrep,i,steep_size,maxforceband,nrestr,stepl,.False.)
+				write(1010,*) "AASD2"
+				flush(1010)
 		 	  moved=(energyreplica(rav,intdistmatrix,nrestr,nrep,i) .lt. maxenergy)
-				! write(*,*) energyreplica(rav,intdistmatrix,nrestr,nrep,i)
 		    if (.not. moved) then
           rav=ravprev
 			    steep_size=steep_size*0.9d0
@@ -179,7 +191,7 @@ close(88881)
 			  ! moved=.True.
 			  do while (.not. moved)
 				  ravprev=rav
-				  call steep(rav,fperp,nrep,i,steep_size,maxforceband,nrestr,0.d0,stepl,.False.)
+				  call steep(rav,fperp,nrep,i,steep_size,maxforceband,nrestr,stepl,.False.)
 				  moved=(energyreplica(rav,intdistmatrix,nrestr,nrep,i) .lt. maxenergy)
 				  ! write(*,*) energyreplica(rav,intdistmatrix,nrestr,nrep,i)
 				  if (.not. moved) then
@@ -189,6 +201,7 @@ close(88881)
 			  end do
 		  end do
 		end if
+
 		do i=1,nrep
 			write(22222,*) energy(i)
     end do
@@ -206,7 +219,7 @@ close(88881)
 		call getnebforce(rav,devav,fav,tang,nrestr,nrep,kspring,maxforceband2,0.d0,relaxd,&
 										ftrue,ftang,fperp,fspring,.false.,dontg,.false.)
 			do i=2,nrep-1
-				if (i.ne.middlepoint) call steep(rav,fspring,nrep,i,0.001d0,maxforceband2,nrestr,0.d0,stepl,.False.)
+				if (i.ne.middlepoint) call steep(rav,fspring,nrep,i,0.001d0,maxforceband2,nrestr,stepl,.False.)
 			end do
 
 		! write(9999,*) "Band max fspring: ",k, maxforceband2
@@ -220,6 +233,7 @@ close(88881)
 			write(9999,*) "Total spring steps: ", k
 			write(9999,*) "Equispaced: ", equispaced
 			write(9999,*)
+			flush(9999)
 		end if
 		k=k+1
 	  end do
@@ -359,7 +373,6 @@ do k=1,nrep
 		  dd=(intdistmatrix(i,j,k)-distmatrix(i,j,k))
 			dij=distmatrix(i,j,k)
 			fij=(2.d0*dd/(dij**5))*(1.d0 + (2.d0*dd/dij))
-      if(k.eq.13) write(7777,*) fij
 			dx=(rav(1,i,k)-rav(1,j,k))
 			dy=(rav(2,i,k)-rav(2,j,k))
 			dz=(rav(3,i,k)-rav(3,j,k))
