@@ -3,13 +3,6 @@
 # This is a tool generate an initial band for a FENEB optimization
 # Written by Jonathan A. Semelak
 #-------------------------------------------------------------------------------------------------------------
-BANDBUILDER=bandbuilder                               #Should be replaced by the corresponding path to feneb
-CPPTRAJ=cpptraj                                       #Should be replaced by the corresponding path to cpptraj
-SANDER=sander                                         #Should be replaced by the corresponding path to sander
-MDIN=growth.mdin                                      #Sander input
-GROWTH=F
-MERGE=F
-#-------------------------------------------------------------------------------------------------------------
 
 print_help() {
   echo
@@ -39,16 +32,18 @@ print_help() {
   echo
 }
 
+#-------- Defaults
 BANDBUILDER=bandbuilder                               #Should be replaced by the corresponding path to feneb
 CPPTRAJ=cpptraj                                       #Should be replaced by the corresponding path to cpptraj
 SANDER=sander                                         #Should be replaced by the corresponding path to sander
 MDIN=growth.mdin                                      #Sander input
 GROWTH=F
+BIDIRECTIONAL=F
 MERGE=F
 #--------
 
 # Parse command line arguments
-while getopts "hb:m:cp:g:s:i:" opt; do
+while getopts "hb:m:cp:g:bi:s:i:" opt; do
   case ${opt} in
     h ) print_help
         exit 0
@@ -60,6 +55,8 @@ while getopts "hb:m:cp:g:s:i:" opt; do
     cp ) CPPTRAJ=$OPTARG
       ;;
     g ) GROWTH=$OPTARG
+      ;;
+    g ) BIDIRECTIONAL=$OPTARG
       ;;
     s ) SANDER=$OPTARG
       ;;
@@ -82,13 +79,13 @@ is_num() {
 # Before doing anything, prints the print_help
 print_help
 
-# Check if MERGE is either 'T', 'F', or 'd'
+# Check if MERGE is either 'T' or 'F'
 if ! echo "$MERGE" | grep -E -q '^[TF]$'; then
   echo "Error: MERGE must be either 'T' or 'F'."
   exit 1
 fi
 
-# Check if GROWTH is either 'T', 'F', or 'd'
+# Check if GROWTH is either 'T' or 'F'
 if ! echo "$GROWTH" | grep -E -q '^[TF]$'; then
   echo "Error: GROWTH must be either 'T' or 'F'."
   exit 1
@@ -172,7 +169,7 @@ then
   # Check if NIMAGES is a number
   is_num "$NIMAGES" "NIMAGES"
 else
-  echo "Error: The number of images not found in bandbuilder.in (nrep)"
+  echo "Error: Number of images not found in bandbuilder.in (nrep)"
   exit 1
 fi
 # Check if the number of images is greater than 2
@@ -214,6 +211,11 @@ if [ "$GROWTH" == "T" ]; then
           exit 1
       fi
   done
+  # Check if BIDIRECTIONAL is either 'T' or 'F'
+  if ! echo "$BIDIRECTIONAL" | grep -E -q '^[TF]$'; then
+    echo "Error: BIDIRECTIONAL must be either 'T' or 'F'."
+    exit 1
+  fi
 fi
 
 # In CPPTRAJ will be used, check that the path is correctly set
@@ -257,7 +259,15 @@ then
 else
   IDPP=F
 fi
-
+# IF IDPP is True, check that nmax is numeric
+if [ "$IDPP" == "T" ]; then
+  if  grep -s -q -F "nmax" "inputs/bandbuilder.in";
+  then
+    NMAX=$(grep nrep inputs/bandbuilder.in|awk '{print $2}')
+    # Check if NMAX
+    is_num "$NMAX" "NAMX"
+fi
+fi
 
 echo "----------------------------------------------------------------------------------------------------------------------"
 echo "                                          STARTING THE BAND GENERATION"
@@ -277,20 +287,96 @@ cp ../inputs/* .
 
 $BANDBUILDER
 
-mkdir -p ../STEP-0
-
-# In CPPTRAJ will be used, check that the path is correctly set
+if [ "$GROWTH" == "T" ]; then
+echo " The Growth method will be used to improve the initial band guess!"
+echo " A total of $((NIMAGES-2)) simulations will be run"
+if [ "BIDIRECTIONAL" == "T" ]; then
+echo " Note that the reactants and products coordaintes files will be the same as rcfile and pcfile"
+cp ${REACTANTSFILE} ${NAME}_1.rst7
+cp ${PRODUCTSFILE} ${NAME}_${NIMAGES}.rst7
+FROM=2
+UPTO=$(((NIMAGES-2)/2))
+UPTO=$((UPTO+1))
+echo " Running images from $FROM to $UPTO (starting with reactants coordinates)"
+for ((k=FROM;k<=UPTO;k++)); # Start running MD
+do
+  echo " Running image ${k}..."
+  j=$((k-1))
+  mv ${NAME}_${k}.rst7 ${NAME}_initial_${k}.rst7
+  $SANDER -O -i ${MDIN} \
+             -o ${NAME}_${k}.out \
+             -p ${TOPOLOGY} \
+             -c ${NAME}_${j}.rst7 \
+             -r ${NAME}_${k}.rst7 \
+             -x ${NAME}_${k}.nc \
+             -ref ${NAME}_initial_${k}.rst7
+done
+FROM=$((NIMAGES-1))
+UPTO=$(((NIMAGES-2)/2))
+UPTO=$((UPTO+1))
+echo " Running images from $FROM to $((UPTO+1)) (starting with products coordinates)"
+for ((k=FROM;k>UPTO;k--)); # Start running MD
+do
+  echo " Running image ${k}..."
+  j=$((k-1))
+  mv ${NAME}_${k}.rst7 ${NAME}_initial_${k}.rst7
+  $SANDER -O -i ${MDIN} \
+             -o ${NAME}_${k}.out \
+             -p ${TOPOLOGY} \
+             -c ${NAME}_${j}.rst7 \
+             -r ${NAME}_${k}.rst7 \
+             -x ${NAME}_${k}.nc \
+             -ref ${NAME}_initial_${k}.rst7
+done
+else
+  echo " Note that the reactants coordaintes file will be the same as rcfile"
+  cp ${REACTANTSFILE} ${NAME}_1.rst7
+  cp ${REACTANTSFILE} ${NAME}_initial_1.rst7
+  FROM=2
+  UPTO=$((NIMAGES-1))
+  echo " Running images from $FROM to $UPTO (starting with reactants coordinates)"
+  for ((k=FROM;k<=UPTO;k++)); # Start running MD
+  do
+    echo " Running image ${k}..."
+    j=$((k-1))
+    mv ${NAME}_${k}.rst7 ${NAME}_initial_${k}.rst7
+    $SANDER -O -i ${MDIN} \
+               -o ${NAME}_${k}.out \
+               -p ${TOPOLOGY} \
+               -c ${NAME}_${j}.rst7 \
+               -r ${NAME}_${k}.rst7 \
+               -x ${NAME}_${k}.nc \
+               -ref ${NAME}_initial_${k}.rst7
+  done
+fi
+mkdir -p ../STEP-0-INITIAL
 if [ "$MERGE" == "T" ]; then
-  echo " Additionally, images will be merged into the file initial_BAND.nc, using CPPTRAJ"
+  echo " Additionally, images will be merged into the file ${NAME}_initial_BAND.nc, using CPPTRAJ"
+  echo " Running CPPTRAJ..."
+  for ((i=1; i<=NIMAGES; i++));
+  do
+  echo "trajin ${NAME}_$i.rst7" >> input.cpptraj
+  done
+  echo "trajout ${NAME}_INITIAL_BAND_0.nc netcdf" >> input.cpptraj
+  $CPPTRAJ $TOPOLOGY input.cpptraj >> cpptraj.log
+  rm input.cpptraj
+  mv ${NAME}_INITIAL_BAND_0.nc ../STEP-0-INITIAL/.
+fi
+mv *_r_initial_*.rst7 ../STEP-0-INITIAL/.
+fi
+
+mkdir -p ../STEP-0
+if [ "$MERGE" == "T" ]; then
+  echo " Additionally, images will be merged into the file ${NAME}_BAND.nc, using CPPTRAJ"
+  echo " Running CPPTRAJ..."
   for ((i=1; i<=NIMAGES; i++));
   do
   echo "trajin ${NAME}_$i.rst7" >> input.cpptraj
   done
   echo "trajout ${NAME}_BAND_0.nc netcdf" >> input.cpptraj
-  $CPPTRAJ $TOPOLOGY input.cpptraj
+  $CPPTRAJ $TOPOLOGY input.cpptraj >> cpptraj.log
   rm input.cpptraj
   mv ${NAME}_BAND_0.nc ../STEP-0/.
 fi
-
 #Move images to the corresponding file
 mv *_r_*.rst7 ../STEP-0/.
