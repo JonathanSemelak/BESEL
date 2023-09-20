@@ -282,7 +282,6 @@ fi
 echo "----------------------------------------------------------------------------------------------------------------------"
 echo "                                          STARTING THE BAND GENERATION"
 echo "----------------------------------------------------------------------------------------------------------------------"
-echo " If everything works smoothly, you will find the images in the STEP-0 folder"
 
 if [ "$IDPP" == "T" ]; then
   echo " Images will be generated using the Image Dependent Pair Potential method"
@@ -301,7 +300,7 @@ if [ "$GROWTH" == "T" ]; then
 echo " The Growth method will be used to improve the initial band guess!"
 echo " A total of $((NIMAGES-2)) simulations will be run"
 if [ "BIDIRECTIONAL" == "T" ]; then
-echo " Note that the reactants and products coordaintes files will be the same as rcfile and pcfile"
+echo " Note that the reactants and products coordinates files will be the same as rcfile and pcfile"
 cp ${REACTANTSFILE} ${NAME}_1.rst7
 cp ${PRODUCTSFILE} ${NAME}_${NIMAGES}.rst7
 FROM=2
@@ -343,7 +342,7 @@ else
   cp ${REACTANTSFILE} ${NAME}_1.rst7
   cp ${REACTANTSFILE} ${NAME}_initial_1.rst7
   FROM=2
-  UPTO=$((NIMAGES-1))
+  UPTO=$((NIMAGES))
   echo " Running images from $FROM to $UPTO (starting with reactants coordinates)"
   for ((k=FROM;k<=UPTO;k++)); # Start running MD
   do
@@ -393,3 +392,4 @@ if [ "$MERGE" == "T" ]; then
 fi
 #Move images to the corresponding file
 mv *_r_*.rst7 ../STEP-0/.
+echo " If everything works smoothly, you will find the images in the STEP-0 folder"
