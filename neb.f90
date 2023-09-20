@@ -1,7 +1,7 @@
 !Original subroutines by N. Foglia 03/2018
 !Oriented to free energy optimizations by J. Semelak 09/2020
 
-subroutine gettang(rav,tang,nrestr,nrep,tangoption,profile)
+subroutine gettang(rav,tang,nrestr,nrep,tangoption,profile)        
 implicit none
 double precision, dimension(3,nrestr,nrep), intent(in) :: rav
 double precision, dimension(3,nrestr,nrep), intent(out) :: tang

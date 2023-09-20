@@ -235,7 +235,6 @@ onlytest = .false.
 usets = .false.
 idpp = .false.
 tsfile = 'None'
-idpp = .False.
 nmax = 500
 wselfdist = .False.
 per=.True.

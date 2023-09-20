@@ -15,7 +15,7 @@ program feneb
 use netcdf
 use readandget
 implicit none
-character(len=500) :: infile, reffile, outfile,topfile, chi, iname, rname, oname, avname, tempname
+character(len=500) :: infile, reffile, outfile,topfile, chi, iname, rname, oname, avname, tempname, arg
 integer :: nsteps, spatial, natoms, nrestr, nrep, nscycle,maxforceat, atj, maxstdat, tangoption, optoption
 integer :: i, j, k, n, start, nend, skip, wtempstart, wtempend, wtempfrec, tempfilesize, minsegmentlenght, nevalfluc, nstepsexternal
 integer, allocatable, dimension (:) :: mask
@@ -33,6 +33,16 @@ double precision, allocatable, dimension(:,:,:) :: rav, fav, tang, ftang, ftrue,
 double precision, allocatable, dimension(:,:,:) :: fspring, dontg, selfdist,coordall, FIRE_vel
 logical ::  per, velin, velout, relaxd, converged, wgrad, wtemp, moved, maxpreached, equispaced, rextrema, test
 logical ::  dostat, H0, H0T, rfromtraj, usensteps, smartstep, typicalneb, historyfound, tangrecalc, stopifconverged
+
+
+!------------ Print version
+if (IARGC() .ge. 1) then
+     call GETARG(1, arg)
+     if (arg == '--version') then
+        print *, 'feneb: Version 2'
+        stop
+     end if
+end if
 
 !------------ Read input
     call readinput(nrep,infile,reffile,outfile,topfile,mask,nrestr, &
