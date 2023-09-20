@@ -1,0 +1,296 @@
+#!/bin/bash
+#-------------------------------------------------------------------------------------------------------------
+# This is a tool generate an initial band for a FENEB optimization
+# Written by Jonathan A. Semelak
+#-------------------------------------------------------------------------------------------------------------
+BANDBUILDER=bandbuilder                               #Should be replaced by the corresponding path to feneb
+CPPTRAJ=cpptraj                                       #Should be replaced by the corresponding path to cpptraj
+SANDER=sander                                         #Should be replaced by the corresponding path to sander
+MDIN=growth.mdin                                      #Sander input
+GROWTH=F
+MERGE=F
+#-------------------------------------------------------------------------------------------------------------
+
+print_help() {
+  echo
+  echo "----------------------------------------------------------------------------------------------------------------------"
+  echo "                                                  BANDBUILDER WIZARD "
+  echo "----------------------------------------------------------------------------------------------------------------------"
+  echo
+  echo "Welcome to Bandbuilder Wizard, a tool designed to automate the generation of an initial band for a FENEB optimization"
+  echo
+  echo "USAGE:"
+  echo "bandbuilder_wizard [OPTIONS]"
+  echo
+  echo "OPTIONS:"
+  echo "-b  Specify the path to bandbuilder [default: bandbuilder]"
+  echo "-m  Specify if a merged .nc file should be generated (enter T for True) [default: F]"
+  echo "-cp Specify the path to cptraj (only needed if -m T) [default: cpptraj]"
+  echo "-g  Growth method for generating the initial band [default: F]"
+  echo "-s  Specify the path to sander or pmemd (only needed if -g T) [default: sander]"
+  echo "-i  Name of the input file for the dynamics simulations  (only needed if -g T) [growth.mdin: F]"
+  echo "----------------------------------------------------------------------------------------------------------------------"
+  echo "NOTES:"
+  echo "1. The following files must be provided in the 'inputs' folder:"
+  echo "    - bandbuilder.in file"
+  echo "    - Reactants and products .rst7 files with the names specified in bandbuilder.in (rcfile and pcfile)"
+  echo "    - The topology file named PREFIX.prmtop, where PREFIX is read from the bandbuilder.in file (prefix)"
+  echo "    - In case -g is set to True, a sander (or pmemd) input  (growth.mdin by default, as specified by -i)"
+  echo
+}
+
+BANDBUILDER=bandbuilder                               #Should be replaced by the corresponding path to feneb
+CPPTRAJ=cpptraj                                       #Should be replaced by the corresponding path to cpptraj
+SANDER=sander                                         #Should be replaced by the corresponding path to sander
+MDIN=growth.mdin                                      #Sander input
+GROWTH=F
+MERGE=F
+#--------
+
+# Parse command line arguments
+while getopts "hb:m:cp:g:s:i:" opt; do
+  case ${opt} in
+    h ) print_help
+        exit 0
+      ;;
+    b ) BANDBUILDER=$OPTARG
+      ;;
+    m ) MERGE=$OPTARG
+      ;;
+    cp ) CPPTRAJ=$OPTARG
+      ;;
+    g ) GROWTH=$OPTARG
+      ;;
+    s ) SANDER=$OPTARG
+      ;;
+    i ) MDIN=$OPTARG
+      ;;
+    * ) echo "Invalid option"
+        exit 1
+      ;;
+  esac
+done
+
+# Function to check if a variable is a number
+is_num() {
+  if ! echo "$1" | grep -E -q '^[0-9]+$'; then
+    echo "Error: $2 is not a number."
+    exit 1
+  fi
+}
+
+# Before doing anything, prints the print_help
+print_help
+
+# Check if MERGE is either 'T', 'F', or 'd'
+if ! echo "$MERGE" | grep -E -q '^[TF]$'; then
+  echo "Error: MERGE must be either 'T' or 'F'."
+  exit 1
+fi
+
+# Check if GROWTH is either 'T', 'F', or 'd'
+if ! echo "$GROWTH" | grep -E -q '^[TF]$'; then
+  echo "Error: GROWTH must be either 'T' or 'F'."
+  exit 1
+fi
+
+# Check if inputs directory exists
+if [ ! -d "inputs" ]; then
+    echo "Error: inputs directory not found."
+    exit 1
+fi
+
+# Check if banbuilder.in file exist
+REQUIRED_FILES=("bandbuilder.in")
+for file in "${REQUIRED_FILES[@]}"; do
+    if [ ! -f "inputs/$file" ]; then
+        echo "Error: Required file $file not found in inputs directory."
+        exit 1
+    fi
+done
+
+# Check if rcfile and pcfile are defined by inspecting the bandbuilder.in file
+if  grep -s -q -F "rcfile" "inputs/bandbuilder.in";
+then
+  REACTANTSFILE=$(grep rcfile inputs/bandbuilder.in|awk '{print $2}')
+else
+  echo "Error: Reactants coordinates file is not specified in bandbuilder.in (rcfile)"
+  exit 1
+fi
+if  grep -s -q -F "pcfile" "inputs/bandbuilder.in";
+then
+  PRODUCTSFILE=$(grep pcfile inputs/bandbuilder.in|awk '{print $2}')
+else
+  echo "Error: Products coordinates file is not specified in bandbuilder.in (pcfile)"
+  exit 1
+fi
+# Check if required files exist
+REQUIRED_FILES=("${REACTANTSFILE}" "${PRODUCTSFILE}")
+for file in "${REQUIRED_FILES[@]}"; do
+    if [ ! -f "inputs/$file" ]; then
+        echo "Error: Required file $file not found in inputs directory."
+        exit 1
+    fi
+done
+
+# Check if a TS candidate is intented to be used
+if  grep -s -q -F "usets" "inputs/bandbuilder.in";
+then
+  USETS=$(grep usets inputs/bandbuilder.in|awk '{print $2}')
+  # Check if USETS is T or F
+  USETS=$(echo "${USETS}" | tr -d '[:space:]')
+  if ! echo "${USETS}" | grep -E -q '^[TF]$'; then
+    echo "Error: ${USETS} must be either 'T' or 'F'."
+    exit 1
+  fi
+else
+  USETS=F
+fi
+# If USETS is true, check if a TS candidate file is provided
+if [ "$USETS" == "T" ]; then
+  if  grep -s -q -F "tsfile" "inputs/bandbuilder.in";
+  then
+    TSCANDIDATEFILE=$(grep tsfile inputs/bandbuilder.in|awk '{print $2}')
+  else
+    echo "Error: Transition state candidate coordinates file is not specified in bandbuilder.in (tsfile)"
+    exit 1
+  fi
+  # Check if required files exist
+  REQUIRED_FILES=("${TSCANDIDATEFILE}")
+  for file in "${REQUIRED_FILES[@]}"; do
+    if [ ! -f "inputs/$file" ]; then
+        echo "Error: Required file $file not found in inputs directory."
+        exit 1
+    fi
+  done
+fi
+
+# Determine NIMAGES by inspecting the bandbuilder.in file
+if  grep -s -q -F "nrep" "inputs/bandbuilder.in";
+then
+  NIMAGES=$(grep nrep inputs/bandbuilder.in|awk '{print $2}')
+  # Check if NIMAGES is a number
+  is_num "$NIMAGES" "NIMAGES"
+else
+  echo "Error: The number of images not found in bandbuilder.in (nrep)"
+  exit 1
+fi
+# Check if the number of images is greater than 2
+if [ "$NIMAGES" -le 2 ]; then
+  if [ "$NIMAGES" -eq 1 ]; then
+    echo "NIMAGES=1 did you mean to perform a free energy optimization?"
+  else
+    echo "Error: NIMAGES must be greater than 2."
+    exit 1
+  fi
+fi
+
+# Determine PREFIX by inspecting the bandbuilder.in file
+if  grep -s -q -F "prefix" "inputs/bandbuilder.in";
+then
+  NAME=$(grep prefix inputs/bandbuilder.in|awk '{print $2}')
+  TOPOLOGY=${NAME}.prmtop
+else
+  echo "Error: Prefix for prmtop and coordinates not found in bandbuilder.in (prefix)"
+  exit 1
+fi
+
+# Now that prefix is set, search for TOPOLOGY
+REQUIRED_FILES=("$TOPOLOGY")
+for file in "${REQUIRED_FILES[@]}"; do
+    if [ ! -f "inputs/$file" ]; then
+        echo "Error: Required file $file not found in inputs directory."
+        exit 1
+    fi
+done
+
+# In case the method is growth, check that the required files exist,
+# and that the required keywords are properly set
+if [ "$GROWTH" == "T" ]; then
+  REQUIRED_FILES=("${MDIN}")
+  for file in "${REQUIRED_FILES[@]}"; do
+      if [ ! -f "inputs/$file" ]; then
+          echo "Error: GROWTH option enabled, but required file $file not found in inputs directory (growth)"
+          exit 1
+      fi
+  done
+fi
+
+# In CPPTRAJ will be used, check that the path is correctly set
+if [ "$MERGE" == "T" ]; then
+  ISWORDVERSION="notVersion"
+  ISWORDVERSION=$($CPPTRAJ --version|awk '{print $2}')
+  if [ "$ISWORDVERSION" != "Version" ]; then
+      echo "Error: MERGE option enabled, but CPPTRAJ not found (see -cp option)"
+      exit 1
+  fi
+fi
+
+# LOOK FOR SANDER
+if [ "$GROWTH" == "T" ]; then
+  ISWORDVERSION="notVersion"
+  ISWORDVERSION=$($SANDER --version|awk '{print $2}')
+  if [ "$ISWORDVERSION" != "Version" ]; then
+      echo "Error: GROWTH option enabled, but $SANDER not found (see -s option)"
+      exit 1
+  fi
+fi
+
+# LOOK FOR BANDBUILDER
+ISWORDVERSION="notVersion"
+ISWORDVERSION=$($BANDBUILDER --version|awk '{print $2}')
+if [ "$ISWORDVERSION" != "Version" ]; then
+    echo "Error: $BANDBUILDER not found (see -b option)"
+    exit 1
+fi
+
+# Check if a the IDPP method will be used
+if  grep -s -q -F "idpp" "inputs/bandbuilder.in";
+then
+  IDPP=$(grep idpp inputs/bandbuilder.in|awk '{print $2}')
+  # Check if USETS is T or F
+  IDPP=$(echo "${IDPP}" | tr -d '[:space:]')
+  if ! echo "${IDPP}" | grep -E -q '^[TF]$'; then
+    echo "Error: ${IDPP} must be either 'T' or 'F'."
+    exit 1
+  fi
+else
+  IDPP=F
+fi
+
+
+echo "----------------------------------------------------------------------------------------------------------------------"
+echo "                                          STARTING THE BAND GENERATION"
+echo "----------------------------------------------------------------------------------------------------------------------"
+echo " If everything works smoothly, you will find the images in the STEP-0 folder"
+
+if [ "$IDPP" == "T" ]; then
+  echo " Images will be generated using the Image Dependent Pair Potential method"
+  echo " This may take a few seconds..."
+else
+  echo " Images will be generated with a Linear Interpolation"
+fi
+
+mkdir -p bandbuilder-run-dir
+cd  bandbuilder-run-dir
+cp ../inputs/* .
+
+$BANDBUILDER
+
+mkdir -p ../STEP-0
+
+# In CPPTRAJ will be used, check that the path is correctly set
+if [ "$MERGE" == "T" ]; then
+  echo " Additionally, images will be merged into the file initial_BAND.nc, using CPPTRAJ"
+  for ((i=1; i<=NIMAGES; i++));
+  do
+  echo "trajin ${NAME}_$i.rst7" >> input.cpptraj
+  done
+  echo "trajout ${NAME}_BAND_0.nc netcdf" >> input.cpptraj
+  $CPPTRAJ $TOPOLOGY input.cpptraj
+  rm input.cpptraj
+  mv ${NAME}_BAND_0.nc ../STEP-0/.
+fi
+
+#Move images to the corresponding file
+mv *_r_*.rst7 ../STEP-0/.
