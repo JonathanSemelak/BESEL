@@ -336,7 +336,7 @@ do
             l=$((STARTREP))
             while [ "$seq_finished" = "T" -a $l -le $ENDREP ];
             do
-            if  grep -s -q -F "wallclock()" "${NAME}_${l}.out"; then
+            if  grep -s -q -F "Final Performance Info" "${NAME}_${l}.out"; then
               seq_finished=T
               last_finished=$((l))
             else
@@ -397,7 +397,7 @@ do
             count=0
             for ((l=FROM; l<=UPTO; l++));
             do
-              if  grep -s -q -F "wallclock()" "${NAME}_${l}.out";
+              if  grep -s -q -F "Final Performance Info" "${NAME}_${l}.out";
               then
                 count=$((count+1))
               else
@@ -443,7 +443,7 @@ do
           count=0
           for ((l=FROM; l<=UPTO; l++));
           do
-          if  grep -s -q -F "wallclock()" "${NAME}_${l}.out";
+          if  grep -s -q -F "Final Performance Info" "${NAME}_${l}.out";
           then
             count=$((count+1))
           else
