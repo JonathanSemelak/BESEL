@@ -415,6 +415,16 @@ else
                -ref ${NAME}_initial_${k}.rst7
   done
 fi
+FROM=2
+UPTO=$((NIMAGES))
+echo " Saving restraint energy to restraint_evolution.dat file"
+rm -f restraint_evolution.dat
+for ((k=FROM;k<=UPTO;k++)); # Start running MD
+do
+awk -F'=' '/RESTRAINT/ { for (i=1; i<=NF; i++) { if ($i ~ /RESTRAINT/) print $(i+1) } }' ${NAME}_${k}.out| awk '{$1=$1};1' | head -n -2 >> restraint_evolution.dat
+echo "" >> restraint_evolution.dat
+done
+
 if [ "$DELETENC" == "T" ]; then
   rm *.nc
 fi
