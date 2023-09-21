@@ -18,7 +18,9 @@ print_help() {
   echo "OPTIONS:"
   echo "-b  Specify the path to bandbuilder [default: bandbuilder]"
   echo "-m  Specify if a merged .nc file should be generated (enter T for True) [default: F]"
-  echo "-cp Specify the path to cptraj (only needed if -m T) [default: cpptraj]"
+  echo "-c  Center and image coordinates (only needed if -m T) [default: F]"
+  echo "-cmask Amber mask to center the images at (only needed if -c T) [default: RCS atoms]"
+  echo "-cp Specify the path to cptraj (only needed if -m or -c are T) [default: cpptraj]"
   echo "-g  Growth method for generating the initial band [default: F]"
   echo "-bi  Turn on bidirectional Growth method for generating the initial band [default: F]"
   echo "-d  Delete .nc files generated during Growth method simulation [default: F]"
@@ -46,7 +48,7 @@ MERGE=F
 #--------
 
 # Parse command line arguments
-while getopts "hb:m:cp:g:bi:d:s:i:" opt; do
+while getopts "hb:m:c:cmask:cp:g:bi:d:s:i:" opt; do
   case ${opt} in
     h ) print_help
         exit 0
@@ -54,6 +56,10 @@ while getopts "hb:m:cp:g:bi:d:s:i:" opt; do
     b ) BANDBUILDER=$OPTARG
       ;;
     m ) MERGE=$OPTARG
+      ;;
+    c ) CENTER=$OPTARG
+      ;;
+    cmask ) CENTERMASK=$OPTARG
       ;;
     cp ) CPPTRAJ=$OPTARG
       ;;
@@ -279,6 +285,28 @@ if [ "$IDPP" == "T" ]; then
 fi
 fi
 
+# Check if CENTER is either 'T' or 'F'
+if ! echo "$CENTER" | grep -E -q '^[TF]$'; then
+  echo "Error: CENTER must be either 'T' or 'F'."
+  exit 1
+fi
+
+# If images will be centered and imaged, look if center mask is RCS
+if [ "$CENTER" == "T" ]; then
+  CENTERMASKISRCS=F
+  if [ "$CENTERMASK" == "RCS" ]; then
+  CENTERMASKISRCS=T
+  result=$(grep '^mask' bandbuilder.in | awk '{
+     printf "\047@"
+     for (i=2; i<=NF; i++) {
+        printf $i
+        if (i < NF) printf ","
+    }
+    printf "\047"
+  }')
+  fi
+fi
+
 echo "----------------------------------------------------------------------------------------------------------------------"
 echo "                                          STARTING THE BAND GENERATION"
 echo "----------------------------------------------------------------------------------------------------------------------"
@@ -288,6 +316,31 @@ if [ "$IDPP" == "T" ]; then
   echo " This may take a few seconds..."
 else
   echo " Images will be generated with a Linear Interpolation"
+fi
+
+# If images will be centered and imaged, look if center mask is RCS
+if [ "$CENTER" == "T" ]; then
+  echo " Images will be centered and imaged with CPPTRAJ"
+  if [ "$CENTERMASKISRCS" == "T" ]; then
+  echo "Atom mask will be the atoms integrating the Recation Coordinate Space (mask in bandbuilder.in)"
+  fi
+  echo " Atom mask is:"
+  echo " $CENTERMASK"
+  echo "  Running quick test to check this mask is correctly specified"
+  echo "  Running CPPTRAJ..."
+  echo "trajin ${REACTANTSFILE}" >> input.cpptraj
+  echo "center ${CENTERMASK} origin" >> input.cpptraj
+  echo "origin familiar" >> input.cpptraj
+  $CPPTRAJ $TOPOLOGY input.cpptraj >> cpptraj_test.log
+  rm input.cpptraj
+  if  grep -s -q -F "RUN END" cpptraj_test.log;
+  then
+    echo "Test passed"
+    rm cpptraj_tests.log
+  else
+    echo "Error: Center mask seems to be wrong. Check the cpptraj.log file."
+    exit 1
+  fi
 fi
 
 mkdir -p bandbuilder-run-dir
@@ -361,13 +414,37 @@ fi
 if [ "$DELETENC" == "T" ]; then
   rm *.nc
 fi
-mkdir -p ../STEP-0-INITIAL
-if [ "$MERGE" == "T" ]; then
-  echo " Additionally, images will be merged into the file ${NAME}_initial_BAND.nc, using CPPTRAJ"
+if [ "$CENTER" == "T" ]; then
+  echo " Now the images will be centered and imaged, using CPPTRAJ"
   echo " Running CPPTRAJ..."
   for ((i=1; i<=NIMAGES; i++));
   do
+  echo "trajin ${NAME}_initial_$i.rst7" >> input.cpptraj
+  echo "center ${CENTERMASK} origin" >> input.cpptraj
+  echo "origin familiar" >> input.cpptraj
+  echo "trajout temp.rst7 restart" >> input.cpptraj
+  $CPPTRAJ $TOPOLOGY input.cpptraj >> cpptraj.log
+  mv temp.rst7 ${NAME}_initial_${i}.rst7
+  rm input.cpptraj
+  done
+  for ((i=1; i<=NIMAGES; i++));
+  do
   echo "trajin ${NAME}_$i.rst7" >> input.cpptraj
+  echo "center ${CENTERMASK} origin" >> input.cpptraj
+  echo "origin familiar" >> input.cpptraj
+  echo "trajout temp.rst7 restart" >> input.cpptraj
+  $CPPTRAJ $TOPOLOGY input.cpptraj >> cpptraj.log
+  mv temp.rst7 ${NAME}_${i}.rst7
+  rm input.cpptraj
+  done
+fi
+mkdir -p ../STEP-0-INITIAL
+if [ "$MERGE" == "T" ]; then
+  echo " Images will be merged into the file ${NAME}_initial_BAND.nc, using CPPTRAJ"
+  echo " Running CPPTRAJ..."
+  for ((i=1; i<=NIMAGES; i++));
+  do
+  echo "trajin ${NAME}_initial_$i.rst7" >> input.cpptraj
   done
   echo "trajout ${NAME}_INITIAL_BAND_0.nc netcdf" >> input.cpptraj
   $CPPTRAJ $TOPOLOGY input.cpptraj >> cpptraj.log
@@ -376,10 +453,9 @@ if [ "$MERGE" == "T" ]; then
 fi
 mv *_r_initial_*.rst7 ../STEP-0-INITIAL/.
 fi
-
 mkdir -p ../STEP-0
 if [ "$MERGE" == "T" ]; then
-  echo " Additionally, images will be merged into the file ${NAME}_BAND.nc, using CPPTRAJ"
+  echo " Images will be merged into the file ${NAME}_BAND.nc, using CPPTRAJ"
   echo " Running CPPTRAJ..."
   for ((i=1; i<=NIMAGES; i++));
   do
@@ -392,4 +468,4 @@ if [ "$MERGE" == "T" ]; then
 fi
 #Move images to the corresponding file
 mv *_r_*.rst7 ../STEP-0/.
-echo " If everything works smoothly, you will find the images in the STEP-0 folder"
+echo " If everything worked smoothly, you will find the images in the STEP-0 folder"
