@@ -213,13 +213,8 @@ end if
     devav=0.d0
 
 !------------ Band loop
-    if (rextrema) then
-      start=2
-      nend=nrep-1
-    else
-      start=1
-      nend=nrep
-    endif
+    start=2
+    nend=nrep-1
     do i=start,nend
       call getfilenames(i,chi,infile,reffile,outfile,iname,rname,oname,avname)
       call getrefcoord(rname,nrestr,mask,natoms,rref,boxinfo,per,velin) !saves all coordinates from rname (rst7 file) in rref
@@ -314,8 +309,21 @@ end if
     end if
 
 
-    if (rextrema) call getposforcesextrema(rav,fav,nrestr,nrep)
-
+    if (rextrema) then
+      call getposforcesextrema(rav,fav,nrestr,nrep)
+    else
+      i=1
+      call getfilenames(i,chi,infile,reffile,outfile,iname,rname,oname,avname) !rname = NAME_r_i.rst7 ; i=replica
+      write(*,*) "ASD1"
+      call getrefcoord(rname,nrestr,mask,natoms,rref,boxinfo,per,velin)
+      write(*,*) "ASD2"
+      call getcoordextrema(rref,natoms,rav,nrestr,nrep,i,mask)
+      write(*,*) "ASD3"
+      i=nrep
+      call getfilenames(i,chi,infile,reffile,outfile,iname,rname,oname,avname) !rname = NAME_r_i.rst7 ; i=replica
+      call getrefcoord(rname,nrestr,mask,natoms,rref,boxinfo,per,velin)
+      call getcoordextrema(rref,natoms,rav,nrestr,nrep,i,mask)
+    end if
     !----------- Write mean pos and forces
         do i=1,nrep
           call writeposforces(rav,fav,nrestr,i,nrep)
