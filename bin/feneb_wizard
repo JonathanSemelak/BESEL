@@ -306,6 +306,11 @@ do
             cp ../STEP-${PREVSTEP}/${NAME}_f_${k}.rst7 ${NAME}_fprev_${k}.rst7
           done
         fi
+        #Also, if REXTREMA is F, copy coordinates of first and last images
+        if [ "$REXTREMA" == "T" ]; then
+          cp ../STEP-${PREVSTEP}/${NAME}_r_1.rst7 .
+          cp ../STEP-${PREVSTEP}/${NAME}_r_${NIMAGES}.rst7 .
+        fi
 
         echo "Running MD"
 
