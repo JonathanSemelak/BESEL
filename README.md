@@ -75,7 +75,7 @@ feopt_wizard -h
 Check the tutorial folder for examples and a short tutorial!
 
 # Requirements
-This code requires NETCDF Libraries.
+This code requires NETCDF Libraries (libnetcdf libraries in conda)
 
 # Compilation
 Execute
