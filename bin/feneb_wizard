@@ -307,7 +307,7 @@ do
           done
         fi
         #Also, if REXTREMA is F, copy coordinates of first and last images
-        if [ "$REXTREMA" == "T" ]; then
+        if [ "$REXTREMA" == "F" ]; then
           cp ../STEP-${PREVSTEP}/${NAME}_r_1.rst7 .
           cp ../STEP-${PREVSTEP}/${NAME}_r_${NIMAGES}.rst7 .
         fi
@@ -441,8 +441,8 @@ do
           then
             echo "all remaining Images have finished"
           else
-            echo "taking a" $NAPTIME $UNITS " long nap..."
-            sleep $NAPTIME$UNITS
+            echo "taking a" $NAPTIME $NAPUNITS " long nap..."
+            sleep $NAPTIME$NAPUNITS
           fi
         done
         fi
