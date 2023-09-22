@@ -647,7 +647,7 @@ end subroutine getrefcoord
 
 subroutine getcoordextrema(rref,natoms,rav,nrestr,nrep,rep,mask)
 implicit none
-double precision, dimension(3,nrestr,nrep), intent(out) :: rav
+double precision, dimension(3,nrestr,nrep), intent(inout) :: rav
 double precision, dimension(3,natoms), intent(in) :: rref
 integer, intent(in) :: natoms, nrestr, nrep, rep
 integer :: at,i,j
