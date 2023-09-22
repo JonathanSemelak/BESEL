@@ -241,37 +241,19 @@ then
   STOPIFCONVERGED=$(grep stopifconverged inputs/feneb.in|awk '{print $2}')
 fi
 
-# Check NCPU against NIMAGES or NIMAGES-2 based on REXTREMA value
-if [ "$REXTREMA" == "T" ]; then
-  if [ "$NCPU" -gt "$(($NIMAGES - 2))" ]; then
-    echo "NCPU cannot be larger than NIMAGES-2 when REXTREMA=1. Setting NCPU to NIMAGES-2."
+# Check NCPU against NIMAGES-2
+if [ "$NCPU" -gt "$(($NIMAGES - 2))" ]; then
+    echo "NCPU cannot be larger than NIMAGES-2. Setting NCPU to NIMAGES-2."
     NCPU="$(($NIMAGES - 2))"
-  fi
-elif [ "$REXTREMA" == "F" ]; then
-  if [ "$NCPU" -gt "$NIMAGES" ]; then
-    echo "NCPU cannot be larger than NIMAGES when REXTREMA=0. Setting NCPU to NIMAGES."
-    NCPU="$NIMAGES"
-  fi
 fi
 
 #If M < N, then we need to split the MD runs in packages. A smarter option would be
 #to implement the FENEB code in the MPI version of sander, but I don't want to patch
 #the AMBER code.
-if [ $REXTREMA == "T" ] #If the extremes of the band are fixed
-then
-  NRUNS=$((NIMAGES-2))
-else
-  NRUNS=$((NIMAGES))
-fi
-#From now on we also need to know if the extremes are fixed or not
-if [ $REXTREMA == "T" ] #If the extremes of the band are fixed
-then
-  STARTREP=2
-  ENDREP=$((NIMAGES-1))
-else
-  STARTREP=1
-  ENDREP=$((NIMAGES))
-fi
+
+NRUNS=$((NIMAGES-2))
+STARTREP=2
+ENDREP=$((NIMAGES-1))
 
 NPACKAGES=$((NRUNS/NCPU))
 NREMAINING=$((NRUNS-NPACKAGES*NCPU))
