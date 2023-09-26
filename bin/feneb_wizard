@@ -323,35 +323,35 @@ do
             l=$((STARTREP))
             while [ "$seq_finished" = "T" -a $l -le $ENDREP ];
             do
-            if  grep -s -q -F "Final Performance Info" "${NAME}_${l}.out"; then
-              seq_finished=T
-              last_finished=$((l))
-            else
-              seq_finished=F
-            fi
-            l=$((l+1))
-            done
-            if [ $last_finished -gt $STARTREP ]; then
-            echo "Images from $STARTREP to ${last_finished} have finished"
-            echo "Checking the corresponding trajectory files are available"
-
-            restart_is_possible=T
-            l=$((STARTREP))
-            while [ "$restart_is_possible" = "T" -a $l -le $last_finished ];
-            do
-              if [ ! -f "${NAME}_f_${l}.nc" ]; then
-                  echo "Error: Required file ${NAME}_f_${k}.nc not found. The simulation cannot be restarted."
-                  restart_is_possible=F
+              if  grep -s -q -F "Final Performance Info" "${NAME}_${l}.out"; then
+                seq_finished=T
+                last_finished=$((l))
+              else
+                seq_finished=F
               fi
               l=$((l+1))
             done
-            echo "Passed: The simulation can be restarted 👍"
-          else
-            restart_is_possible=F
-            STARTREP=$((OLDSTARTREP))
-            NRUNS=$((OLDNRUNS))
-            NPACKAGES=$((NRUNS/NCPU))
-            NREMAINING=$((NRUNS-NPACKAGES*NCPU))
+            if [ $last_finished -gt $STARTREP ]; then
+                echo "Images from $STARTREP to ${last_finished} have finished"
+                echo "Checking the corresponding trajectory files are available"
+                restart_is_possible=T
+                l=$((STARTREP))
+                while [ "$restart_is_possible" = "T" -a $l -le $last_finished ];
+                do
+                  if [ ! -f "${NAME}_f_${l}.nc" ]; then
+                      echo "Error: Required file ${NAME}_f_${k}.nc not found. The simulation cannot be restarted."
+                      restart_is_possible=F
+                  fi
+                l=$((l+1))
+                done
+                echo "Passed: The simulation can be restarted 👍"
+            else
+               restart_is_possible=F
+               STARTREP=$((OLDSTARTREP))
+               NRUNS=$((OLDNRUNS))
+               NPACKAGES=$((NRUNS/NCPU))
+               NREMAINING=$((NRUNS-NPACKAGES*NCPU))
+            fi
           fi
         fi
 
