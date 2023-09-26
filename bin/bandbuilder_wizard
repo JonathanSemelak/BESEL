@@ -50,7 +50,7 @@ CENTERMASK=RCS
 #--------
 
 # Parse command line arguments
-while getopts "hb:m:c:k:cp:g:bi:d:s:i:" opt; do
+while getopts "hb:m:c:k:cp:g:v:d:s:i:" opt; do
   case ${opt} in
     h ) print_help
         exit 0
