@@ -22,7 +22,7 @@ print_help() {
   echo "-k Amber mask to center the images at (only needed if -c T) [default: RCS atoms]"
   echo "-cp Specify the path to cptraj (only needed if -m or -c are T) [default: cpptraj]"
   echo "-g  Growth method for generating the initial band [default: F]"
-  echo "-bi  Turn on bidirectional Growth method for generating the initial band [default: F]"
+  echo "-v  Turn on bidirectional Growth method for generating the initial band [default: F]"
   echo "-d  Delete .nc files generated during Growth method simulation [default: F]"
   echo "-s  Specify the path to sander or pmemd (only needed if -g T) [default: sander]"
   echo "-i  Name of the input file for the dynamics simulations  (only needed if -g T) [growth.mdin: F]"
@@ -67,7 +67,7 @@ while getopts "hb:m:c:k:cp:g:bi:d:s:i:" opt; do
       ;;
     g ) GROWTH=$OPTARG
       ;;
-    bi ) BIDIRECTIONAL=$OPTARG
+    v ) BIDIRECTIONAL=$OPTARG
       ;;
     d ) DELETENC=$OPTARG
       ;;
