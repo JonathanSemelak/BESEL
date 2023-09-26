@@ -333,9 +333,9 @@ do
             done
             if [ $last_finished -ge $STARTREP ]; then
             echo "Images from $STARTREP to ${last_finished} have finished"
-            NRUNS=$((NRUNS-last_finished))
-            NRUNS=$((NRUNS-1))
             STARTREP=$((last_finished+1))
+            NRUNS=$((NIMAGES-last_finished))
+            NRUNS=$((NRUNS+1))
             NPACKAGES=$((NRUNS/NCPU))
             NREMAINING=$((NRUNS-NPACKAGES*NCPU))
             echo "Only for this step, the remaining $((NRUNS)) will be run during this first step"
