@@ -335,7 +335,7 @@ do
             echo "Images from $STARTREP to ${last_finished} have finished"
             STARTREP=$((last_finished+1))
             NRUNS=$((NIMAGES-last_finished))
-            NRUNS=$((NRUNS+1))
+            NRUNS=$((NRUNS-1))
             NPACKAGES=$((NRUNS/NCPU))
             NREMAINING=$((NRUNS-NPACKAGES*NCPU))
             echo "Only for this step, the remaining $((NRUNS)) will be run during this first step"
