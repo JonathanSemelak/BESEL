@@ -331,27 +331,48 @@ do
             fi
             l=$((l+1))
             done
-            if [ $last_finished -ge $STARTREP ]; then
+            if [ $last_finished -gt $STARTREP ]; then
             echo "Images from $STARTREP to ${last_finished} have finished"
-            STARTREP=$((last_finished+1))
-            NRUNS=$((NIMAGES-last_finished))
-            NRUNS=$((NRUNS-1))
-            NPACKAGES=$((NRUNS/NCPU))
-            NREMAINING=$((NRUNS-NPACKAGES*NCPU))
-            echo "Only for this step, the remaining $((NRUNS)) will be run during this first step"
-            if [ $NREMAINING == '0' ]; then
-              echo  "The $((NRUNS))  MD simulations will be run in $NPACKAGES packages of $NCPU each."
-            else
-              echo  "The $((NRUNS))  MD simulations will be run in $NPACKAGES packages of $NCPU each"
-              echo  "and an extra one with $NREMAINING simulations"
-            fi
-            fi
+            echo "Checking the corresponding trajectory files are available"
+
+            restart_is_possible=T
+            l=$((STARTREP))
+            while [ "$restart_is_possible" = "T" -a $l -le $last_finished ];
+            do
+              if [ ! -f "${NAME}_f_${l}.nc" ]; then
+                  echo "Error: Required file ${NAME}_f_${k}.nc not found. The simulation cannot be restarted."
+                  restart_is_possible=F
+              fi
+              l=$((l+1))
+            done
+            echo "Passed: The simulation can be restarted 👍"
           else
+            restart_is_possible=F
             STARTREP=$((OLDSTARTREP))
             NRUNS=$((OLDNRUNS))
             NPACKAGES=$((NRUNS/NCPU))
             NREMAINING=$((NRUNS-NPACKAGES*NCPU))
           fi
+        fi
+
+        if [ $RESTART = 'T' ]; then
+            if [ $restart_is_possible = 'T' ]; then
+                STARTREP=$((last_finished+1))
+                NRUNS=$((NIMAGES-last_finished))
+                NRUNS=$((NRUNS-1))
+                NPACKAGES=$((NRUNS/NCPU))
+                NREMAINING=$((NRUNS-NPACKAGES*NCPU))
+                echo "Only for this step, the remaining $((NRUNS)) will be run during this first step"
+                if [ $NREMAINING == '0' ]; then
+                   echo  "The $((NRUNS))  MD simulations will be run in $NPACKAGES packages of $NCPU each."
+                else
+                   echo  "The $((NRUNS))  MD simulations will be run in $NPACKAGES packages of $NCPU each"
+                   echo  "and an extra one with $NREMAINING simulations"
+                fi
+            else
+                echo  "No previous runs were found"
+                echo  "The simulation will be started from scratch"
+            fi
         fi
 
         FROM=$((STARTREP))
