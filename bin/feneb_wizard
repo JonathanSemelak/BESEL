@@ -353,6 +353,11 @@ do
                NREMAINING=$((NRUNS-NPACKAGES*NCPU))
             fi
           fi
+          restart_is_possible=F
+          STARTREP=$((OLDSTARTREP))
+          NRUNS=$((OLDNRUNS))
+          NPACKAGES=$((NRUNS/NCPU))
+          NREMAINING=$((NRUNS-NPACKAGES*NCPU))
         fi
 
         if [ $RESTART = 'T' ]; then
