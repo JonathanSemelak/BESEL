@@ -384,7 +384,7 @@ echo " Running images from $FROM to $((UPTO+1)) (starting with products coordina
 for ((k=FROM;k>UPTO;k--)); # Start running MD
 do
   echo " Running image ${k}..."
-  j=$((k-1))
+  j=$((k+1))
   mv ${NAME}_${k}.rst7 ${NAME}_initial_${k}.rst7
   $SANDER -O -i ${MDIN} \
              -o ${NAME}_${k}.out \
