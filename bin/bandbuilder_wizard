@@ -360,6 +360,8 @@ if [ "$BIDIRECTIONAL" == "T" ]; then
 echo " Note that the reactants and products coordinates files will be the same as rcfile and pcfile"
 cp ${REACTANTSFILE} ${NAME}_1.rst7
 cp ${PRODUCTSFILE} ${NAME}_${NIMAGES}.rst7
+cp ${REACTANTSFILE} ${NAME}_initial_1.rst7
+cp ${PRODUCTSFILE} ${NAME}_initial_${NIMAGES}.rst7
 FROM=2
 UPTO=$(((NIMAGES-2)/2))
 UPTO=$((UPTO+1))
@@ -416,7 +418,11 @@ else
   done
 fi
 FROM=2
-UPTO=$((NIMAGES))
+if [ "$BIDIRECTIONAL" == "T" ]; then
+  UPTO=$((NIMAGES-1))
+else
+  UPTO=$((NIMAGES))
+fi
 echo " Saving restraint energy to restraint_evolution.dat file"
 rm -f restraint_evolution.dat
 for ((k=FROM;k<=UPTO;k++)); # Start running MD

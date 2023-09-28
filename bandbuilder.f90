@@ -131,7 +131,7 @@ if (idpp) then
 ! TEST---------------------
 
 call getdistmatrix(nrestr,nrep,distmatrix,rav)
-open(unit=88881, file="INIdistmatrix.dat")
+open(unit=88881, file="distmatrix_initial.dat")
 do i=1,nrestr
   do j=1,nrestr
     if (i.ne.j) then
@@ -143,40 +143,25 @@ do i=1,nrestr
   end do
 end do
 close(88881)
+  open(unit=9999, file="idpp.out")
 	do j=1,nmax
+		write(9999,*) "Image Dependent Pair Potential - NEB Optimization"
+		write(9999,*) "---------"
+		write(9999,*) "STEP: ", j
+		write(9999,*) "---------"
 	  call getdistmatrix(nrestr,nrep,distmatrix,rav)
     if(j.eq.1) call getintdistmatrix(nrestr,nrep,distmatrix,intdistmatrix,middlepoint)
-		if(j.eq.1) then
-			open(unit=888811, file="INTERPOLATEDdistmatrix.dat")
-			do n1=1,nrestr
-			  do n2=1,nrestr
-			    if (n1.ne.n2) then
-					  do n3=1,nrep
-			        write(888811,'(2x, I6,2x, f20.10)') n3, intdistmatrix(n1,n2,n3)
-						end do
-						write(888811,'(2x, I6,2x, f20.10)')
-				  endif
-			  end do
-			end do
-			close(888811)
-		end if
-
     call getenergyandforce(rav,nrestr,nrep,distmatrix,intdistmatrix,energy,maxenergy,fav)
 	  call gettang(rav,tang,nrestr,nrep,tangoption,profile)
 	  call getnebforce(rav,devav,fav,tang,nrestr,nrep,kspring,maxforceband,ftol,relaxd,&
 											ftrue,ftang,fperp,fspring,.true.,dontg,.false.)
-		write(11111,*) j, maxenergy, maxforceband, steep_size
-    flush(11111)
+
 	  do i=2,middlepoint-1
       moved=.False.
 			! moved=.True.
 		  do while (.not. moved)
 				ravprev=rav
-				write(1010,*) "AASD1"
-				flush(1010)
 		    call steep(rav,fperp,nrep,i,steep_size,maxforceband,nrestr,stepl,.False.)
-				write(1010,*) "AASD2"
-				flush(1010)
 		 	  moved=(energyreplica(rav,intdistmatrix,nrestr,nrep,i) .lt. maxenergy)
 		    if (.not. moved) then
           rav=ravprev
@@ -202,16 +187,14 @@ close(88881)
 		  end do
 		end if
 
+		write(9999,*) "Band energy (a.u.)"
 		do i=1,nrep
-			write(22222,*) energy(i)
+			write(9999,*) i, energy(i)
     end do
-		write(22222,*)
-		! write(*,*) j,steep_size
+		write(9999,*)
 
 	equispaced=.False.
-	! equispaced=.True.
 	call getdistrightminusleft(rav, nrep, nrestr, equispaced, 0.0001d0)
-	! write(*,*) "Eq: ", equispaced
 
 	k=1
 	do while ((k .le. nscycle) .and. (.not. equispaced))
@@ -221,9 +204,6 @@ close(88881)
 			do i=2,nrep-1
 				if (i.ne.middlepoint) call steep(rav,fspring,nrep,i,0.001d0,maxforceband2,nrestr,stepl,.False.)
 			end do
-
-		! write(9999,*) "Band max fspring: ",k, maxforceband2
-	  ! write(9999,*)
 
 		call getdistrightminusleft(rav, nrep, nrestr, equispaced, 0.0001d0)
 
@@ -240,7 +220,7 @@ close(88881)
 	end do
 
 	call getdistmatrix(nrestr,nrep,distmatrix,rav)
-	open(unit=8888, file="distmatrix.dat")
+	open(unit=8888, file="distmatrix_final.dat")
 	do i=1,nrestr
 	  do j=1,nrestr
 	    if (i.ne.j) then
@@ -253,6 +233,7 @@ close(88881)
 	end do
 	close(8888)
 endif
+close(9999)
 
 ! write output files
 
