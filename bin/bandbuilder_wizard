@@ -318,8 +318,7 @@ cd  bandbuilder-run-dir
 cp ../inputs/* .
 
 if [ "$IDPP" == "T" ]; then
-  echo " Images will be generated using the Image Dependent Pair Potential method"
-  echo " This may take a few seconds..."
+  echo " Images will be generated using the Image Dependent Pair Potential (IDPP) method"
 else
   echo " Images will be generated with a Linear Interpolation"
 fi
@@ -341,7 +340,6 @@ if [ "$CENTER" == "T" ]; then
   if  grep -s -q -F "RUN END" cpptraj_test.log;
   then
     echo " Test passed"
-    echo " Running Interpolation..."
     rm cpptraj_test.log
     rm input.cpptraj
   else
@@ -350,6 +348,12 @@ if [ "$CENTER" == "T" ]; then
   fi
 fi
 
+if [ "$IDPP" == "T" ]; then
+  echo " Running IDPP NEB optimization..."
+  echo " This may take a few seconds..."
+else
+  echo " Running Interpolation..."
+fi
 
 $BANDBUILDER
 
