@@ -1,7 +1,7 @@
 !Original subroutines by N. Foglia 03/2018
 !Oriented to free energy optimizations by J. Semelak 09/2020
 
-subroutine gettang(rav,tang,nrestr,nrep,tangoption,profile)        
+subroutine gettang(rav,tang,nrestr,nrep,tangoption,profile)
 implicit none
 double precision, dimension(3,nrestr,nrep), intent(in) :: rav
 double precision, dimension(3,nrestr,nrep), intent(out) :: tang
@@ -139,7 +139,6 @@ logical :: relaxdrep,relaxd,wrmforce,typicalneb
       call getmaxforce(nrestr,nrep,i,fperp,maxforce,ftol,relaxdrep,maxforceat,rms)
       if (maxforce .gt. maxforceband) maxforcerep=i
       if (maxforce .gt. maxforceband) maxforceband=maxforce
-      !write(9999,*) "Replica: ", i, "Max force: ", maxforce, "Converged: ", relaxdrep
       write(9999,*) i, maxforce, relaxdrep
       call getmaxstd(nrestr,nrep,i,fperp,devav,maxstd,maxstdat,.False.)
       if (maxstd .gt. maxstdband) maxstdrep=i
