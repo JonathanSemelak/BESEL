@@ -268,7 +268,7 @@ do
    if (keyword == 'velin') read(line,*) exp, velin
    if (keyword == 'velout') read(line,*) exp, velout
    if (keyword == 'onlytest') read(line,*) exp, onlytest
-   if (keyword == 'nmax') read(line,*) exp, nmax
+   if (keyword == 'nsteps') read(line,*) exp, nmax
    if (keyword == 'idpp') read(line,*) exp, idpp
    if (keyword == 'wselfdist') read(line,*) exp, wselfdist
 end do
