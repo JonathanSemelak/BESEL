@@ -279,7 +279,7 @@ else
 fi
 # IF IDPP is True, check that nsteps is numeric
 if [ "$IDPP" == "T" ]; then
-  if  grep -s -q -F "nmax" "inputs/bandbuilder.in";
+  if  grep -s -q -F "nsteps" "inputs/bandbuilder.in";
   then
     NSTEPS=$(grep nsteps inputs/bandbuilder.in|awk '{print $2}')
     # Check if NMAX
