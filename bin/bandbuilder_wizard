@@ -369,10 +369,15 @@ cp ${PRODUCTSFILE} ${NAME}_initial_${NIMAGES}.rst7
 FROM=2
 UPTO=$(((NIMAGES-2)/2))
 UPTO=$((UPTO+1))
+total_images=$((NIMAGES-2))
+current_image=0
 echo " Running images from $FROM to $UPTO (starting with reactants coordinates)"
 for ((k=FROM;k<=UPTO;k++)); # Start running MD
 do
-  echo " Running image ${k}..."
+  current_image=$(($current_image + 1))
+  percent=$((100 * $current_image / $total_images))
+  bar=$(printf '#%.0s' $(seq 1 $((percent / 2))))
+  printf "Running image $k... [$bar%*s] $percent%%\r" '' $(((100 - $percent) / 2))
   j=$((k-1))
   mv ${NAME}_${k}.rst7 ${NAME}_initial_${k}.rst7
   $SANDER -O -i ${MDIN} \
@@ -389,7 +394,10 @@ UPTO=$((UPTO+1))
 echo " Running images from $FROM to $((UPTO+1)) (starting with products coordinates)"
 for ((k=FROM;k>UPTO;k--)); # Start running MD
 do
-  echo " Running image ${k}..."
+  current_image=$(($current_image + 1))
+  percent=$((100 * $current_image / $total_images))
+  bar=$(printf '#%.0s' $(seq 1 $((percent / 2))))
+  printf "Running image $k... [$bar%*s] $percent%%\r" '' $(((100 - $percent) / 2))
   j=$((k+1))
   mv ${NAME}_${k}.rst7 ${NAME}_initial_${k}.rst7
   $SANDER -O -i ${MDIN} \
@@ -406,10 +414,15 @@ else
   cp ${REACTANTSFILE} ${NAME}_initial_1.rst7
   FROM=2
   UPTO=$((NIMAGES))
+  total_images=$((NIMAGES-2))
+  current_image=0
   echo " Running images from $FROM to $UPTO (starting with reactants coordinates)"
   for ((k=FROM;k<=UPTO;k++)); # Start running MD
   do
-    echo " Running image ${k}..."
+    current_image=$(($current_image + 1))
+    percent=$((100 * $current_image / $total_images))
+    bar=$(printf '#%.0s' $(seq 1 $((percent / 2))))
+    printf "Running image $k... [$bar%*s] $percent%%\r" '' $(((100 - $percent) / 2))
     j=$((k-1))
     mv ${NAME}_${k}.rst7 ${NAME}_initial_${k}.rst7
     $SANDER -O -i ${MDIN} \
