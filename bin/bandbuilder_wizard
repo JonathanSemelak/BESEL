@@ -331,7 +331,7 @@ if [ "$CENTER" == "T" ]; then
   fi
   echo " Atom mask is:"
   echo " $CENTERMASK"
-  echo " Running quick test to check this mask is correctly specified"
+  echo " Running a quick test to check this mask is correctly specified"
   echo " Running CPPTRAJ..."
   echo "trajin ${REACTANTSFILE}" > input.cpptraj
   echo "center ${CENTERMASK} origin" >> input.cpptraj
