@@ -146,9 +146,11 @@ close(88881)
   open(unit=9999, file="idpp.out")
 	do j=1,nmax
 		write(9999,*) "Image Dependent Pair Potential - NEB Optimization"
+		write(9999,*) "Energy units are arbitrary units (a.u.) and forces units are a.u./Angstrom"
 		write(9999,*) "---------"
 		write(9999,*) "STEP: ", j
 		write(9999,*) "---------"
+		write(9999,*) "Band forces:"
 	  call getdistmatrix(nrestr,nrep,distmatrix,rav)
     if(j.eq.1) call getintdistmatrix(nrestr,nrep,distmatrix,intdistmatrix,middlepoint)
     call getenergyandforce(rav,nrestr,nrep,distmatrix,intdistmatrix,energy,maxenergy,fav)
@@ -187,7 +189,7 @@ close(88881)
 		  end do
 		end if
 
-		write(9999,*) "Band energy (a.u.)"
+		write(9999,*) "Band energy:"
 		do i=1,nrep
 			write(9999,*) i, energy(i)
     end do
