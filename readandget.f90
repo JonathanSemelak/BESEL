@@ -194,15 +194,17 @@ double precision, dimension(natoms) :: massall
 double precision, dimension(nrestr) :: mass
 integer, dimension(nrestr) :: mask
 integer :: natoms,nrestr, i, at, ierr
-character(len=10) :: buffer
-character(len=4)  :: ismass
+character(len=200) :: buffer
 
 open (unit=80008, file=topfile, status='old', action='read')
 do
-  read(80008,*,iostat=ierr) buffer, ismass
+  read(80008,'(A)',iostat=ierr) buffer
   if (ierr /= 0) exit
-    if (ismass == "MASS") exit
+  if (index(buffer, "%FLAG MASS") /= 0) then
+     exit  ! Found the line, exit the loop
+  endif
 enddo
+
 read (80008,*)
 i=1
 do while (i .le. (natoms/5)*5)
